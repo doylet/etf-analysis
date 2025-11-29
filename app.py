@@ -19,7 +19,6 @@ load_dotenv()
 # Page configuration
 st.set_page_config(
     page_title="ETF Analysis Dashboard",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )

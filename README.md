@@ -122,7 +122,7 @@ etf-analysis/
 - gcloud CLI installed and configured
 - Docker installed (for local testing)
 
-### Deployment Steps
+### Option 1: Manual Deployment
 
 1. **Update deploy.sh with your project details:**
 ```bash
@@ -131,12 +131,7 @@ SERVICE_NAME="etf-analysis-dashboard"
 REGION="us-central1"
 ```
 
-2. **Make the deployment script executable:**
-```bash
-chmod +x deploy.sh
-```
-
-3. **Deploy to Cloud Run:**
+2. **Deploy to Cloud Run:**
 ```bash
 ./deploy.sh
 ```
@@ -146,6 +141,30 @@ The script will:
 - Build the container image
 - Deploy to Cloud Run
 - Provide the public URL
+
+### Option 2: Automatic Deployment (CI/CD)
+
+Set up Cloud Build to automatically deploy on every push to master:
+
+1. **Update setup-cloud-build.sh with your project ID:**
+```bash
+PROJECT_ID="your-gcp-project-id"
+```
+
+2. **Run the setup script:**
+```bash
+./setup-cloud-build.sh
+```
+
+3. **Follow the prompts to connect your GitHub repository**
+
+Once configured, every push to the master branch will:
+- Trigger Cloud Build automatically
+- Build the Docker image
+- Deploy to Cloud Run
+- Tag with commit SHA and 'latest'
+
+Monitor builds at: https://console.cloud.google.com/cloud-build/builds
 
 ### Cloud SQL Setup (Optional)
 

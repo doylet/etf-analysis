@@ -19,7 +19,7 @@ class ManageInstrumentsPage:
         instruments = self.storage.get_all_instruments(active_only=True)
         self.instruments = instruments
 
-        col1, col2 = st.columns([3, 1])
+        col1, col2 = st.columns([2, 1])
 
         if instruments:
             with col1:

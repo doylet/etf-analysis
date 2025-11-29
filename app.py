@@ -1,16 +1,8 @@
 """
-ETF Analysis Dashboard - Main Application Entry Point
+ETF Analysis Dashboard - Home Page
 """
 
 import streamlit as st
-from src.services import AlphaVantageClient
-from src.services.storage_adapter import DataStorageAdapter
-from src.controllers import (
-    ManageInstrumentsPage,
-    DashboardPage,
-    PriceHistoryPage,
-    ComparativeAnalysisPage
-)
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -18,7 +10,8 @@ load_dotenv()
 
 # Page configuration
 st.set_page_config(
-    page_title="ETF Analysis Dashboard",
+    page_title="ETF Analysis Dashboard - Home",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -39,44 +32,28 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+st.title("📊 ETF Analysis Dashboard")
 
-# Initialize services
-@st.cache_resource
-def init_services():
-    storage = DataStorageAdapter()
-    av_client = AlphaVantageClient()
-    return storage, av_client
+st.markdown("""
+## Welcome to the ETF Analysis Dashboard
 
+Use the sidebar navigation to explore different sections:
 
-def main():
-    """Main application entry point"""
-    storage, av_client = init_services()
-    
-    # Sidebar navigation
-    st.sidebar.title("Analysis Dashboard")
-    page = st.sidebar.radio(
-        "Navigation",
-        ["Dashboard", "Manage Instruments", "Price History", "Comparative Analysis"]
-    )
-    
-    # Route to appropriate page controller
-    if page == "Manage Instruments":
-        controller = ManageInstrumentsPage(storage, av_client)
-    elif page == "Dashboard":
-        controller = DashboardPage(storage)
-    elif page == "Price History":
-        controller = PriceHistoryPage(storage)
-    elif page == "Comparative Analysis":
-        controller = ComparativeAnalysisPage(storage)
-    
-    # Render the page
-    controller.render()
-    
-    # Footer
-    st.sidebar.divider()
-    st.sidebar.caption("Analysis Dashboard")
-    # st.sidebar.caption("Built with Streamlit")
+### 📊 Dashboard
+View portfolio overview and manage data for all tracked instruments.
 
+### 🔧 Manage Instruments
+Add, remove, and update instruments. Search for symbols using Alpha Vantage integration.
 
-if __name__ == "__main__":
-    main()
+### 📈 Price History
+Analyze historical price data and trading volumes for individual instruments.
+
+### 📉 Comparative Analysis
+Compare performance across multiple instruments with normalized charts.
+
+---
+
+**Get started by selecting a page from the sidebar!**
+""")
+
+st.sidebar.success("Select a page above.")

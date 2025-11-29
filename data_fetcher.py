@@ -23,7 +23,19 @@ class DataFetcher:
             # Check if already exists
             existing = session.query(Instrument).filter_by(symbol=symbol.upper()).first()
             if existing:
-                return {'success': False, 'message': f'{symbol} already exists'}
+                if existing.is_active:
+                    return {'success': False, 'message': f'{symbol} already exists'}
+                else:
+                    # Reactivate previously removed instrument
+                    existing.is_active = True
+                    existing.instrument_type = instrument_type
+                    if sector:
+                        existing.sector = sector
+                    if notes:
+                        existing.notes = notes
+                    existing.last_updated = datetime.utcnow()
+                    session.commit()
+                    return {'success': True, 'message': f'Reactivated {symbol}', 'instrument': existing}
             
             # Fetch basic info from yfinance
             ticker = yf.Ticker(symbol)

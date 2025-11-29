@@ -2,7 +2,7 @@ streamlit==1.29.0
 pandas==2.1.4
 numpy==1.26.2
 plotly==5.18.0
-yfinance==0.2.32
+yfinance==0.2.66
 sqlalchemy==2.0.23
 google-cloud-storage==2.14.0
 google-cloud-secret-manager==2.16.4

@@ -16,13 +16,7 @@ class ManageInstrumentsPage:
     def render(self):
         st.title("Manage Instruments")
         
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            self._render_add_form()
-        
-        with col2:
-            self._render_search()
+        self._render_add_form()
         
         st.divider()
         self._render_instruments_list()
@@ -87,19 +81,6 @@ class ManageInstrumentsPage:
                 st.rerun()
             else:
                 st.error(result['message'])
-    
-    def _render_search(self):
-        st.subheader("Search Instruments")
-        search_term = st.text_input("Search by symbol or name", key="search")
-        
-        if search_term:
-            results = self.storage.search_instruments(search_term)
-            if results:
-                st.write(f"Found {len(results)} instrument(s):")
-                for inst in results:
-                    st.write(f"**{inst['symbol']}** - {inst['name']} ({inst['type']})")
-            else:
-                st.info("No instruments found")
     
     def _render_instruments_list(self):
         st.subheader("Tracked Instruments")

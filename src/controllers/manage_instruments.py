@@ -24,7 +24,7 @@ class ManageInstrumentsPage:
         if instruments:
             with col1:
                 self._render_instruments_list()
-                if st.button("Refresh List", type="secondary", use_container_width=False):
+                if st.button("Refresh List", type="secondary", width="content"):
                     st.rerun()
 
             with col2:
@@ -72,7 +72,7 @@ class ManageInstrumentsPage:
                         with col_c:
                             st.caption(result['region'])
                         with col_d:
-                            if st.button("Add", key=f"add_search_{idx}", type="secondary", use_container_width=True):
+                            if st.button("Add", key=f"add_search_{idx}", type="secondary", width="stretch"):
                                 # Determine instrument type from search result
                                 result_type = result['type'].upper()
                                 if 'ETF' in result_type:
@@ -135,7 +135,7 @@ class ManageInstrumentsPage:
         
         with col3:
             st.write("")
-            if st.button("Fetch Data", type="primary", use_container_width=True):
+            if st.button("Fetch Data", type="primary", width="stretch"):
                 self._handle_data_fetch(selected_symbols, instruments, period)
     
     def _handle_data_fetch(self, selected_symbols, instruments, period):
@@ -179,7 +179,7 @@ class ManageInstrumentsPage:
             
             edited_df = st.data_editor(
                 df[['symbol', 'name', 'type', 'sector', 'added_date', 'last_updated']],
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 disabled=['symbol', 'added_date', 'last_updated'],  # Make these columns read-only
                 num_rows="fixed"  # Prevent adding/deleting rows

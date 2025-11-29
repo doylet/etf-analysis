@@ -11,7 +11,6 @@ load_dotenv()
 # Page configuration
 st.set_page_config(
     page_title="ETF Analysis Dashboard - Home",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -32,23 +31,23 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📊 ETF Analysis Dashboard")
+st.title("ETF Analysis Dashboard")
 
 st.markdown("""
 ## Welcome to the ETF Analysis Dashboard
 
 Use the sidebar navigation to explore different sections:
 
-### 📊 Dashboard
+### Dashboard
 View portfolio overview and manage data for all tracked instruments.
 
-### 🔧 Manage Instruments
+### Manage Instruments
 Add, remove, and update instruments. Search for symbols using Alpha Vantage integration.
 
-### 📈 Price History
+### Price History
 Analyze historical price data and trading volumes for individual instruments.
 
-### 📉 Comparative Analysis
+### Comparative Analysis
 Compare performance across multiple instruments with normalized charts.
 
 ---

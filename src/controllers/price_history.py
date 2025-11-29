@@ -103,7 +103,7 @@ class PriceHistoryPage:
             height=500
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     
     def _render_volume_chart(self, symbol, df):
         fig = go.Figure()
@@ -122,11 +122,11 @@ class PriceHistoryPage:
             height=300
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     
     def _render_data_table(self, df):
         with st.expander("View Raw Data"):
             st.dataframe(
                 df.reset_index().tail(50).sort_index(ascending=False),
-                use_container_width=True
+                width="stretch"
             )

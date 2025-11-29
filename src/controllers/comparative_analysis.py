@@ -106,7 +106,7 @@ class ComparativeAnalysisPage:
             yaxis=dict(ticksuffix="%")
         )
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width="stretch")
     
     def _render_metrics_table(self, all_data):
         st.subheader("Performance Metrics")
@@ -129,6 +129,6 @@ class ComparativeAnalysisPage:
         
         st.dataframe(
             pd.DataFrame(metrics_data),
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )

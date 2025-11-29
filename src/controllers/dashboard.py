@@ -26,8 +26,8 @@ class DashboardPage:
         
         self._render_overview(instruments, latest_prices)
         st.divider()
-        self._render_data_management(symbols)
-        st.divider()
+        # self._render_data_management(symbols)
+        # st.divider()
         self._render_instruments_table(instruments, latest_prices)
     
     def _render_overview(self, instruments, latest_prices):
@@ -44,24 +44,24 @@ class DashboardPage:
                         value=f"${price_info['close']:.2f}",
                         delta=None
                     )
-                    st.caption(inst['name'][:30])
+                    # st.caption(inst['name'][:30])
     
-    def _render_data_management(self, symbols):
-        st.subheader("Data Management")
-        col_refresh1, col_refresh2 = st.columns([3, 1])
+    # def _render_data_management(self, symbols):
+    #     st.subheader("Data Management")
+    #     col_refresh1, col_refresh2 = st.columns([3, 1])
         
-        with col_refresh1:
-            refresh_symbol = st.selectbox(
-                "Update price data for:",
-                options=['All'] + symbols,
-                key="refresh_select"
-            )
+    #     with col_refresh1:
+    #         refresh_symbol = st.selectbox(
+    #             "Update price data for:",
+    #             options=['All'] + symbols,
+    #             key="refresh_select"
+    #         )
         
-        with col_refresh2:
-            st.write("")
-            st.write("")
-            if st.button("Fetch Latest Data"):
-                self._handle_data_refresh(refresh_symbol, symbols)
+    #     with col_refresh2:
+    #         st.write("")
+    #         st.write("")
+    #         if st.button("Fetch Latest Data"):
+    #             self._handle_data_refresh(refresh_symbol, symbols)
     
     def _handle_data_refresh(self, refresh_symbol, symbols):
         symbols_to_refresh = symbols if refresh_symbol == 'All' else [refresh_symbol]
@@ -99,6 +99,6 @@ class DashboardPage:
         
         st.dataframe(
             pd.DataFrame(display_data),
-            use_container_width=True,
+            width="stretch",
             hide_index=True
         )

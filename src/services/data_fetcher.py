@@ -6,7 +6,7 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 from sqlalchemy import and_
-from database import DatabaseManager, Instrument, PriceData
+from src.models.database import DatabaseManager, Instrument, PriceData
 
 
 class DataFetcher:

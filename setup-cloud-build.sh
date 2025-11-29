@@ -4,7 +4,7 @@
 # Creates a GitHub-triggered Cloud Build pipeline
 
 # Configuration
-PROJECT_ID="your-gcp-project-id"  # Change this to your project ID
+PROJECT_ID="conda-portfolio-dashboard"
 REPO_OWNER="doylet"
 REPO_NAME="etf-analysis"
 TRIGGER_NAME="etf-analysis-deploy"

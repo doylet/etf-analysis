@@ -3,7 +3,7 @@
 # ETF Analysis Dashboard - Cloud Run Deployment Script
 
 # Configuration
-PROJECT_ID="your-gcp-project-id"
+PROJECT_ID="conda-portfolio-dashboard"
 SERVICE_NAME="etf-analysis-dashboard"
 REGION="us-central1"
 IMAGE_NAME="gcr.io/${PROJECT_ID}/${SERVICE_NAME}"

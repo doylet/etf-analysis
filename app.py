@@ -9,7 +9,12 @@ import plotly.express as px
 from datetime import datetime, timedelta
 from database import DatabaseManager
 from data_fetcher import DataFetcher
+from alphavantage_client import AlphaVantageClient
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Page configuration
 st.set_page_config(
@@ -24,9 +29,10 @@ st.set_page_config(
 def init_database():
     db = DatabaseManager()
     fetcher = DataFetcher(db)
-    return db, fetcher
+    av_client = AlphaVantageClient()
+    return db, fetcher, av_client
 
-db, fetcher = init_database()
+db, fetcher, av_client = init_database()
 
 # Custom CSS
 st.markdown("""
@@ -63,8 +69,33 @@ if page == "Manage Instruments":
     with col1:
         st.subheader("Add New Instrument")
         
+        # Symbol search feature
+        if av_client.is_available():
+            st.markdown("**Search for symbols:**")
+            search_query = st.text_input("Search by company name or symbol", key="av_search")
+            
+            if search_query and len(search_query) >= 2:
+                with st.spinner("Searching..."):
+                    results = av_client.search_symbols(search_query)
+                    
+                    if results:
+                        st.markdown("**Search Results:**")
+                        for result in results[:10]:  # Show top 10
+                            col_a, col_b, col_c = st.columns([2, 3, 1])
+                            with col_a:
+                                st.code(result['symbol'])
+                            with col_b:
+                                st.write(f"{result['name']} ({result['type']})")
+                            with col_c:
+                                st.caption(result['region'])
+                        st.divider()
+                    else:
+                        st.info("No results found")
+        else:
+            st.info("💡 Add ALPHAVANTAGE_API_KEY to .env for symbol search")
+        
         with st.form("add_instrument_form"):
-            symbol = st.text_input("Symbol (e.g., SPY, AAPL)", key="add_symbol").upper()
+            symbol = st.text_input("Symbol (e.g., SPY, AAPL, BHP.AX)", key="add_symbol").upper()
             instrument_type = st.selectbox(
                 "Type",
                 ["etf", "stock", "index"],

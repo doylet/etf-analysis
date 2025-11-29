@@ -99,6 +99,7 @@ class DataFetcher:
                     'type': i.instrument_type,
                     'sector': i.sector,
                     'added_date': i.added_date,
+                    'last_updated': i.last_updated,
                     'notes': i.notes
                 }
                 for i in instruments

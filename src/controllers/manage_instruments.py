@@ -12,16 +12,27 @@ class ManageInstrumentsPage:
     def __init__(self, storage, av_client):
         self.storage = storage
         self.av_client = av_client
-    
+        
     def render(self):
         st.title("Manage Instruments")
         
-        self._render_instruments_list()
+        instruments = self.storage.get_all_instruments(active_only=True)
+        self.instruments = instruments
 
-        self._render_add_form()
+        col1, col2 = st.columns([3, 1])
 
+        if instruments:
+            with col1:
+                self._render_instruments_list()
+                if st.button("Refresh List", type="secondary", use_container_width=False):
+                    st.rerun()
 
-    
+            with col2:
+
+                self._render_add_form()
+
+                self._render_remove_form()
+
     def _render_add_form(self):
         st.subheader("Add New Instrument")
         
@@ -99,9 +110,11 @@ class ManageInstrumentsPage:
             else:
                 st.error(result['message'])
     
-    def _render_data_controls(self, instruments):
+    def _render_data_controls(self):
         st.subheader("Manage Historical Data")
         
+        instruments = self.instruments
+
         col1, col2, col3 = st.columns([2, 1, 1])
         
         with col1:
@@ -121,7 +134,6 @@ class ManageInstrumentsPage:
             )
         
         with col3:
-            st.write("")
             st.write("")
             if st.button("Fetch Data", type="primary", use_container_width=True):
                 self._handle_data_fetch(selected_symbols, instruments, period)
@@ -159,39 +171,37 @@ class ManageInstrumentsPage:
     
     def _render_instruments_list(self):
         st.subheader("Tracked Instruments")
-        
-        instruments = self.storage.get_all_instruments(active_only=True)
-        
-        if instruments:
-            df = pd.DataFrame(instruments)
+                
+        if self.instruments:
+            df = pd.DataFrame(self.instruments)
             df['added_date'] = pd.to_datetime(df['added_date']).dt.strftime('%Y-%m-%d')
+            df['last_updated'] = pd.to_datetime(df['last_updated']).dt.strftime('%Y-%m-%d %H:%M')
             
-            st.dataframe(
-                df[['symbol', 'name', 'type', 'sector', 'added_date']],
+            edited_df = st.data_editor(
+                df[['symbol', 'name', 'type', 'sector', 'added_date', 'last_updated']],
                 use_container_width=True,
-                hide_index=True
+                hide_index=True,
+                disabled=['symbol', 'added_date', 'last_updated'],  # Make these columns read-only
+                num_rows="fixed"  # Prevent adding/deleting rows
             )
             
-            self._render_data_controls(instruments)
-            st.divider()
-            self._render_remove_form(instruments)
+            self._render_data_controls()
+
         else:
             st.info("No instruments tracked yet. Add some above!")
     
-    def _render_remove_form(self, instruments):
+    def _render_remove_form(self):
         st.subheader("Remove Instrument")
-        col_remove1, col_remove2 = st.columns([3, 1])
-        
-        with col_remove1:
+
+        instruments = self.instruments
+
+        if instruments:
             remove_symbol = st.selectbox(
                 "Select instrument to remove",
                 options=[i['symbol'] for i in instruments],
                 key="remove_select"
             )
-        
-        with col_remove2:
-            st.write("")
-            st.write("")
+
             if st.button("Remove", type="secondary"):
                 result = self.storage.remove_instrument(remove_symbol)
                 if result['success']:

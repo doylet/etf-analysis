@@ -7,8 +7,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-from src.models import DatabaseManager
-from src.services import DataFetcher, AlphaVantageClient
+from src.services import AlphaVantageClient
+from src.services.storage_adapter import DataStorageAdapter
 import os
 from dotenv import load_dotenv
 
@@ -23,15 +23,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize database and data fetcher
+# Initialize storage adapter and clients
 @st.cache_resource
-def init_database():
-    db = DatabaseManager()
-    fetcher = DataFetcher(db)
+def init_services():
+    storage = DataStorageAdapter()
     av_client = AlphaVantageClient()
-    return db, fetcher, av_client
+    return storage, av_client
 
-db, fetcher, av_client = init_database()
+fetcher, av_client = init_services()
 
 # Custom CSS
 st.markdown("""

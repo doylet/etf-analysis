@@ -23,15 +23,21 @@ A comprehensive ETF and stock analysis dashboard built with Streamlit, featuring
 
 💾 **Data Persistence**
 - SQLite for local development
-- PostgreSQL/Cloud SQL support for production
+- BigQuery for production deployment
 - Automatic price data caching
 - Incremental updates
+
+🔍 **Symbol Search**
+- Live symbol search via Alpha Vantage API
+- Search across global exchanges
+- View company details before adding
 
 ☁️ **Cloud Ready**
 - Dockerized for easy deployment
 - Google Cloud Run configuration
-- Cloud Storage integration
-- Secret Manager support
+- BigQuery integration for scalable storage
+- Cloud Storage and Secret Manager support
+- CI/CD with Cloud Build
 
 ## Quick Start (Local Development)
 
@@ -224,6 +230,23 @@ gcloud run services update etf-analysis-dashboard \
 ```bash
 echo -n "your-db-password" | gcloud secrets create db-password --data-file=-
 ```
+
+### BigQuery Setup (Production Default)
+
+The deployed dashboard uses BigQuery for data storage automatically. No manual setup required - tables are created on first run:
+
+- **Dataset**: `etf_analysis`
+- **Tables**:
+  - `instruments` - Tracked stocks/ETFs
+  - `price_data` - Historical OHLCV data
+
+**Benefits:**
+- Serverless and auto-scaling
+- Pay per query (very cost-effective)
+- No database maintenance
+- Built-in analytics capabilities
+
+The app automatically uses BigQuery when `USE_BIGQUERY=true` environment variable is set (configured in Dockerfile for Cloud Run).
 
 ### Cloud Storage Setup (Optional)
 

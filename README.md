@@ -101,17 +101,44 @@ From the **Dashboard** page:
 
 ```
 etf-analysis/
-├── app.py                  # Main Streamlit application
-├── database.py             # Database models and connection
-├── data_fetcher.py         # Price data fetching and storage
-├── gcp_utils.py            # Google Cloud Platform utilities
-├── requirements.txt        # Python dependencies
-├── Dockerfile              # Container configuration
-├── deploy.sh               # Cloud Run deployment script
-├── .env.example            # Environment variables template
-├── .streamlit/
-│   └── config.toml         # Streamlit configuration
-└── data/                   # Local SQLite database (created automatically)
+├── app.py                      # Main Streamlit application
+├── requirements.txt            # Python dependencies
+├── Dockerfile                  # Container configuration
+├── cloudbuild.yaml            # Cloud Build CI/CD config
+├── trigger.yaml               # Cloud Build trigger config
+├── .env.example               # Environment variables template
+├── .gitignore                 # Git exclusions
+├── .dockerignore              # Docker exclusions
+│
+├── src/                       # Source code
+│   ├── models/                # Data models
+│   │   ├── __init__.py
+│   │   └── database.py        # SQLAlchemy models
+│   ├── services/              # Business logic
+│   │   ├── __init__.py
+│   │   ├── data_fetcher.py    # Price data fetching
+│   │   └── alphavantage_client.py  # Symbol search
+│   └── utils/                 # Utilities
+│       ├── __init__.py
+│       └── gcp_utils.py       # GCP integration
+│
+├── config/                    # Configuration
+│   ├── __init__.py
+│   └── settings.py            # App settings
+│
+├── scripts/                   # Deployment scripts
+│   ├── deploy.sh              # Cloud Run deployment
+│   └── setup-cloud-build.sh   # CI/CD setup
+│
+├── tests/                     # Unit tests
+│   ├── __init__.py
+│   └── test_database.py       # Database tests
+│
+├── .streamlit/                # Streamlit config
+│   └── config.toml
+│
+└── data/                      # Local database (created automatically)
+    └── etf_analysis.db
 ```
 
 ## Google Cloud Deployment
@@ -124,7 +151,7 @@ etf-analysis/
 
 ### Option 1: Manual Deployment
 
-1. **Update deploy.sh with your project details:**
+1. **Update scripts/deploy.sh with your project details:**
 ```bash
 PROJECT_ID="your-gcp-project-id"
 SERVICE_NAME="etf-analysis-dashboard"
@@ -133,7 +160,7 @@ REGION="us-central1"
 
 2. **Deploy to Cloud Run:**
 ```bash
-./deploy.sh
+./scripts/deploy.sh
 ```
 
 The script will:
@@ -146,14 +173,14 @@ The script will:
 
 Set up Cloud Build to automatically deploy on every push to master:
 
-1. **Update setup-cloud-build.sh with your project ID:**
+1. **Update scripts/setup-cloud-build.sh with your project ID:**
 ```bash
 PROJECT_ID="your-gcp-project-id"
 ```
 
 2. **Run the setup script:**
 ```bash
-./setup-cloud-build.sh
+./scripts/setup-cloud-build.sh
 ```
 
 3. **Follow the prompts to connect your GitHub repository**
@@ -276,8 +303,11 @@ GCP_PROJECT_ID=your-project-id
 # Install dev dependencies
 pip install pytest pytest-cov
 
-# Run tests (when test files are added)
+# Run tests
 pytest tests/
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
 ```
 
 ### Local Docker Build

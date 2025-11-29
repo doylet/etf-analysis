@@ -7,9 +7,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
-from database import DatabaseManager
-from data_fetcher import DataFetcher
-from alphavantage_client import AlphaVantageClient
+from src.models import DatabaseManager
+from src.services import DataFetcher, AlphaVantageClient
 import os
 from dotenv import load_dotenv
 

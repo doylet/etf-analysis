@@ -51,16 +51,32 @@ class ManageInstrumentsPage:
                 results = self.av_client.search_symbols(search_query)
                 
                 if results:
-                    st.markdown("**Search Results:**")
-                    for result in results[:10]:
-                        col_a, col_b, col_c = st.columns([2, 3, 1])
+                    st.markdown("**Search Results (click to add):**")
+                    for idx, result in enumerate(results[:10]):
+                        col_a, col_b, col_c, col_d = st.columns([1.5, 3, 1, 1])
                         with col_a:
                             st.code(result['symbol'])
                         with col_b:
                             st.write(f"{result['name']} ({result['type']})")
                         with col_c:
                             st.caption(result['region'])
-                    st.divider()
+                        with col_d:
+                            if st.button("Add", key=f"add_search_{idx}", type="secondary", use_container_width=True):
+                                # Determine instrument type from search result
+                                result_type = result['type'].upper()
+                                if 'ETF' in result_type:
+                                    instrument_type = 'ETF'
+                                elif 'INDEX' in result_type:
+                                    instrument_type = 'Index'
+                                else:
+                                    instrument_type = 'Stock'
+                                
+                                self._handle_add_instrument(
+                                    symbol=result['symbol'],
+                                    instrument_type=instrument_type,
+                                    sector=None,
+                                    notes=f"Added from search: {result['name']}"
+                                )
                 else:
                     st.info("No results found")
     

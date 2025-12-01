@@ -18,10 +18,10 @@
 
 **Purpose**: Ensure clean working environment and branch setup
 
-- [ ] T001 Verify feature branch `001-correlation-widget-tidy` is active and spec/plan docs exist
-- [ ] T002 Create backup of `src/widgets/correlation_matrix_widget.py` for reference
-- [ ] T003 [P] Review Streamlit expander documentation for state management patterns
-- [ ] T004 [P] Review current session state usage in correlation_matrix_widget.py
+- [X] T001 Verify feature branch `001-correlation-widget-tidy` is active and spec/plan docs exist
+- [X] T002 Create backup of `src/widgets/correlation_matrix_widget.py` for reference
+- [X] T003 [P] Review Streamlit expander documentation for state management patterns
+- [X] T004 [P] Review current session state usage in correlation_matrix_widget.py
 
 ---
 
@@ -31,10 +31,10 @@
 
 **⚠️ CRITICAL**: After each task, manually test that widget still works exactly as before
 
-- [ ] T005 Extract holdings checkbox rendering to `_render_holdings_selection()` method in src/widgets/correlation_matrix_widget.py
-- [ ] T006 Extract benchmark checkbox rendering to `_render_benchmark_selection()` method in src/widgets/correlation_matrix_widget.py
-- [ ] T007 Extract custom symbol input/display to `_render_custom_symbols()` method in src/widgets/correlation_matrix_widget.py
-- [ ] T008 Test widget functionality - verify all selections still work after refactoring
+- [X] T005 Extract holdings checkbox rendering to `_render_holdings_selection()` method in src/widgets/correlation_matrix_widget.py
+- [X] T006 Extract benchmark checkbox rendering to `_render_benchmark_selection()` method in src/widgets/correlation_matrix_widget.py
+- [X] T007 Extract custom symbol input/display to `_render_custom_symbols()` method in src/widgets/correlation_matrix_widget.py
+- [X] T008 Test widget functionality - verify all selections still work after refactoring
 
 **Checkpoint**: Widget works identically to before - code is just organized into methods
 
@@ -44,11 +44,11 @@
 
 **Purpose**: Add expander UI components while preserving functionality
 
-- [ ] T009 Wrap holdings section in `st.expander()` with dynamic count display in src/widgets/correlation_matrix_widget.py
-- [ ] T010 Move portfolio aggregate checkbox into dedicated expander section in src/widgets/correlation_matrix_widget.py
-- [ ] T011 Wrap benchmarks section in `st.expander()` in src/widgets/correlation_matrix_widget.py
-- [ ] T012 Create custom symbols expander with list display in src/widgets/correlation_matrix_widget.py
-- [ ] T013 Test widget - verify expanders expand/collapse and all selections persist
+- [X] T009 Wrap holdings section in `st.expander()` with dynamic count display in src/widgets/correlation_matrix_widget.py
+- [X] T010 Move portfolio aggregate checkbox into dedicated expander section in src/widgets/correlation_matrix_widget.py
+- [X] T011 Wrap benchmarks section in `st.expander()` in src/widgets/correlation_matrix_widget.py
+- [X] T012 Create custom symbols expander with list display in src/widgets/correlation_matrix_widget.py
+- [X] T013 Test widget - verify expanders expand/collapse and all selections persist
 
 **Checkpoint**: Widget now uses expanders - sections are collapsible and clearly organized
 
@@ -58,11 +58,11 @@
 
 **Purpose**: Implement select all / deselect all functionality
 
-- [ ] T014 Add "Select All" button for holdings in `_render_holdings_selection()` in src/widgets/correlation_matrix_widget.py
-- [ ] T015 Add "Deselect All" button for holdings in `_render_holdings_selection()` in src/widgets/correlation_matrix_widget.py
-- [ ] T016 Add "Select All" button for benchmarks in `_render_benchmark_selection()` in src/widgets/correlation_matrix_widget.py
-- [ ] T017 Add "Deselect All" button for benchmarks in `_render_benchmark_selection()` in src/widgets/correlation_matrix_widget.py
-- [ ] T018 Test bulk selection buttons - verify they update session state correctly without rerun loops
+- [X] T014 Add "Select All" button for holdings in `_render_holdings_selection()` in src/widgets/correlation_matrix_widget.py
+- [X] T015 Add "Deselect All" button for holdings in `_render_holdings_selection()` in src/widgets/correlation_matrix_widget.py
+- [X] T016 Add "Select All" button for benchmarks in `_render_benchmark_selection()` in src/widgets/correlation_matrix_widget.py
+- [X] T017 Add "Deselect All" button for benchmarks in `_render_benchmark_selection()` in src/widgets/correlation_matrix_widget.py
+- [X] T018 Test bulk selection buttons - verify they update session state correctly without rerun loops
 
 **Checkpoint**: Users can quickly select/deselect all items in each category
 
@@ -72,11 +72,11 @@
 
 **Purpose**: Display custom symbols as a manageable list with remove functionality
 
-- [ ] T019 Separate custom symbols from AVAILABLE_INSTRUMENTS list in `_render_custom_symbols()` in src/widgets/correlation_matrix_widget.py
-- [ ] T020 Display custom symbols as individual rows with remove buttons in src/widgets/correlation_matrix_widget.py
-- [ ] T021 Implement remove button click handler to delete from session state in src/widgets/correlation_matrix_widget.py
-- [ ] T022 Add validation feedback for symbol addition (already exists, empty input) in src/widgets/correlation_matrix_widget.py
-- [ ] T023 Test custom symbol add/remove - verify clean add/remove cycle and UI feedback
+- [X] T019 Separate custom symbols from AVAILABLE_INSTRUMENTS list in `_render_custom_symbols()` in src/widgets/correlation_matrix_widget.py
+- [X] T020 Display custom symbols as individual rows with remove buttons in src/widgets/correlation_matrix_widget.py
+- [X] T021 Implement remove button click handler to delete from session state in src/widgets/correlation_matrix_widget.py
+- [X] T022 Add validation feedback for symbol addition (already exists, empty input) in src/widgets/correlation_matrix_widget.py
+- [X] T023 Test custom symbol add/remove - verify clean add/remove cycle and UI feedback
 
 **Checkpoint**: Custom symbols are clearly displayed and easily removed
 
@@ -86,13 +86,13 @@
 
 **Purpose**: Apply Professional UI Standards (Constitution Principle IV)
 
-- [ ] T024 Add `st.divider()` between time period selection and holdings section in src/widgets/correlation_matrix_widget.py
-- [ ] T025 Add `st.divider()` between portfolio aggregate and benchmarks section in src/widgets/correlation_matrix_widget.py
-- [ ] T026 Add `st.divider()` between benchmarks and custom symbols section in src/widgets/correlation_matrix_widget.py
-- [ ] T027 Add helpful tooltip to portfolio aggregate checkbox explaining aggregation in src/widgets/correlation_matrix_widget.py
-- [ ] T028 Verify all content remains properly indented within `st.container(border=True)` in src/widgets/correlation_matrix_widget.py
-- [ ] T029 Update expander titles to show counts using format "Section Name (X)" for total items or "Section Name (X/Y selected)" for selections (e.g., "Portfolio Holdings (3/5 selected)", "Custom Symbols (2)") in src/widgets/correlation_matrix_widget.py
-- [ ] T030 Test visual appearance - verify clean spacing, borders, and professional look
+- [X] T024 Add `st.divider()` between time period selection and holdings section in src/widgets/correlation_matrix_widget.py
+- [X] T025 Add `st.divider()` between portfolio aggregate and benchmarks section in src/widgets/correlation_matrix_widget.py
+- [X] T026 Add `st.divider()` between benchmarks and custom symbols section in src/widgets/correlation_matrix_widget.py
+- [X] T027 Add helpful tooltip to portfolio aggregate checkbox explaining aggregation in src/widgets/correlation_matrix_widget.py
+- [X] T028 Verify all content remains properly indented within `st.container(border=True)` in src/widgets/correlation_matrix_widget.py
+- [X] T029 Update expander titles to show counts using format "Section Name (X)" for total items or "Section Name (X/Y selected)" for selections (e.g., "Portfolio Holdings (3/5 selected)", "Custom Symbols (2)") in src/widgets/correlation_matrix_widget.py
+- [X] T030 Test visual appearance - verify clean spacing, borders, and professional look
 
 **Checkpoint**: Widget has professional appearance with clear visual hierarchy
 

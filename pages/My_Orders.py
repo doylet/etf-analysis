@@ -1,15 +1,14 @@
 """
-Manage Instruments Page
+My Orders Page
 """
 
 import streamlit as st
 from src.services import AlphaVantageClient
 from src.services.storage_adapter import DataStorageAdapter
-from src.controllers import ManageInstrumentsPage
+from src.controllers import MyOrdersPage
 
 st.set_page_config(
-    page_title="Manage Instruments",
-    page_icon="🔧",
+    page_title="My Orders",
     layout="wide"
 )
 
@@ -20,5 +19,5 @@ def init_services():
     return storage, av_client
 
 storage, av_client = init_services()
-controller = ManageInstrumentsPage(storage, av_client)
+controller = MyOrdersPage(storage, av_client=av_client)
 controller.render()

@@ -4,101 +4,130 @@ Dashboard page controller
 
 import streamlit as st
 import pandas as pd
+import json
+from .base import BaseController
+from src.widgets import (
+    PortfolioSummaryWidget,
+    HoldingsBreakdownWidget,
+    PerformanceWidget,
+    BenchmarkComparisonWidget,
+    DividendAnalysisWidget,
+    CorrelationMatrixWidget
+)
 
 
-class DashboardPage:
+class DashboardPage(BaseController):
     """Controller for main Dashboard page"""
     
+    # Registry of available widgets
+    AVAILABLE_WIDGETS = {
+        'portfolio_summary': PortfolioSummaryWidget,
+        'benchmark_comparison': BenchmarkComparisonWidget,
+        'holdings_breakdown': HoldingsBreakdownWidget,
+        'performance': PerformanceWidget,
+        'dividend_analysis': DividendAnalysisWidget,
+        'correlation_matrix': CorrelationMatrixWidget
+    }
+    
     def __init__(self, storage):
-        self.storage = storage
+        super().__init__(storage)
+        
+        # Load widget configuration from database
+        if 'dashboard_widgets' not in st.session_state:
+            saved_widgets = self.storage.get_setting('dashboard_widgets')
+            
+            if saved_widgets:
+                try:
+                    st.session_state.dashboard_widgets = json.loads(saved_widgets)
+                except:
+                    # Fallback to defaults if JSON parsing fails
+                    st.session_state.dashboard_widgets = [
+                        'portfolio_summary',
+                        'benchmark_comparison',
+                        'holdings_breakdown'
+                    ]
+            else:
+                # Default widgets on first load
+                st.session_state.dashboard_widgets = [
+                    'portfolio_summary',
+                    'benchmark_comparison',
+                    'holdings_breakdown'
+                ]
+                # Save defaults to database
+                self._save_widget_state()
     
     def render(self):
         st.title("ETF Analysis Dashboard")
         
-        instruments = self.storage.get_all_instruments(active_only=True)
+        instruments = self._load_instruments(active_only=True)
         
         if not instruments:
             st.warning("No instruments tracked. Go to 'Manage Instruments' to add some.")
             return
         
-        symbols = [i['symbol'] for i in instruments]
-        latest_prices = self.storage.get_latest_prices(symbols)
+        # Widget management controls
+        self._render_widget_controls()
         
-        self._render_overview(instruments, latest_prices)
-        st.divider()
-        # self._render_data_management(symbols)
-        # st.divider()
-        self._render_instruments_table(instruments, latest_prices)
+        # Render active widgets
+        self._render_active_widgets(instruments)
     
-    def _render_overview(self, instruments, latest_prices):
-        st.subheader("Portfolio Overview")
-        
-        cols = st.columns(min(4, len(instruments)))
-        for idx, inst in enumerate(instruments[:4]):
-            with cols[idx]:
-                symbol = inst['symbol']
-                if symbol in latest_prices:
-                    price_info = latest_prices[symbol]
-                    st.metric(
-                        label=symbol,
-                        value=f"${price_info['close']:.2f}",
-                        delta=None
-                    )
-                    # st.caption(inst['name'][:30])
-    
-    # def _render_data_management(self, symbols):
-    #     st.subheader("Data Management")
-    #     col_refresh1, col_refresh2 = st.columns([3, 1])
-        
-    #     with col_refresh1:
-    #         refresh_symbol = st.selectbox(
-    #             "Update price data for:",
-    #             options=['All'] + symbols,
-    #             key="refresh_select"
-    #         )
-        
-    #     with col_refresh2:
-    #         st.write("")
-    #         st.write("")
-    #         if st.button("Fetch Latest Data"):
-    #             self._handle_data_refresh(refresh_symbol, symbols)
-    
-    def _handle_data_refresh(self, refresh_symbol, symbols):
-        symbols_to_refresh = symbols if refresh_symbol == 'All' else [refresh_symbol]
-        
-        progress_bar = st.progress(0)
-        for idx, sym in enumerate(symbols_to_refresh):
-            with st.spinner(f"Fetching {sym}..."):
-                result = self.storage.fetch_and_store_prices(sym, period='1mo')
-                if result['success']:
-                    st.success(f"{sym}: {result['message']}")
-            progress_bar.progress((idx + 1) / len(symbols_to_refresh))
-        
-        st.rerun()
-    
-    def _render_instruments_table(self, instruments, latest_prices):
-        st.subheader("All Tracked Instruments")
-        
-        display_data = []
-        for inst in instruments:
-            symbol = inst['symbol']
-            row = {
-                'Symbol': symbol,
-                'Name': inst['name'],
-                'Type': inst['type'],
-                'Sector': inst['sector']
-            }
-            if symbol in latest_prices:
-                row['Last Price'] = f"${latest_prices[symbol]['close']:.2f}"
-                row['Last Update'] = latest_prices[symbol]['date'].strftime('%Y-%m-%d')
-            else:
-                row['Last Price'] = 'N/A'
-                row['Last Update'] = 'N/A'
+    def _render_widget_controls(self):
+        """Render widget management controls"""
+        with st.expander("Manage Dashboard Widgets", expanded=False):
+            st.write("**Active Widgets:**")
             
-            display_data.append(row)
-        
-        st.dataframe(
-            pd.DataFrame(display_data),
-            width="stretch",
-            hide_index=True
+            if st.session_state.dashboard_widgets:
+                for widget_key in st.session_state.dashboard_widgets:
+                    widget_class = self.AVAILABLE_WIDGETS.get(widget_key)
+                    if widget_class:
+                        temp_widget = widget_class(self.storage, widget_key)
+                        col1, col2 = st.columns([4, 1])
+                        with col1:
+                            st.write(f"• {temp_widget.get_name()}")
+                        with col2:
+                            if st.button("Remove", key=f"remove_{widget_key}"):
+                                st.session_state.dashboard_widgets.remove(widget_key)
+                                self._save_widget_state()
+                                st.rerun()
+            else:
+                st.info("No widgets active. Add some below.")
+            
+            st.write("**Available Widgets:**")
+            
+            # Show available widgets to add
+            for widget_key, widget_class in self.AVAILABLE_WIDGETS.items():
+                if widget_key not in st.session_state.dashboard_widgets:
+                    temp_widget = widget_class(self.storage, widget_key)
+                    col1, col2 = st.columns([4, 1])
+                    with col1:
+                        st.write(f"• {temp_widget.get_name()} - _{temp_widget.get_description()}_")
+                    with col2:
+                        if st.button("Add", key=f"add_{widget_key}"):
+                            st.session_state.dashboard_widgets.append(widget_key)
+                            self._save_widget_state()
+                            st.rerun()
+    
+    def _save_widget_state(self):
+        """Save current widget configuration to database"""
+        widgets_json = json.dumps(st.session_state.dashboard_widgets)
+        self.storage.set_setting(
+            'dashboard_widgets',
+            widgets_json,
+            'Active dashboard widgets configuration'
         )
+    
+    def _render_active_widgets(self, instruments):
+        """Render all active widgets"""
+        if not st.session_state.dashboard_widgets:
+            st.info("No widgets active. Use 'Manage Dashboard Widgets' above to add some.")
+            return
+        
+        for widget_key in st.session_state.dashboard_widgets:
+            widget_class = self.AVAILABLE_WIDGETS.get(widget_key)
+            if widget_class:
+                widget = widget_class(self.storage, widget_key)
+                
+                # Render widget in a container
+                with st.container():
+                    st.subheader(widget.get_name())
+                    widget.render(instruments=instruments)

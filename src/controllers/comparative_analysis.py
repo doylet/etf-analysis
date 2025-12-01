@@ -6,18 +6,16 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+from .base import BaseController
 
 
-class ComparativeAnalysisPage:
+class ComparativeAnalysisPage(BaseController):
     """Controller for Comparative Analysis page"""
-    
-    def __init__(self, storage):
-        self.storage = storage
     
     def render(self):
         st.title("Comparative Analysis")
         
-        instruments = self.storage.get_all_instruments(active_only=True)
+        instruments = self._load_instruments(active_only=True)
         
         if not instruments:
             st.warning("No instruments tracked. Go to 'Manage Instruments' to add some.")

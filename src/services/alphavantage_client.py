@@ -51,6 +51,10 @@ class AlphaVantageClient:
                 print(f"Alpha Vantage Rate Limit: {data['Note']}")
                 return []
             
+            if 'Information' in data:
+                print(f"Alpha Vantage Info: {data['Information']}")
+                return []
+            
             # Parse results
             matches = data.get('bestMatches', [])
             
@@ -73,6 +77,63 @@ class AlphaVantageClient:
         except Exception as e:
             print(f"Unexpected error: {e}")
             return []
+    
+    def get_company_overview(self, symbol: str) -> Optional[Dict]:
+        """
+        Get company overview information using Alpha Vantage OVERVIEW endpoint
+        
+        Args:
+            symbol: Stock/ETF symbol
+            
+        Returns:
+            Dictionary with company details including sector, industry, description
+        """
+        if not self.api_key:
+            return None
+        
+        try:
+            params = {
+                'function': 'OVERVIEW',
+                'symbol': symbol,
+                'apikey': self.api_key
+            }
+            
+            response = requests.get(self.BASE_URL, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Check for API errors
+            if 'Error Message' in data:
+                print(f"Alpha Vantage Error: {data['Error Message']}")
+                return None
+            
+            if 'Note' in data:
+                print(f"Alpha Vantage Rate Limit: {data['Note']}")
+                return None
+            
+            # Check if we got valid data
+            if not data or 'Symbol' not in data:
+                return None
+            
+            return {
+                'symbol': data.get('Symbol', ''),
+                'name': data.get('Name', ''),
+                'description': data.get('Description', ''),
+                'sector': data.get('Sector', ''),
+                'industry': data.get('Industry', ''),
+                'exchange': data.get('Exchange', ''),
+                'currency': data.get('Currency', ''),
+                'country': data.get('Country', ''),
+                'asset_type': data.get('AssetType', '')
+            }
+        
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching company overview: {e}")
+            return None
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return None
     
     def is_available(self) -> bool:
         """Check if Alpha Vantage API is configured"""

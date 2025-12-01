@@ -5,23 +5,34 @@ Price History page controller
 import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+from ..base import BaseController
+from src.components import SymbolSearchComponent, AddInstrumentFormComponent
 
 
-class PriceHistoryPage:
+class PriceHistoryPage(BaseController):
     """Controller for Price History page"""
-    
-    def __init__(self, storage):
-        self.storage = storage
     
     def render(self):
         st.title("Price History")
+        st.write("Track instrument prices and add new instruments to your portfolio.")
         
-        instruments = self.storage.get_all_instruments(active_only=True)
+        instruments = self._load_instruments(active_only=True)
+        
+        # Add instrument section first
+        with st.expander("Add New Instrument", expanded=not bool(instruments)):
+            search_component = SymbolSearchComponent(self.av_client)
+            search_component.render()
+            
+            form_component = AddInstrumentFormComponent(self.storage, self.av_client)
+            form_component.render()
         
         if not instruments:
-            st.warning("No instruments tracked. Go to 'Manage Instruments' to add some.")
+            st.info("No instruments tracked yet. Add your first instrument above!")
             return
         
+        
+        
+        # Price analysis section
         symbols = [i['symbol'] for i in instruments]
         selected_symbol, period = self._render_controls(symbols)
         
@@ -103,7 +114,7 @@ class PriceHistoryPage:
             height=500
         )
         
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, width='stretch')
     
     def _render_volume_chart(self, symbol, df):
         fig = go.Figure()
@@ -122,11 +133,11 @@ class PriceHistoryPage:
             height=300
         )
         
-        st.plotly_chart(fig, width="stretch")
+        st.plotly_chart(fig, width='stretch')
     
     def _render_data_table(self, df):
         with st.expander("View Raw Data"):
             st.dataframe(
                 df.reset_index().tail(50).sort_index(ascending=False),
-                width="stretch"
+                width='stretch'
             )

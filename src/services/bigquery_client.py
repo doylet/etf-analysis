@@ -85,7 +85,7 @@ class BigQueryClient:
             print(f"Created table {table_id}")
     
     def add_instrument(self, symbol: str, name: str, instrument_type: str, 
-                       sector: str = None, notes: str = None) -> bool:
+                       sector: str = None, notes: str = None, quantity: float = 0.0) -> bool:
         """Add or update an instrument"""
         if not self.client:
             return False
@@ -113,6 +113,7 @@ class BigQueryClient:
                     name = @name,
                     instrument_type = @instrument_type,
                     sector = @sector,
+                    quantity = @quantity,
                     notes = @notes,
                     last_updated = CURRENT_TIMESTAMP()
                 WHERE symbol = @symbol
@@ -121,11 +122,11 @@ class BigQueryClient:
             # Insert new
             update_query = f"""
                 INSERT INTO `{table_id}` (
-                    symbol, name, instrument_type, sector, is_active, 
+                    symbol, name, instrument_type, sector, quantity, is_active, 
                     added_date, last_updated, notes
                 )
                 VALUES (
-                    @symbol, @name, @instrument_type, @sector, TRUE,
+                    @symbol, @name, @instrument_type, @sector, @quantity, TRUE,
                     CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), @notes
                 )
             """
@@ -136,6 +137,7 @@ class BigQueryClient:
                 bigquery.ScalarQueryParameter("name", "STRING", name),
                 bigquery.ScalarQueryParameter("instrument_type", "STRING", instrument_type),
                 bigquery.ScalarQueryParameter("sector", "STRING", sector),
+                bigquery.ScalarQueryParameter("quantity", "FLOAT64", quantity),
                 bigquery.ScalarQueryParameter("notes", "STRING", notes),
             ]
         )
@@ -176,6 +178,28 @@ class BigQueryClient:
         job_config = bigquery.QueryJobConfig(
             query_parameters=[
                 bigquery.ScalarQueryParameter("symbol", "STRING", symbol)
+            ]
+        )
+        
+        self.client.query(query, job_config=job_config).result()
+        return True
+    
+    def update_instrument_quantity(self, symbol: str, quantity: float) -> bool:
+        """Update an instrument's quantity"""
+        if not self.client:
+            return False
+        
+        table_id = f"{self.project_id}.{self.dataset_id}.instruments"
+        query = f"""
+            UPDATE `{table_id}`
+            SET quantity = @quantity
+            WHERE symbol = @symbol
+        """
+        
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("symbol", "STRING", symbol),
+                bigquery.ScalarQueryParameter("quantity", "FLOAT64", quantity)
             ]
         )
         

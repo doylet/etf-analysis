@@ -45,9 +45,9 @@ Dashboard widgets MUST follow the BaseWidget interface and remain independent. E
 **Rationale**: Modular widgets enable flexible dashboard composition, easier testing, and independent feature development.
 
 ### IV. Professional UI Standards
-User interfaces MUST use Streamlit's container components properly. All widget content MUST be indented within `st.container(border=True)` blocks. Section spacing MUST use appropriate whitespace (e.g., blank `st.write()` calls or natural component spacing), NOT `st.divider()`. Metrics MUST include helpful tooltips via the `help` parameter.
+User interfaces MUST use Streamlit's container components properly. All widget content MUST be indented within `st.container(border=True)` blocks. Section spacing MUST use `st.space("small")`, `st.space("medium")`, or `st.space("large")` as appropriate, NOT `st.divider()` or `st.write("")`. Metrics MUST include helpful tooltips via the `help` parameter.
 
-**Rationale**: Consistent, professional UI presentation enhances user experience and maintainability. Visual dividers create excessive noise and inconsistent spacing patterns.
+**Rationale**: Consistent, professional UI presentation enhances user experience and maintainability. Visual dividers create excessive noise, and `st.write("")` is a hack - `st.space()` is the proper Streamlit API for whitespace control.
 
 ### V. Code Readability
 Code MUST prioritize readability over cleverness. Variable names MUST be descriptive. Complex logic MUST be broken into well-named functions. Magic numbers MUST be replaced with named constants.
@@ -78,12 +78,13 @@ The following practices are **EXPRESSLY FORBIDDEN** in this codebase:
    - MUST provide clear error messages to users when operations fail
    - **Rationale**: Financial applications require transparency about data quality and operation status
 
-4. **st.divider() for Visual Separation**
+4. **st.divider() and st.write("") for Visual Separation**
    - MUST NOT use `st.divider()` to separate sections or create visual breaks
-   - MUST use appropriate whitespace through blank `st.write()` calls or natural component spacing
+   - MUST NOT use `st.write("")` or `st.write()` with empty/whitespace-only strings for spacing
+   - MUST use `st.space("small")`, `st.space("medium")`, or `st.space("large")` for vertical spacing
    - MUST rely on Streamlit's expander components and container borders for visual hierarchy
-   - **Exception**: None - st.divider() is prohibited in all contexts
-   - **Rationale**: st.divider() creates excessive visual noise, inconsistent spacing patterns, and disrupts the natural flow of content. Professional dashboards rely on subtle whitespace and component organization rather than explicit divider lines.
+   - **Exception**: None - these practices are prohibited in all contexts
+   - **Rationale**: `st.divider()` creates excessive visual noise and inconsistent spacing patterns. `st.write("")` is a hack that bypasses Streamlit's proper spacing API. Professional dashboards use `st.space()` for controlled whitespace and rely on component organization rather than explicit divider lines or empty write calls.
 
 ### Required Practices
 
@@ -141,4 +142,4 @@ This constitution supersedes all other development practices and preferences. Wh
 - Complexity that violates simplicity principles MUST be justified in writing
 - When constitution conflicts with external library patterns, constitution wins unless explicitly documented otherwise
 
-**Version**: 1.1.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-01
+**Version**: 1.2.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-01

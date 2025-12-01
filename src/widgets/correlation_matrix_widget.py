@@ -74,7 +74,7 @@ class CorrelationMatrixWidget(BaseWidget):
             end_date = datetime.now()
             start_date = end_date - timedelta(days=days)
             
-            st.divider()
+            st.write("")  # Spacing
             
             # Portfolio holdings selection
             selected_holdings = self._render_holdings_selection(holdings)
@@ -88,12 +88,12 @@ class CorrelationMatrixWidget(BaseWidget):
                     help="Adds a 'PORTFOLIO' series to the correlation matrix representing the combined performance of all selected holdings weighted by their position sizes"
                 )
             
-            st.divider()
+            st.write("")  # Spacing
             
             # Additional instruments/benchmarks selection
             selected_additional = self._render_benchmark_selection()
             
-            st.divider()
+            st.write("")  # Spacing
             
             # Custom symbol input
             self._render_custom_symbols()

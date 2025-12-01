@@ -1,5 +1,20 @@
 <!--
 Sync Impact Report:
+Version: 1.0.0 → 1.1.0
+Action: Amendment to forbid st.divider()
+Changes:
+  - MINOR version bump: Added new forbidden practice (st.divider())
+  - Updated Principle IV: Professional UI Standards to remove st.divider() requirement
+  - Added Forbidden Practice #4: st.divider() usage
+  - Rationale: st.divider() creates excessive visual noise and inconsistent spacing
+Templates Status:
+  - spec-template.md: ⚠️ Review references to st.divider() in UI standards
+  - plan-template.md: ⚠️ Review UI component patterns
+  - All other templates: ✅ No updates required
+Affected Code:
+  - src/widgets/correlation_matrix_widget.py: ⚠️ Contains 3 st.divider() calls (T024-T026)
+  - Action required: Replace st.divider() with blank st.write() or proper spacing
+Previous Report:
 Version: (none) → 1.0.0
 Action: Initial constitution establishment
 Changes:
@@ -30,9 +45,9 @@ Dashboard widgets MUST follow the BaseWidget interface and remain independent. E
 **Rationale**: Modular widgets enable flexible dashboard composition, easier testing, and independent feature development.
 
 ### IV. Professional UI Standards
-User interfaces MUST use Streamlit's container components properly. All widget content MUST be indented within `st.container(border=True)` blocks. Spacing MUST use `st.divider()` for section breaks, not empty `st.write()` calls. Metrics MUST include helpful tooltips via the `help` parameter.
+User interfaces MUST use Streamlit's container components properly. All widget content MUST be indented within `st.container(border=True)` blocks. Section spacing MUST use appropriate whitespace (e.g., blank `st.write()` calls or natural component spacing), NOT `st.divider()`. Metrics MUST include helpful tooltips via the `help` parameter.
 
-**Rationale**: Consistent, professional UI presentation enhances user experience and maintainability.
+**Rationale**: Consistent, professional UI presentation enhances user experience and maintainability. Visual dividers create excessive noise and inconsistent spacing patterns.
 
 ### V. Code Readability
 Code MUST prioritize readability over cleverness. Variable names MUST be descriptive. Complex logic MUST be broken into well-named functions. Magic numbers MUST be replaced with named constants.
@@ -62,6 +77,13 @@ The following practices are **EXPRESSLY FORBIDDEN** in this codebase:
    - MUST NOT return None without documenting why
    - MUST provide clear error messages to users when operations fail
    - **Rationale**: Financial applications require transparency about data quality and operation status
+
+4. **st.divider() for Visual Separation**
+   - MUST NOT use `st.divider()` to separate sections or create visual breaks
+   - MUST use appropriate whitespace through blank `st.write()` calls or natural component spacing
+   - MUST rely on Streamlit's expander components and container borders for visual hierarchy
+   - **Exception**: None - st.divider() is prohibited in all contexts
+   - **Rationale**: st.divider() creates excessive visual noise, inconsistent spacing patterns, and disrupts the natural flow of content. Professional dashboards rely on subtle whitespace and component organization rather than explicit divider lines.
 
 ### Required Practices
 
@@ -119,4 +141,4 @@ This constitution supersedes all other development practices and preferences. Wh
 - Complexity that violates simplicity principles MUST be justified in writing
 - When constitution conflicts with external library patterns, constitution wins unless explicitly documented otherwise
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-01
+**Version**: 1.1.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-01

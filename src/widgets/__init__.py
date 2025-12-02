@@ -9,6 +9,8 @@ from .performance_widget import PerformanceWidget
 from .benchmark_comparison_widget import BenchmarkComparisonWidget
 from .dividend_analysis_widget import DividendAnalysisWidget
 from .correlation_matrix_widget import CorrelationMatrixWidget
+from .portfolio_optimizer_widget import PortfolioOptimizerWidget
+from .monte_carlo_widget import MonteCarloWidget
 
 __all__ = [
     'BaseWidget',
@@ -18,4 +20,6 @@ __all__ = [
     'BenchmarkComparisonWidget',
     'DividendAnalysisWidget',
     'CorrelationMatrixWidget',
+    'PortfolioOptimizerWidget',
+    'MonteCarloWidget',
 ]

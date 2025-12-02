@@ -12,7 +12,9 @@ from src.widgets import (
     PerformanceWidget,
     BenchmarkComparisonWidget,
     DividendAnalysisWidget,
-    CorrelationMatrixWidget
+    CorrelationMatrixWidget,
+    PortfolioOptimizerWidget,
+    MonteCarloWidget
 )
 
 
@@ -23,6 +25,8 @@ class DashboardPage(BaseController):
     AVAILABLE_WIDGETS = {
         'portfolio_summary': PortfolioSummaryWidget,
         'benchmark_comparison': BenchmarkComparisonWidget,
+        'portfolio_optimizer': PortfolioOptimizerWidget,
+        'monte_carlo': MonteCarloWidget,
         'holdings_breakdown': HoldingsBreakdownWidget,
         'performance': PerformanceWidget,
         'dividend_analysis': DividendAnalysisWidget,

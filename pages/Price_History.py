@@ -8,7 +8,6 @@ from src.controllers import PriceHistoryPage
 
 st.set_page_config(
     page_title="Price History",
-    page_icon="📈",
     layout="wide"
 )
 

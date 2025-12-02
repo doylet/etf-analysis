@@ -8,7 +8,6 @@ from src.controllers import ComparativeAnalysisPage
 
 st.set_page_config(
     page_title="Comparative Analysis",
-    page_icon="📉",
     layout="wide"
 )
 

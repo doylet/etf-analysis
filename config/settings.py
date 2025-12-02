@@ -4,14 +4,13 @@
 DATABASE_URL = 'sqlite:///./data/etf_analysis.db'
 
 # API Keys
-ALPHAVANTAGE_API_KEY = None  # Set via environment variable
+ALPHAVANTAGE_API_KEY = "F4M0NKO6QMBZJFKP"  # Set via environment variable
 
 # GCP Settings
-GCP_PROJECT_ID = None
+GCP_PROJECT_ID = "conda-portfolio-dashboard"
 GCP_BUCKET_NAME = None
 
 # Application Settings
 APP_TITLE = "ETF Analysis Dashboard"
-APP_ICON = "📊"
-DEFAULT_FETCH_PERIOD = "1y"
-MAX_INSTRUMENTS_TO_COMPARE = 5
+DEFAULT_FETCH_PERIOD = "all"
+MAX_INSTRUMENTS_TO_COMPARE = 10

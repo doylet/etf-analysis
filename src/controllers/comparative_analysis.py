@@ -6,18 +6,16 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
+from .base import BaseController
 
 
-class ComparativeAnalysisPage:
+class ComparativeAnalysisPage(BaseController):
     """Controller for Comparative Analysis page"""
-    
-    def __init__(self, storage):
-        self.storage = storage
     
     def render(self):
         st.title("Comparative Analysis")
         
-        instruments = self.storage.get_all_instruments(active_only=True)
+        instruments = self._load_instruments(active_only=True)
         
         if not instruments:
             st.warning("No instruments tracked. Go to 'Manage Instruments' to add some.")
@@ -49,7 +47,7 @@ class ComparativeAnalysisPage:
         with col2:
             period = st.selectbox(
                 "Period",
-                options=['1M', '3M', '6M', '1Y', 'All'],
+                options=['1M', '3M', '6M', '1Y', '2Y', '5Y', 'All'],
                 index=3
             )
         
@@ -68,7 +66,7 @@ class ComparativeAnalysisPage:
     
     def _calculate_start_date(self, period):
         end_date = datetime.now()
-        period_days = {'1M': 30, '3M': 90, '6M': 180, '1Y': 365}
+        period_days = {'1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730, '5Y': 1825}
         
         if period in period_days:
             return end_date - timedelta(days=period_days[period])

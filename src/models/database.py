@@ -21,6 +21,7 @@ class Instrument(Base):
     name = Column(String(200))
     instrument_type = Column(String(20))  # 'stock', 'etf', 'index'
     sector = Column(String(100))
+    currency = Column(String(3), default='USD')  # ISO currency code: USD, AUD, etc.
     is_active = Column(Boolean, default=True)
     added_date = Column(DateTime, default=datetime.utcnow)
     last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -114,6 +115,21 @@ class AppSetting(Base):
     setting_value = Column(String(5000))  # JSON blob or simple string value
     description = Column(String(500))
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    __table_args__ = (
+        {'sqlite_autoincrement': True},
+    )
+
+
+class FXRate(Base):
+    """Model for foreign exchange rates (daily close prices)"""
+    __tablename__ = 'fx_rates'
+    
+    id = Column(Integer, primary_key=True)
+    currency_pair = Column(String(7), nullable=False, index=True)  # e.g., 'AUDUSD'
+    date = Column(DateTime, nullable=False, index=True)
+    rate = Column(Float, nullable=False)  # Exchange rate
     created_at = Column(DateTime, default=datetime.utcnow)
     
     __table_args__ = (

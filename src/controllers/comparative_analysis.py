@@ -47,7 +47,7 @@ class ComparativeAnalysisPage(BaseController):
         with col2:
             period = st.selectbox(
                 "Period",
-                options=['1M', '3M', '6M', '1Y', 'All'],
+                options=['1M', '3M', '6M', '1Y', '2Y', '5Y', 'All'],
                 index=3
             )
         
@@ -66,7 +66,7 @@ class ComparativeAnalysisPage(BaseController):
     
     def _calculate_start_date(self, period):
         end_date = datetime.now()
-        period_days = {'1M': 30, '3M': 90, '6M': 180, '1Y': 365}
+        period_days = {'1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730, '5Y': 1825}
         
         if period in period_days:
             return end_date - timedelta(days=period_days[period])

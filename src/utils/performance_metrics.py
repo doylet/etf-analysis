@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 
 
 def calculate_returns(prices: pd.Series) -> pd.Series:
-    """Calculate daily returns from price series"""
-    return prices.pct_change().dropna()
+    """Calculate daily returns from price series."""
+    return prices.pct_change().infer_objects(copy=False).dropna()
 
 
 def calculate_sharpe_ratio(returns: pd.Series, risk_free_rate: float = 0.04) -> float:

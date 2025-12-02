@@ -6,7 +6,7 @@ import yfinance as yf
 import pandas as pd
 from datetime import datetime, timedelta
 from sqlalchemy import and_, func
-from src.models.database import DatabaseManager, Instrument, PriceData, Order, Dividend, DividendCashFlow, AppSetting
+from src.models.database import DatabaseManager, Instrument, PriceData, Order, Dividend, DividendCashFlow, AppSetting, FXRate
 
 
 class DataFetcher:
@@ -16,7 +16,7 @@ class DataFetcher:
         self.db = db_manager
     
     def add_instrument(self, symbol: str, name: str = None, instrument_type: str = 'stock', 
-                       sector: str = None, notes: str = None, is_active: bool = True):
+                       sector: str = None, notes: str = None, is_active: bool = True, currency: str = 'USD'):
         """Add a new instrument to track"""
         session = self.db.get_session()
         try:
@@ -196,6 +196,7 @@ class DataFetcher:
                     'name': i.name,
                     'type': i.instrument_type,
                     'sector': i.sector,
+                    'currency': getattr(i, 'currency', 'USD'),
                     'quantity': quantity,
                     'added_date': i.added_date,
                     'last_updated': i.last_updated,
@@ -217,6 +218,7 @@ class DataFetcher:
                     'name': instrument.name,
                     'type': instrument.instrument_type,
                     'sector': instrument.sector,
+                    'currency': getattr(instrument, 'currency', 'USD'),
                     'quantity': quantity,
                     'added_date': instrument.added_date,
                     'last_updated': instrument.last_updated,
@@ -695,5 +697,125 @@ class DataFetcher:
         try:
             settings = session.query(AppSetting).all()
             return {s.setting_key: s.setting_value for s in settings}
+        finally:
+            session.close()
+    
+    def fetch_and_store_fx_rates(self, currency_pair: str = 'AUDUSD', period: str = '5y', 
+                                  force_refresh: bool = False):
+        """Fetch FX rates and store in database
+        
+        Args:
+            currency_pair: Currency pair (e.g., 'AUDUSD')
+            period: Period to fetch ('1y', '5y', 'max')
+            force_refresh: Force fetching even if data exists
+        """
+        session = self.db.get_session()
+        try:
+            # Check if we need to fetch data
+            if not force_refresh:
+                latest = session.query(FXRate).filter_by(
+                    currency_pair=currency_pair
+                ).order_by(FXRate.date.desc()).first()
+                
+                if latest and (datetime.utcnow() - latest.date).days < 1:
+                    return {'success': True, 'message': 'FX data is up to date', 'cached': True}
+            
+            # Fetch from yfinance using =X suffix for forex
+            # AUDUSD=X is the ticker for AUD/USD exchange rate
+            ticker = yf.Ticker(f"{currency_pair}=X")
+            df = ticker.history(period=period)
+            
+            if df.empty:
+                return {'success': False, 'message': f'No FX data available for {currency_pair}'}
+            
+            # Store in database
+            records_added = 0
+            for date, row in df.iterrows():
+                # Check if record exists
+                existing = session.query(FXRate).filter(
+                    and_(
+                        FXRate.currency_pair == currency_pair,
+                        FXRate.date == date.to_pydatetime()
+                    )
+                ).first()
+                
+                if not existing:
+                    fx_record = FXRate(
+                        currency_pair=currency_pair,
+                        date=date.to_pydatetime(),
+                        rate=float(row['Close'])
+                    )
+                    session.add(fx_record)
+                    records_added += 1
+            
+            session.commit()
+            return {
+                'success': True,
+                'message': f'Fetched {records_added} FX records for {currency_pair}',
+                'records_added': records_added
+            }
+        
+        except Exception as e:
+            session.rollback()
+            return {'success': False, 'message': str(e)}
+        finally:
+            session.close()
+    
+    def get_fx_rate(self, currency_pair: str, date: datetime = None) -> float:
+        """Get FX rate for a specific date
+        
+        Args:
+            currency_pair: Currency pair (e.g., 'AUDUSD')
+            date: Date to get rate for (defaults to latest)
+            
+        Returns:
+            Exchange rate, or 1.0 if not found
+        """
+        session = self.db.get_session()
+        try:
+            query = session.query(FXRate).filter_by(currency_pair=currency_pair)
+            
+            if date:
+                # Get rate for specific date or closest before it
+                query = query.filter(FXRate.date <= date)
+            
+            rate = query.order_by(FXRate.date.desc()).first()
+            
+            if rate:
+                return rate.rate
+            return 1.0  # Default to 1.0 if no rate found
+        finally:
+            session.close()
+    
+    def get_fx_rates(self, currency_pair: str, start_date: datetime = None, 
+                    end_date: datetime = None) -> pd.DataFrame:
+        """Get FX rates for a date range
+        
+        Args:
+            currency_pair: Currency pair (e.g., 'AUDUSD')
+            start_date: Start date (optional)
+            end_date: End date (optional)
+            
+        Returns:
+            DataFrame with columns: date, rate
+        """
+        session = self.db.get_session()
+        try:
+            query = session.query(FXRate).filter_by(currency_pair=currency_pair)
+            
+            if start_date:
+                query = query.filter(FXRate.date >= start_date)
+            if end_date:
+                query = query.filter(FXRate.date <= end_date)
+            
+            rates = query.order_by(FXRate.date).all()
+            
+            if not rates:
+                return pd.DataFrame(columns=['date', 'rate'])
+            
+            return pd.DataFrame([
+                {'date': r.date, 'rate': r.rate}
+                for r in rates
+            ])
         finally:
             session.close()

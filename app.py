@@ -3,7 +3,11 @@ ETF Analysis Dashboard - Home Page
 """
 
 import streamlit as st
+import pandas as pd
 from dotenv import load_dotenv
+
+# Suppress pandas FutureWarnings
+pd.set_option('future.no_silent_downcasting', True)
 
 # Load environment variables
 load_dotenv()

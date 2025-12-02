@@ -3,7 +3,7 @@ Data storage adapter that uses BigQuery in production and SQLite locally
 """
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 import pandas as pd
 
@@ -13,6 +13,7 @@ class DataStorageAdapter:
     
     def __init__(self):
         self.use_bigquery = os.getenv('USE_BIGQUERY', 'false').lower() == 'true'
+        self._currency_cache = {}  # Cache for instrument currencies
         
         if self.use_bigquery:
             from .bigquery_client import BigQueryClient
@@ -60,7 +61,9 @@ class DataStorageAdapter:
         if self.use_bigquery:
             return self.storage.get_instruments(active_only)
         else:
-            return self.storage.get_all_instruments(active_only)
+            instruments = self.storage.get_all_instruments(active_only)
+            # Enrich with converted values if currency data exists
+            return self._enrich_with_currency_conversion(instruments)
     
     def get_instrument(self, symbol: str) -> Optional[Dict]:
         """Get a single instrument by symbol"""
@@ -124,8 +127,36 @@ class DataStorageAdapter:
     
     def get_price_data(self, symbol: str, start_date: datetime = None,
                        end_date: datetime = None) -> pd.DataFrame:
-        """Get price data"""
-        return self.storage.get_price_data(symbol, start_date, end_date)
+        """Get price data, optionally with currency conversion"""
+        if self.use_bigquery:
+            return self.storage.get_price_data(symbol, start_date, end_date)
+        else:
+            price_df = self.storage.get_price_data(symbol, start_date, end_date)
+            
+            # Apply currency conversion if instrument has currency data
+            if not price_df.empty:
+                currency = self._get_instrument_currency(symbol)
+                if currency and currency != 'AUD':
+                    price_df = self._convert_price_data_to_base(price_df, currency, start_date, end_date)
+            
+            return price_df
+    
+    def _get_instrument_currency(self, symbol: str) -> str:
+        """Get instrument currency from cache or database"""
+        if symbol not in self._currency_cache:
+            # Query just the currency, not the full enriched data
+            from src.models.database import Instrument
+            from src.models import DatabaseManager
+            db = DatabaseManager()
+            session = db.get_session()
+            try:
+                inst = session.query(Instrument).filter_by(symbol=symbol.upper()).first()
+                currency = getattr(inst, 'currency', 'USD') if inst else 'USD'
+                self._currency_cache[symbol] = currency
+            finally:
+                session.close()
+        
+        return self._currency_cache[symbol]
     
     def get_latest_prices(self, symbols: List[str]) -> Dict:
         """Get latest prices"""
@@ -230,3 +261,178 @@ class DataStorageAdapter:
             return {}
         else:
             return self.storage.get_all_settings()
+    
+    def fetch_and_store_fx_rates(self, currency_pair: str = 'AUDUSD', 
+                                  period: str = '5y', force_refresh: bool = False) -> Dict:
+        """Fetch and store FX rates"""
+        if self.use_bigquery:
+            return {'success': False, 'message': 'FX rates not implemented for BigQuery'}
+        else:
+            return self.storage.fetch_and_store_fx_rates(currency_pair, period, force_refresh)
+    
+    def get_fx_rate(self, currency_pair: str, date: datetime = None) -> float:
+        """Get FX rate for a specific date"""
+        if self.use_bigquery:
+            return 1.0
+        else:
+            return self.storage.get_fx_rate(currency_pair, date)
+    
+    def get_fx_rates(self, currency_pair: str, start_date: datetime = None,
+                    end_date: datetime = None) -> pd.DataFrame:
+        """Get FX rates for a date range"""
+        if self.use_bigquery:
+            return pd.DataFrame(columns=['date', 'rate'])
+        else:
+            return self.storage.get_fx_rates(currency_pair, start_date, end_date)
+    
+    def _enrich_with_currency_conversion(self, instruments: List[Dict]) -> List[Dict]:
+        """Enrich instruments with currency-converted values
+        
+        This adds 'value_local', 'value_base', and 'base_currency' to each instrument
+        """
+        # Check if any instruments have currency data
+        if not any(inst.get('currency') for inst in instruments):
+            return instruments
+        
+        # Import here to avoid circular dependency
+        from src.utils.currency_converter import CurrencyConverter
+        
+        base_currency = 'AUD'
+        converter = CurrencyConverter(self, base_currency=base_currency)
+        
+        # Get latest prices for all symbols
+        symbols = [inst['symbol'] for inst in instruments]
+        latest_prices = self.get_latest_prices(symbols)
+        
+        # Enrich each instrument
+        enriched = []
+        for inst in instruments:
+            symbol = inst['symbol']
+            quantity = inst.get('quantity', 0)
+            currency = inst.get('currency', 'USD')
+            
+            # Add base currency fields
+            inst['base_currency'] = base_currency
+            
+            if quantity > 0 and symbol in latest_prices:
+                price = latest_prices[symbol]['close']
+                value_local = quantity * price
+                value_base = converter.convert_to_base(value_local, currency)
+                
+                inst['price'] = price
+                inst['value_local'] = value_local
+                inst['value_base'] = value_base
+            else:
+                inst['price'] = 0
+                inst['value_local'] = 0
+                inst['value_base'] = 0
+            
+            enriched.append(inst)
+        
+        return enriched
+    
+    def _convert_price_data_to_base(self, price_df: pd.DataFrame, currency: str, 
+                                     start_date: datetime = None, end_date: datetime = None) -> pd.DataFrame:
+        """Convert price data to base currency (AUD)
+        
+        Args:
+            price_df: DataFrame with price data (indexed by date)
+            currency: Source currency (e.g., 'USD', 'AUD')
+            start_date: Start date for FX rates
+            end_date: End date for FX rates
+            
+        Returns:
+            DataFrame with prices converted to AUD
+        """
+        if currency == 'AUD' or price_df.empty:
+            return price_df
+        
+        if currency == 'USD':
+            # Get FX rates for the date range, with some buffer
+            if start_date:
+                fx_start = start_date - timedelta(days=30)  # Extra buffer for forward-fill
+            else:
+                fx_start = price_df.index.min() - timedelta(days=30)
+            
+            fx_end = end_date if end_date else price_df.index.max()
+            
+            fx_rates_df = self.get_fx_rates('AUDUSD', fx_start, fx_end)
+            
+            if fx_rates_df.empty:
+                # No FX data available - return unconverted with warning
+                print(f"⚠️  Warning: No FX rates available for {currency}, prices not converted")
+                return price_df
+            
+            # Create indexed FX rates and forward-fill for missing dates
+            fx_rates = fx_rates_df.set_index('date')['rate']
+            
+            # Resample to daily and forward-fill to ensure no gaps
+            fx_rates = fx_rates.resample('D').ffill()
+            
+            # Also backward-fill any leading NaNs
+            fx_rates = fx_rates.bfill()
+            
+            # Align FX rates with price data dates
+            aligned_fx = fx_rates.reindex(price_df.index)
+            
+            # Forward-fill then backward-fill any remaining NaNs
+            aligned_fx = aligned_fx.ffill().bfill()
+            
+            # Check for any remaining NaNs and warn
+            if aligned_fx.isna().any():
+                nan_count = aligned_fx.isna().sum()
+                print(f"⚠️  Warning: {nan_count} FX rates still missing after alignment")
+                # Use global mean as absolute last resort
+                aligned_fx = aligned_fx.fillna(fx_rates.mean())
+            
+            # Convert all price columns (open, high, low, close)
+            converted_df = price_df.copy()
+            for col in ['open', 'high', 'low', 'close']:
+                if col in converted_df.columns:
+                    # AUDUSD rate is AUD per USD, so divide to convert USD to AUD
+                    converted_df[col] = converted_df[col] / aligned_fx
+            
+            # Clean outliers and NaNs with nearest neighbor average
+            converted_df = self._clean_price_outliers(converted_df)
+            
+            return converted_df
+        
+        # Other currencies not yet supported
+        print(f"⚠️  Warning: Currency {currency} not supported, prices not converted")
+        return price_df
+    
+    def _clean_price_outliers(self, price_df: pd.DataFrame) -> pd.DataFrame:
+        """Clean outliers and NaN values using nearest neighbor averaging.
+        
+        Detects extreme price changes (>25% day-over-day) and replaces them
+        with the average of surrounding valid values.
+        """
+        if price_df.empty:
+            return price_df
+        
+        cleaned_df = price_df.copy()
+        
+        for col in ['open', 'high', 'low', 'close']:
+            if col not in cleaned_df.columns:
+                continue
+            
+            series = cleaned_df[col].copy()
+            
+            # Calculate day-over-day percent change
+            pct_change = series.pct_change().abs()
+            
+            # Find outliers: >25% change or NaN values
+            outliers = (pct_change > 0.25) | series.isna()
+            
+            if outliers.any():
+                # Replace outliers with interpolation (linear between neighbors)
+                series_clean = series.copy()
+                series_clean[outliers] = None
+                series_clean = series_clean.interpolate(method='linear', limit_direction='both')
+                
+                # If still NaN at edges, forward/backward fill
+                series_clean = series_clean.ffill().bfill()
+                
+                cleaned_df[col] = series_clean
+        
+        return cleaned_df

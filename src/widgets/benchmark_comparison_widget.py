@@ -10,6 +10,7 @@ ARCHITECTURE: This widget follows the layered architecture pattern:
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.graph_objects as go
 from typing import Dict, List, Tuple
 from datetime import datetime, timedelta
 from dataclasses import dataclass
@@ -134,20 +135,23 @@ class BenchmarkComparisonWidget(LayeredBaseWidget):
         Returns:
             Tuple[str, int]: (benchmark_symbol, period_days)
         """
-        # Select benchmark
-        benchmark_symbol = st.selectbox(
-            "Select Benchmark:",
-            options=list(self.BENCHMARKS.keys()),
-            format_func=lambda x: f"{x} - {self.BENCHMARKS[x]}",
-            key=self._get_session_key("benchmark")
-        )
-        
-        # Time period
-        period = st.selectbox(
-            "Time Period:",
-            options=['1 Month', '3 Months', '6 Months', '1 Year'],
-            key=self._get_session_key("period")
-        )
+        col1, col2 = st.columns(2)
+
+        with col1:      
+            # Select benchmark
+            benchmark_symbol = st.selectbox(
+                "Select Benchmark:",
+                options=list(self.BENCHMARKS.keys()),
+                format_func=lambda x: f"{x} - {self.BENCHMARKS[x]}",
+                key=self._get_session_key("benchmark")
+            )
+        with col2:
+            # Time period
+            period = st.selectbox(
+                "Time Period:",
+                options=['1 Month', '3 Months', '6 Months', '1 Year'],
+                key=self._get_session_key("period")
+            )
         
         period_days = {
             '1 Month': 30,
@@ -246,16 +250,79 @@ class BenchmarkComparisonWidget(LayeredBaseWidget):
         """
         st.markdown("**Cumulative Returns**")
         
-        # Calculate cumulative returns
-        portfolio_cumret = (1 + portfolio_returns).cumprod() - 1
-        benchmark_cumret = (1 + benchmark_returns).cumprod() - 1
+        # Align dates (inner join) - only use dates where both have data
+        aligned_portfolio = portfolio_returns.dropna()
+        aligned_benchmark = benchmark_returns.dropna()
         
-        comparison_df = pd.DataFrame({
-            'Portfolio': portfolio_cumret * 100,
-            'Benchmark': benchmark_cumret * 100
-        })
+        # Find common dates
+        common_dates = aligned_portfolio.index.intersection(aligned_benchmark.index)
         
-        st.line_chart(comparison_df)
+        if len(common_dates) == 0:
+            st.warning("No overlapping dates between portfolio and benchmark")
+            return
+        
+        # Filter to common dates
+        aligned_portfolio = aligned_portfolio.loc[common_dates]
+        aligned_benchmark = aligned_benchmark.loc[common_dates]
+        
+        # Calculate cumulative returns on aligned data
+        portfolio_cumret = (1 + aligned_portfolio).cumprod() - 1
+        benchmark_cumret = (1 + aligned_benchmark).cumprod() - 1
+        
+        # Create plotly figure
+        fig = go.Figure()
+        
+        # Add portfolio line
+        fig.add_trace(go.Scatter(
+            x=portfolio_cumret.index,
+            y=portfolio_cumret * 100,
+            mode='lines',
+            name='Portfolio',
+            line=dict(color='#1f77b4', width=3),
+            hovertemplate='%{y:.2f}%<extra></extra>'
+        ))
+        
+        # Add benchmark line
+        fig.add_trace(go.Scatter(
+            x=benchmark_cumret.index,
+            y=benchmark_cumret * 100,
+            mode='lines',
+            name='Benchmark',
+            line=dict(color='#ff7f0e', width=2),
+            hovertemplate='%{y:.2f}%<extra></extra>'
+        ))
+        
+        # Update layout
+        fig.update_layout(
+            xaxis=dict(
+                title="",
+                showgrid=False
+            ),
+            yaxis=dict(
+                title="Cumulative Return (%)",
+                showgrid=True,
+                gridwidth=1,
+                gridcolor='rgba(128, 128, 128, 0.1)',
+                zeroline=True,
+                zerolinewidth=1,
+                zerolinecolor='rgba(128, 128, 128, 0.3)'
+            ),
+            hovermode='x unified',
+            showlegend=True,
+            legend=dict(
+                orientation="h",
+                yanchor="bottom",
+                y=1.02,
+                xanchor="right",
+                x=1
+            ),
+            height=400,
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            margin=dict(l=60, r=20, t=40, b=60)
+        )
+        
+        st.plotly_chart(fig, width='stretch')
     
     # ========================================================================
     # DATA LAYER - Data fetching and validation methods
@@ -297,6 +364,10 @@ class BenchmarkComparisonWidget(LayeredBaseWidget):
         
         if portfolio_df is None or portfolio_df.empty:
             return pd.Series()
+        
+        # Forward-fill prices on holidays (when one market closed, use previous price)
+        # This prevents portfolio value drops on days when some markets are closed
+        portfolio_df = portfolio_df.ffill().infer_objects(copy=False)
         
         # Sum across all positions
         return portfolio_df.sum(axis=1)

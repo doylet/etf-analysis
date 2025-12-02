@@ -1,15 +1,31 @@
 """
-Dividend analysis widget - shows dividend history and cash flows
+Dividend analysis widget - shows dividend history and cash flows.
+
+ARCHITECTURE: This widget follows the layered architecture pattern:
+- UI Layer: Streamlit rendering (_render_* methods)
+- Data Layer: Data fetching and validation (_fetch_*, _prepare_* methods)
+- Logic Layer: Pure calculations (_calculate_* static methods)
 """
 
 import streamlit as st
 import pandas as pd
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
-from .base_widget import BaseWidget
+from dataclasses import dataclass
+
+from .layered_base_widget import LayeredBaseWidget
 
 
-class DividendAnalysisWidget(BaseWidget):
+@dataclass
+class DividendSummary:
+    """Summary of dividend statistics."""
+    total_all_time: float
+    total_1y: float
+    total_ytd: float
+    symbol_breakdown: List[Dict[str, str]]
+
+
+class DividendAnalysisWidget(LayeredBaseWidget):
     """Widget showing dividend history and cash flow tracking"""
     
     def get_name(self) -> str:
@@ -21,16 +37,24 @@ class DividendAnalysisWidget(BaseWidget):
     def get_scope(self) -> str:
         return "portfolio"
     
+    # ========================================================================
+    # UI LAYER - Streamlit rendering methods
+    # ========================================================================
+    
     def render(self, instruments: List[Dict] = None, selected_symbols: List[str] = None):
-        """Render dividend analysis"""
+        """Main render orchestration - UI only.
+        
+        Parameters:
+            instruments: List of instrument dictionaries
+            selected_symbols: Optional list of selected symbols
+        """
         with st.container(border=True):
             if not instruments:
                 st.info("No instruments in portfolio")
                 return
             
-            # Get holdings with quantities > 0
-            holdings = [i for i in instruments if i.get('quantity', 0) > 0]
-            symbols = [h['symbol'] for h in holdings] if holdings else [i['symbol'] for i in instruments]
+            # Prepare data
+            holdings, symbols = self._prepare_holdings_and_symbols(instruments)
             
             if not symbols:
                 st.info("No holdings to track dividends for")
@@ -49,7 +73,11 @@ class DividendAnalysisWidget(BaseWidget):
                 self._render_dividend_summary(symbols)
     
     def _render_dividend_history(self, symbols: List[str]):
-        """Render historical dividend data"""
+        """Render historical dividend data.
+        
+        Parameters:
+            symbols: List of symbols to show dividends for
+        """
         st.subheader("Dividend History")
         
         # Fetch button
@@ -58,12 +86,12 @@ class DividendAnalysisWidget(BaseWidget):
             fetch_symbol = st.selectbox(
                 "Fetch dividend data for:",
                 options=symbols,
-                key=f"{self.widget_id}_fetch_symbol"
+                key=self._get_session_key("fetch_symbol")
             )
         
         with col2:
-            st.space("small")  # Spacing
-            if st.button("Fetch Dividends", key=f"{self.widget_id}_fetch_btn"):
+            st.space("small")
+            if st.button("Fetch Dividends", key=self._get_session_key("fetch_btn")):
                 result = self.storage.fetch_and_store_dividends(fetch_symbol)
                 if result['success']:
                     st.success(result['message'])
@@ -71,55 +99,73 @@ class DividendAnalysisWidget(BaseWidget):
                 else:
                     st.error(result['message'])
         
-        
+        st.space("small")
         
         # Filter options
+        selected_symbol, start_date = self._render_history_filters(symbols)
+        
+        # Get dividend data
+        symbol_filter = None if selected_symbol == 'All' else selected_symbol
+        dividends = self.storage.get_dividends(symbol_filter, start_date, datetime.now())
+        
+        if dividends:
+            self._render_dividend_history_table(dividends)
+        else:
+            st.info("No dividend data. Use 'Fetch Dividends' button above to fetch from yfinance.")
+    
+    def _render_history_filters(self, symbols: List[str]) -> Tuple[str, Optional[datetime]]:
+        """Render filter controls for dividend history.
+        
+        Parameters:
+            symbols: Available symbols for filtering
+            
+        Returns:
+            Tuple[str, Optional[datetime]]: Selected symbol and start date
+        """
         col1, col2 = st.columns(2)
+        
         with col1:
             selected_symbol = st.selectbox(
                 "Filter by symbol:",
                 options=['All'] + symbols,
-                key=f"{self.widget_id}_hist_filter"
+                key=self._get_session_key("hist_filter")
             )
         
         with col2:
             period = st.selectbox(
                 "Period:",
                 options=['All Time', '1 Year', '2 Years', '5 Years'],
-                key=f"{self.widget_id}_hist_period"
+                key=self._get_session_key("hist_period")
             )
         
-        # Get dividend data
-        end_date = datetime.now()
-        start_date = None
+        # Calculate start date
+        start_date = self._calculate_period_start_date(period)
+        return selected_symbol, start_date
+    
+    def _render_dividend_history_table(self, dividends: List[Dict]):
+        """Display dividend history as table with statistics.
         
-        if period == '1 Year':
-            start_date = end_date - timedelta(days=365)
-        elif period == '2 Years':
-            start_date = end_date - timedelta(days=730)
-        elif period == '5 Years':
-            start_date = end_date - timedelta(days=1825)
+        Parameters:
+            dividends: List of dividend dictionaries
+        """
+        df = pd.DataFrame(dividends)
+        df['ex_date'] = pd.to_datetime(df['ex_date']).dt.date
+        display_df = df[['symbol', 'ex_date', 'amount', 'dividend_type']]
+        display_df.columns = ['Symbol', 'Ex-Date', 'Amount ($)', 'Type']
         
-        symbol_filter = None if selected_symbol == 'All' else selected_symbol
-        dividends = self.storage.get_dividends(symbol_filter, start_date, end_date)
+        st.dataframe(display_df, hide_index=True, width='stretch')
         
-        if dividends:
-            df = pd.DataFrame(dividends)
-            df['ex_date'] = pd.to_datetime(df['ex_date']).dt.date
-            display_df = df[['symbol', 'ex_date', 'amount', 'dividend_type']]
-            display_df.columns = ['Symbol', 'Ex-Date', 'Amount ($)', 'Type']
-            
-            st.dataframe(display_df, hide_index=True, width='stretch')
-            
-            # Summary stats
-            total_dividends = df['amount'].sum()
-            avg_dividend = df['amount'].mean()
-            st.caption(f"Total: ${total_dividends:.2f} | Average: ${avg_dividend:.2f} | Count: {len(df)}")
-        else:
-            st.info("No dividend data. Use 'Fetch Dividends' button above to fetch from yfinance.")
+        # Summary stats
+        total_dividends = df['amount'].sum()
+        avg_dividend = df['amount'].mean()
+        st.caption(f"Total: ${total_dividends:.2f} | Average: ${avg_dividend:.2f} | Count: {len(df)}")
     
     def _render_cash_flow_tracker(self, holdings: List[Dict]):
-        """Render dividend cash flow recording and display"""
+        """Render dividend cash flow recording and display.
+        
+        Parameters:
+            holdings: List of holding dictionaries
+        """
         st.subheader("Dividend Cash Flow Tracker")
         
         # Auto-calculate button
@@ -128,7 +174,7 @@ class DividendAnalysisWidget(BaseWidget):
             st.write("**Auto-Calculate Dividends:**")
             st.caption("Automatically calculate dividends received based on your holdings at each ex-dividend date")
         with col2:
-            if st.button("Auto-Calculate All", key=f"{self.widget_id}_auto_calc", type="primary"):
+            if st.button("Auto-Calculate All", key=self._get_session_key("auto_calc"), type="primary"):
                 with st.spinner("Calculating dividends from holdings..."):
                     result = self.storage.auto_populate_dividend_cash_flows()
                     if result['success']:
@@ -137,25 +183,38 @@ class DividendAnalysisWidget(BaseWidget):
                     else:
                         st.error(result['message'])
         
+        st.space("small")
         
+        # Manual entry form
+        self._render_manual_entry_form(holdings)
         
+        st.space("small")
+        
+        # Display recorded cash flows
+        self._render_cash_flows_table()
+    
+    def _render_manual_entry_form(self, holdings: List[Dict]):
+        """Render manual dividend entry form.
+        
+        Parameters:
+            holdings: List of holding dictionaries
+        """
         st.write("**Manual Entry (Optional):**")
         st.caption("Use this only if you need to override or add custom dividend entries")
         
-        # Form to record dividend cash flow
-        with st.form(key=f"{self.widget_id}_cash_flow_form"):
+        with st.form(key=self._get_session_key("cash_flow_form")):
             col1, col2 = st.columns(2)
             
             with col1:
                 cf_symbol = st.selectbox(
                     "Symbol:",
                     options=[h['symbol'] for h in holdings],
-                    key=f"{self.widget_id}_cf_symbol"
+                    key=self._get_session_key("cf_symbol")
                 )
                 cf_date = st.date_input(
                     "Payment Date:",
                     value=datetime.now(),
-                    key=f"{self.widget_id}_cf_date"
+                    key=self._get_session_key("cf_date")
                 )
             
             with col2:
@@ -163,19 +222,19 @@ class DividendAnalysisWidget(BaseWidget):
                     "Shares Held:",
                     min_value=0.0,
                     step=1.0,
-                    key=f"{self.widget_id}_cf_shares"
+                    key=self._get_session_key("cf_shares")
                 )
                 cf_per_share = st.number_input(
                     "Dividend per Share:",
                     min_value=0.0,
                     step=0.01,
                     format="%.4f",
-                    key=f"{self.widget_id}_cf_per_share"
+                    key=self._get_session_key("cf_per_share")
                 )
             
             cf_notes = st.text_input(
                 "Notes (optional):",
-                key=f"{self.widget_id}_cf_notes"
+                key=self._get_session_key("cf_notes")
             )
             
             total_preview = cf_shares * cf_per_share
@@ -197,10 +256,9 @@ class DividendAnalysisWidget(BaseWidget):
                     st.rerun()
                 else:
                     st.error(result['message'])
-        
-        
-        
-        # Display recorded cash flows
+    
+    def _render_cash_flows_table(self):
+        """Display recorded dividend cash flows."""
         st.write("**Dividend Cash Flows:**")
         
         cash_flows = self.storage.get_dividend_cash_flows()
@@ -219,9 +277,65 @@ class DividendAnalysisWidget(BaseWidget):
             st.info("No dividend cash flows recorded yet.")
     
     def _render_dividend_summary(self, symbols: List[str]):
-        """Render dividend summary statistics"""
+        """Render dividend summary statistics.
+        
+        Parameters:
+            symbols: List of symbols to summarize
+        """
         st.subheader("Dividend Summary")
         
+        # Fetch summary data
+        summary = self._fetch_dividend_summary(symbols)
+        
+        # Display metrics
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Total (All Time)", f"${summary.total_all_time:,.2f}")
+        
+        with col2:
+            st.metric("Last 12 Months", f"${summary.total_1y:,.2f}")
+        
+        with col3:
+            st.metric("Year to Date", f"${summary.total_ytd:,.2f}")
+        
+        st.space("small")
+        
+        # Per-symbol breakdown
+        st.write("**By Symbol:**")
+        
+        if summary.symbol_breakdown:
+            df = pd.DataFrame(summary.symbol_breakdown)
+            st.dataframe(df, hide_index=True, width='stretch')
+        else:
+            st.info("No dividend cash flows recorded yet.")
+    
+    # ========================================================================
+    # DATA LAYER - Data fetching and validation methods
+    # ========================================================================
+    
+    def _prepare_holdings_and_symbols(self, instruments: List[Dict]) -> Tuple[List[Dict], List[str]]:
+        """Prepare holdings and symbols lists from instruments.
+        
+        Parameters:
+            instruments: List of instrument dictionaries
+            
+        Returns:
+            Tuple[List[Dict], List[str]]: Holdings list and symbols list
+        """
+        holdings = [i for i in instruments if i.get('quantity', 0) > 0]
+        symbols = [h['symbol'] for h in holdings] if holdings else [i['symbol'] for i in instruments]
+        return holdings, symbols
+    
+    def _fetch_dividend_summary(self, symbols: List[str]) -> DividendSummary:
+        """Fetch dividend summary data from storage.
+        
+        Parameters:
+            symbols: List of symbols to summarize
+            
+        Returns:
+            DividendSummary: Aggregated summary data
+        """
         # Calculate totals
         total_all_time = self.storage.calculate_total_dividends_received()
         total_1y = self.storage.calculate_total_dividends_received(
@@ -231,22 +345,7 @@ class DividendAnalysisWidget(BaseWidget):
             start_date=datetime(datetime.now().year, 1, 1)
         )
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric("Total (All Time)", f"${total_all_time:,.2f}")
-        
-        with col2:
-            st.metric("Last 12 Months", f"${total_1y:,.2f}")
-        
-        with col3:
-            st.metric("Year to Date", f"${total_ytd:,.2f}")
-        
-        
-        
         # Per-symbol breakdown
-        st.write("**By Symbol:**")
-        
         symbol_data = []
         for symbol in symbols:
             total = self.storage.calculate_total_dividends_received(symbol=symbol)
@@ -256,8 +355,33 @@ class DividendAnalysisWidget(BaseWidget):
                     'Total Received': f"${total:,.2f}"
                 })
         
-        if symbol_data:
-            df = pd.DataFrame(symbol_data)
-            st.dataframe(df, hide_index=True, width='stretch')
-        else:
-            st.info("No dividend cash flows recorded yet.")
+        return DividendSummary(
+            total_all_time=total_all_time,
+            total_1y=total_1y,
+            total_ytd=total_ytd,
+            symbol_breakdown=symbol_data
+        )
+    
+    # ========================================================================
+    # LOGIC LAYER - Pure calculation methods
+    # ========================================================================
+    
+    @staticmethod
+    def _calculate_period_start_date(period: str) -> Optional[datetime]:
+        """Calculate start date based on period selection.
+        
+        Parameters:
+            period: Period string ('1 Year', '2 Years', etc.)
+            
+        Returns:
+            Optional[datetime]: Start date or None for 'All Time'
+        """
+        if period == 'All Time':
+            return None
+        elif period == '1 Year':
+            return datetime.now() - timedelta(days=365)
+        elif period == '2 Years':
+            return datetime.now() - timedelta(days=730)
+        elif period == '5 Years':
+            return datetime.now() - timedelta(days=1825)
+        return None

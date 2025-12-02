@@ -87,8 +87,6 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                 key=self._get_session_key("include_dividends")
             )
             
-            st.divider()
-            
             # Choose optimization mode
             mode = st.radio(
                 "Optimization Mode:",
@@ -319,7 +317,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             return
         
         # Display optimal portfolios
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns(2, borders=True)
         
         with col1:
             st.markdown("**Minimum Volatility Portfolio**")

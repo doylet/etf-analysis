@@ -74,95 +74,29 @@ class CorrelationMatrixWidget(BaseWidget):
             end_date = datetime.now()
             start_date = end_date - timedelta(days=days)
             
+            st.space("medium")
             
             # Portfolio holdings selection
-            st.write("**Select portfolio holdings to include:**")
+            selected_holdings = self._render_holdings_selection(holdings)
             
-            num_cols = 4
-            cols = st.columns(num_cols)
+            # Portfolio aggregate in expander
+            with st.expander("Portfolio Aggregate", expanded=True):
+                include_portfolio = st.checkbox(
+                    "Include Portfolio (aggregate of selected holdings)",
+                    value=True,
+                    key=f"{self.widget_id}_include_portfolio",
+                    help="Adds a 'PORTFOLIO' series to the correlation matrix representing the combined performance of all selected holdings weighted by their position sizes"
+                )
             
-            # Initialize selected holdings in session state
-            if f"{self.widget_id}_selected_holdings" not in st.session_state:
-                st.session_state[f"{self.widget_id}_selected_holdings"] = [h['symbol'] for h in holdings]
-            
-            selected_holdings = []
-            for idx, holding in enumerate(holdings):
-                col_idx = idx % num_cols
-                with cols[col_idx]:
-                    is_selected = st.checkbox(
-                        f"{holding['symbol']}",
-                        value=holding['symbol'] in st.session_state[f"{self.widget_id}_selected_holdings"],
-                        key=f"{self.widget_id}_holding_{holding['symbol']}"
-                    )
-                    if is_selected:
-                        selected_holdings.append(holding['symbol'])
-            
-            st.session_state[f"{self.widget_id}_selected_holdings"] = selected_holdings
-            
-            # Add checkbox to include portfolio aggregate
-            include_portfolio = st.checkbox(
-                "Include Portfolio (aggregate of selected holdings)",
-                value=True,
-                key=f"{self.widget_id}_include_portfolio"
-            )
+            st.space("medium")
             
             # Additional instruments/benchmarks selection
-            st.write("**Add benchmarks or other instruments:**")
+            selected_additional = self._render_benchmark_selection()
             
-            # Initialize selected additional instruments
-            if f"{self.widget_id}_selected_additional" not in st.session_state:
-                st.session_state[f"{self.widget_id}_selected_additional"] = ['SPY']
-            
-            # Get the current list from session state
-            current_additional = st.session_state[f"{self.widget_id}_selected_additional"]
-            
-            # Show available instruments
-            cols = st.columns(num_cols)
-            selected_additional = []
-            
-            for idx, (symbol, name) in enumerate(self.AVAILABLE_INSTRUMENTS.items()):
-                col_idx = idx % num_cols
-                with cols[col_idx]:
-                    is_selected = st.checkbox(
-                        f"{symbol} - {name}",
-                        value=symbol in current_additional,
-                        key=f"{self.widget_id}_additional_{symbol}"
-                    )
-                    if is_selected:
-                        selected_additional.append(symbol)
-
-            # Add any custom symbols that were added
-            custom_symbols = [s for s in current_additional if s not in self.AVAILABLE_INSTRUMENTS]
-            for custom in custom_symbols:
-                selected_additional.append(custom)
-            
-            # Update session state
-            st.session_state[f"{self.widget_id}_selected_additional"] = selected_additional
+            st.space("medium")
             
             # Custom symbol input
-            st.markdown("**Or add custom symbol:**")
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                custom_symbol = st.text_input(
-                    "Enter symbol:",
-                    key=f"{self.widget_id}_custom_symbol",
-                    placeholder="e.g., AAPL, MSFT, VEU.AX"
-                )
-            with col2:
-                st.space("small")
-                if st.button("Add", key=f"{self.widget_id}_add_custom"):
-                    # Get the symbol from the text input via session state
-                    symbol_to_add = st.session_state.get(f"{self.widget_id}_custom_symbol", "").upper().strip()
-                    if symbol_to_add:
-                        current_list = st.session_state[f"{self.widget_id}_selected_additional"]
-                        if symbol_to_add not in current_list:
-                            current_list.append(symbol_to_add)
-                            st.session_state[f"{self.widget_id}_selected_additional"] = current_list
-                            st.rerun()
-                        else:
-                            st.warning(f"{symbol_to_add} is already selected")
-                    else:
-                        st.warning("Please enter a symbol")
+            self._render_custom_symbols()
             
             # Show currently selected additional instruments
             if selected_additional:
@@ -365,6 +299,199 @@ class CorrelationMatrixWidget(BaseWidget):
                     formatted_pivot = pivot_df.style.format("{:.2f}")
                     
                     st.dataframe(formatted_pivot, width='stretch')
+    
+    def _render_holdings_selection(self, holdings: List[Dict]) -> List[str]:
+        """Render portfolio holdings selection UI and return selected symbols.
+        
+        Parameters:
+            holdings: List of portfolio holdings dictionaries with 'symbol' keys
+            
+        Returns:
+            List[str]: Selected holding symbols
+            
+        Session State:
+            Accesses/modifies: {widget_id}_selected_holdings
+        """
+        # Initialize selected holdings in session state
+        if f"{self.widget_id}_selected_holdings" not in st.session_state:
+            st.session_state[f"{self.widget_id}_selected_holdings"] = [h['symbol'] for h in holdings]
+        
+        # Calculate selection count for title
+        selected_count = len(st.session_state[f"{self.widget_id}_selected_holdings"])
+        total_count = len(holdings)
+        
+        with st.expander(f"Portfolio Holdings ({selected_count}/{total_count} selected)", expanded=True):
+            # Bulk selection buttons
+            col1, col2, col3 = st.columns([1, 1, 4])
+            with col1:
+                if st.button("Select All", key=f"{self.widget_id}_select_all_holdings"):
+                    st.session_state[f"{self.widget_id}_selected_holdings"] = [h['symbol'] for h in holdings]
+                    st.rerun()
+            with col2:
+                if st.button("Deselect All", key=f"{self.widget_id}_deselect_all_holdings"):
+                    st.session_state[f"{self.widget_id}_selected_holdings"] = []
+                    st.rerun()
+            
+            num_cols = 4
+            cols = st.columns(num_cols)
+            
+            selected_holdings = []
+            for idx, holding in enumerate(holdings):
+                col_idx = idx % num_cols
+                with cols[col_idx]:
+                    is_selected = st.checkbox(
+                        f"{holding['symbol']}",
+                        value=holding['symbol'] in st.session_state[f"{self.widget_id}_selected_holdings"],
+                        key=f"{self.widget_id}_holding_{holding['symbol']}"
+                    )
+                    if is_selected:
+                        selected_holdings.append(holding['symbol'])
+            
+            st.session_state[f"{self.widget_id}_selected_holdings"] = selected_holdings
+        return selected_holdings
+    
+    def _render_benchmark_selection(self) -> List[str]:
+        """Render benchmark instruments selection UI and return selected symbols.
+        
+        Returns:
+            List[str]: Selected benchmark symbols (including custom symbols)
+            
+        Session State:
+            Accesses/modifies: {widget_id}_selected_additional
+        """
+        # Initialize selected additional instruments
+        if f"{self.widget_id}_selected_additional" not in st.session_state:
+            st.session_state[f"{self.widget_id}_selected_additional"] = ['SPY']
+        
+        # Get the current list from session state
+        current_additional = st.session_state[f"{self.widget_id}_selected_additional"]
+        
+        # Calculate how many benchmarks are selected (excluding custom symbols)
+        benchmark_selected = [s for s in current_additional if s in self.AVAILABLE_INSTRUMENTS]
+        selected_count = len(benchmark_selected)
+        total_count = len(self.AVAILABLE_INSTRUMENTS)
+        
+        with st.expander(f"Benchmark Instruments ({selected_count}/{total_count} selected)", expanded=False):
+            # Bulk selection buttons
+            col1, col2, col3 = st.columns([1, 1, 4])
+            with col1:
+                if st.button("Select All", key=f"{self.widget_id}_select_all_benchmarks"):
+                    # Get custom symbols first
+                    custom_symbols = [s for s in current_additional if s not in self.AVAILABLE_INSTRUMENTS]
+                    # Add all benchmarks
+                    all_selected = list(self.AVAILABLE_INSTRUMENTS.keys()) + custom_symbols
+                    st.session_state[f"{self.widget_id}_selected_additional"] = all_selected
+                    st.rerun()
+            with col2:
+                if st.button("Deselect All", key=f"{self.widget_id}_deselect_all_benchmarks"):
+                    # Keep only custom symbols
+                    custom_symbols = [s for s in current_additional if s not in self.AVAILABLE_INSTRUMENTS]
+                    st.session_state[f"{self.widget_id}_selected_additional"] = custom_symbols
+                    st.rerun()
+            
+            # Show available instruments
+            num_cols = 4
+            cols = st.columns(num_cols)
+            selected_additional = []
+            
+            for idx, (symbol, name) in enumerate(self.AVAILABLE_INSTRUMENTS.items()):
+                col_idx = idx % num_cols
+                with cols[col_idx]:
+                    is_selected = st.checkbox(
+                        f"{symbol} - {name}",
+                        value=symbol in current_additional,
+                        key=f"{self.widget_id}_additional_{symbol}"
+                    )
+                    if is_selected:
+                        selected_additional.append(symbol)
+
+            # Add any custom symbols that were added
+            custom_symbols = [s for s in current_additional if s not in self.AVAILABLE_INSTRUMENTS]
+            for custom in custom_symbols:
+                selected_additional.append(custom)
+            
+            # Update session state
+            st.session_state[f"{self.widget_id}_selected_additional"] = selected_additional
+        return selected_additional
+    
+    def _render_custom_symbols(self):
+        """Render custom symbol input UI with remove functionality.
+        
+        Session State:
+            Accesses: {widget_id}_custom_symbol, {widget_id}_selected_additional
+            Modifies: {widget_id}_selected_additional
+            
+        Side Effects:
+            Calls st.rerun() when a symbol is successfully added or removed
+        """
+        # Get custom symbols from session state
+        if f"{self.widget_id}_selected_additional" in st.session_state:
+            current_additional = st.session_state[f"{self.widget_id}_selected_additional"]
+            custom_symbols = [s for s in current_additional if s not in self.AVAILABLE_INSTRUMENTS]
+        else:
+            custom_symbols = []
+        
+        custom_count = len(custom_symbols)
+        
+        with st.expander(f"Custom Symbols ({custom_count})", expanded=True):
+            # Display existing custom symbols with remove buttons
+            if custom_symbols:
+                st.caption("Current custom symbols:")
+                for symbol in custom_symbols:
+                    col1, col2 = st.columns([5, 1])
+                    with col1:
+                        st.text(symbol)
+                    with col2:
+                        if st.button("×", key=f"{self.widget_id}_remove_{symbol}", help=f"Remove {symbol}"):
+                            # Remove symbol from session state
+                            current_list = st.session_state[f"{self.widget_id}_selected_additional"]
+                            current_list.remove(symbol)
+                            st.session_state[f"{self.widget_id}_selected_additional"] = current_list
+                            st.rerun()
+            else:
+                st.caption("No custom symbols added yet")
+            
+            st.markdown("**Add custom symbol:**")
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                custom_symbol = st.text_input(
+                    "Enter symbol:",
+                    key=f"{self.widget_id}_custom_symbol",
+                    placeholder="e.g., AAPL, MSFT, VEU.AX"
+                )
+            with col2:
+                st.markdown("&nbsp;")  # Spacer for alignment
+                if st.button("Add", key=f"{self.widget_id}_add_custom"):
+                    # Get the symbol from the text input via session state
+                    symbol_to_add = st.session_state.get(f"{self.widget_id}_custom_symbol", "").upper().strip()
+                    
+                    # Validation: non-empty
+                    if not symbol_to_add:
+                        st.warning("Please enter a symbol")
+                        return
+                    
+                    # Validation: length 1-10 characters
+                    if len(symbol_to_add) < 1 or len(symbol_to_add) > 10:
+                        st.error("Symbol must be between 1 and 10 characters")
+                        return
+                    
+                    # Validation: alphanumeric + dots/dashes only
+                    import re
+                    if not re.match(r'^[A-Z0-9.\-]+$', symbol_to_add):
+                        st.error("Symbol must contain only uppercase letters, numbers, dots, and dashes")
+                        return
+                    
+                    # Check if already exists
+                    current_list = st.session_state[f"{self.widget_id}_selected_additional"]
+                    if symbol_to_add in current_list:
+                        st.warning(f"{symbol_to_add} is already selected")
+                        return
+                    
+                    # Add symbol
+                    current_list.append(symbol_to_add)
+                    st.session_state[f"{self.widget_id}_selected_additional"] = current_list
+                    st.success(f"Added {symbol_to_add}")
+                    st.rerun()
     
     def _calculate_portfolio_values(self, holdings: List[Dict], 
                                     start_date: datetime, end_date: datetime) -> pd.Series:

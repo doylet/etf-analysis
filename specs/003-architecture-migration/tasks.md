@@ -203,19 +203,19 @@
 
 ### API Schemas for User Story 2
 
-- [ ] T044 [P] [US2] Create request/response schemas in `src/api/schemas/simulation.py`
+- [X] T044 [P] [US2] Create request/response schemas in `src/api/schemas/simulation.py`
   - `SimulationRequest` (wraps `SimulationParameters`)
   - `SimulationResponse` (wraps `SimulationResults`)
   - `TaskStatusResponse` (for async simulation tracking)
-- [ ] T045 [P] [US2] Create request/response schemas in `src/api/schemas/optimization.py`
+- [X] T045 [P] [US2] Create request/response schemas in `src/api/schemas/optimization.py`
   - `OptimizationRequest` schema
   - `OptimizationResponse` schema
   - `EfficientFrontierResponse` schema
-- [ ] T046 [P] [US2] Create request/response schemas in `src/api/schemas/portfolio.py`
+- [X] T046 [P] [US2] Create request/response schemas in `src/api/schemas/portfolio.py`
   - `PortfolioSummaryResponse` (wraps `PortfolioSummary`)
   - `InstrumentListResponse` (paginated)
   - `InstrumentCreateRequest`, `InstrumentUpdateRequest`
-- [ ] T047 [P] [US2] Create request/response schemas in `src/api/schemas/rebalancing.py`
+- [X] T047 [P] [US2] Create request/response schemas in `src/api/schemas/rebalancing.py`
   - `RebalancingRequest` schema
   - `RebalancingResponse` (wraps `RebalancingRecommendation`)
 

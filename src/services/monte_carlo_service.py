@@ -16,10 +16,19 @@ from ..domain.rebalancing import RebalancingRecommendation
 class MonteCarloService:
     """Service for running Monte Carlo portfolio simulations."""
     
-    @staticmethod
+    def __init__(self, price_data_repository=None):
+        """
+        Initialize service with optional repository.
+        
+        Args:
+            price_data_repository: Optional PriceDataRepository for fetching data
+        """
+        self.price_data_repository = price_data_repository
+    
     def run_simulation(
+        self,
         params: SimulationParameters,
-        returns_df: pd.DataFrame,
+        returns_df: Optional[pd.DataFrame] = None,
         confidence_level: int = 90,
         estimation_method: str = "Historical Mean",
         enable_rebalancing_analysis: bool = False,
@@ -32,7 +41,7 @@ class MonteCarloService:
         
         Args:
             params: Simulation parameters (symbols, weights, years, etc.)
-            returns_df: Historical returns DataFrame with symbol columns
+            returns_df: Historical returns DataFrame with symbol columns (optional if repository provided)
             confidence_level: Confidence level for percentiles (e.g., 90)
             estimation_method: "Historical Mean" or "Exponentially Weighted"
             enable_rebalancing_analysis: Whether to analyze rebalancing timing
@@ -43,6 +52,12 @@ class MonteCarloService:
         Returns:
             SimulationResults with paths, percentiles, and risk metrics
         """
+        # Fetch returns if not provided and repository available
+        if returns_df is None:
+            if self.price_data_repository is None:
+                raise ValueError("Either returns_df or price_data_repository must be provided")
+            returns_df = self._fetch_returns(params)
+        
         # 1. Estimate parameters from historical data
         weights = np.array(params.weights)
         portfolio_returns = (returns_df[params.symbols] * weights).sum(axis=1)
@@ -193,3 +208,23 @@ class MonteCarloService:
                     returns.iloc[closest_idx] += div_yield
         
         return returns
+    
+    def _fetch_returns(self, params: SimulationParameters) -> pd.DataFrame:
+        """
+        Fetch historical returns using repository.
+        
+        Args:
+            params: Simulation parameters with symbols
+            
+        Returns:
+            DataFrame with returns for each symbol
+        """
+        end = datetime.now()
+        start = end - timedelta(days=365 * 5)  # 5 years of history
+        
+        returns_dict = {}
+        for symbol in params.symbols:
+            returns = self.price_data_repository.get_returns(symbol, start, end)
+            returns_dict[symbol] = returns
+        
+        return pd.DataFrame(returns_dict)

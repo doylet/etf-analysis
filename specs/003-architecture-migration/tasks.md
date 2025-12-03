@@ -170,7 +170,7 @@
   - Methods: `get_cash_flows(symbol: str) -> pd.DataFrame`
   - Methods: `calculate_yield(symbol: str) -> float`
   - Wrap storage adapter's dividend methods
-- [ ] T039 [US4] Update `src/services/` to accept repositories via dependency injection
+- [X] T039 [US4] Update `src/services/` to accept repositories via dependency injection
   - Modify services to accept repository interfaces as constructor parameters
   - Services should use repositories instead of direct storage adapter calls
 

@@ -15,16 +15,25 @@ from ..domain.rebalancing import RebalancingRecommendation
 class RebalancingService:
     """Service for analyzing portfolio rebalancing timing and impact."""
     
-    @staticmethod
+    def __init__(self, price_data_repository=None):
+        """
+        Initialize service with optional repository.
+        
+        Args:
+            price_data_repository: Optional PriceDataRepository for fetching data
+        """
+        self.price_data_repository = price_data_repository
+    
     def analyze_timing(
+        self,
         symbols: list[str],
         target_weights: np.ndarray,
-        returns_df: pd.DataFrame,
-        years: int,
-        drift_threshold: float,
-        transaction_cost_pct: float,
-        mu: float,
-        sigma: float,
+        returns_df: Optional[pd.DataFrame] = None,
+        years: int = 10,
+        drift_threshold: float = 0.10,
+        transaction_cost_pct: float = 0.001,
+        mu: float = 0.08,
+        sigma: float = 0.15,
         max_rebalances_per_year: Optional[int] = None
     ) -> RebalancingRecommendation:
         """
@@ -33,7 +42,7 @@ class RebalancingService:
         Args:
             symbols: List of instrument symbols
             target_weights: Target portfolio weights (must sum to 1)
-            returns_df: Historical returns DataFrame
+            returns_df: Historical returns DataFrame (optional if repository provided)
             years: Simulation horizon
             drift_threshold: Drift threshold to trigger rebalancing (e.g., 0.10 for 10%)
             transaction_cost_pct: Transaction cost per rebalance (% of portfolio)
@@ -44,6 +53,12 @@ class RebalancingService:
         Returns:
             RebalancingRecommendation with timing and impact analysis
         """
+        # Fetch returns if not provided and repository available
+        if returns_df is None:
+            if self.price_data_repository is None:
+                raise ValueError("Either returns_df or price_data_repository must be provided")
+            returns_df = self._fetch_returns(symbols)
+        
         # Simulate asset paths to predict weight drift
         n_assets = len(symbols)
         dt = 1 / 252
@@ -151,3 +166,23 @@ class RebalancingService:
             instruments_to_rebalance=[],  # Will be populated by higher-level logic if needed
             portfolio_value_at_dates=portfolio_value_at_dates
         )
+    
+    def _fetch_returns(self, symbols: list) -> pd.DataFrame:
+        """
+        Fetch historical returns using repository.
+        
+        Args:
+            symbols: List of symbols
+            
+        Returns:
+            DataFrame with returns for each symbol
+        """
+        end = datetime.now()
+        start = end - timedelta(days=365 * 5)  # 5 years of history
+        
+        returns_dict = {}
+        for symbol in symbols:
+            returns = self.price_data_repository.get_returns(symbol, start, end)
+            returns_dict[symbol] = returns
+        
+        return pd.DataFrame(returns_dict)

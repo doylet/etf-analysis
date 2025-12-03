@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import minimize
 from typing import Optional
+from datetime import datetime, timedelta
 
 from ..domain.optimization import (
     OptimizationRequest,
@@ -19,17 +20,26 @@ from ..domain.optimization import (
 class OptimizationService:
     """Service for portfolio optimization using various objectives."""
     
-    @staticmethod
+    def __init__(self, price_data_repository=None):
+        """
+        Initialize service with optional repository.
+        
+        Args:
+            price_data_repository: Optional PriceDataRepository for fetching data
+        """
+        self.price_data_repository = price_data_repository
+    
     def optimize(
+        self,
         request: OptimizationRequest,
-        returns_df: pd.DataFrame
+        returns_df: Optional[pd.DataFrame] = None
     ) -> OptimizationResults:
         """
         Optimize portfolio based on requested objective.
         
         Args:
             request: Optimization parameters (symbols, objective, constraints, etc.)
-            returns_df: Historical returns DataFrame with symbol columns
+            returns_df: Historical returns DataFrame with symbol columns (optional if repository provided)
             
         Returns:
             OptimizationResults with optimal weights and metrics
@@ -37,6 +47,12 @@ class OptimizationService:
         Raises:
             ValueError: If optimization fails or inputs are invalid
         """
+        # Fetch returns if not provided and repository available
+        if returns_df is None:
+            if self.price_data_repository is None:
+                raise ValueError("Either returns_df or price_data_repository must be provided")
+            returns_df = self._fetch_returns(request.symbols)
+        
         # Validate inputs
         if len(request.symbols) < 2:
             raise ValueError("Optimization requires at least 2 symbols")
@@ -46,9 +62,9 @@ class OptimizationService:
         
         # Route to appropriate optimization method
         if request.objective == OptimizationObjective.MAX_SHARPE:
-            return OptimizationService._maximize_sharpe(returns_subset, request)
+            return self._maximize_sharpe(returns_subset, request)
         elif request.objective == OptimizationObjective.MIN_VOLATILITY:
-            return OptimizationService._minimize_volatility(returns_subset, request)
+            return self._minimize_volatility(returns_subset, request)
         elif request.objective == OptimizationObjective.MAX_RETURN:
             return OptimizationService._maximize_return(returns_subset, request)
         elif request.objective == OptimizationObjective.EFFICIENT_FRONTIER:
@@ -344,3 +360,23 @@ class OptimizationService:
             volatility=float(volatility),
             sharpe_ratio=float(sharpe_ratio)
         )
+    
+    def _fetch_returns(self, symbols: list) -> pd.DataFrame:
+        """
+        Fetch historical returns using repository.
+        
+        Args:
+            symbols: List of symbols
+            
+        Returns:
+            DataFrame with returns for each symbol
+        """
+        end = datetime.now()
+        start = end - timedelta(days=365 * 5)  # 5 years of history
+        
+        returns_dict = {}
+        for symbol in symbols:
+            returns = self.price_data_repository.get_returns(symbol, start, end)
+            returns_dict[symbol] = returns
+        
+        return pd.DataFrame(returns_dict)

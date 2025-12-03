@@ -176,17 +176,17 @@
 
 ### Tests for User Story 4
 
-- [ ] T040 [P] [US4] Integration test `InstrumentRepository` in `tests/integration/test_repositories.py`
+- [X] T040 [P] [US4] Integration test `InstrumentRepository` in `tests/integration/test_repositories.py`
   - Test CRUD operations with real SQLite database
   - Verify domain models returned correctly
   - Test search functionality
-- [ ] T041 [P] [US4] Integration test `OrderRepository` in `tests/integration/test_repositories.py`
+- [X] T041 [P] [US4] Integration test `OrderRepository` in `tests/integration/test_repositories.py`
   - Test order creation and retrieval
   - Test holdings calculation at specific dates
-- [ ] T042 [P] [US4] Integration test `PriceDataRepository` in `tests/integration/test_repositories.py`
+- [X] T042 [P] [US4] Integration test `PriceDataRepository` in `tests/integration/test_repositories.py`
   - Test price history retrieval
   - Test returns calculation
-- [ ] T043 [P] [US4] Unit test service layer with mocked repositories in `tests/unit/test_services_with_repos.py`
+- [X] T043 [P] [US4] Unit test service layer with mocked repositories in `tests/unit/test_services_with_repos.py`
   - Mock InstrumentRepository for OptimizationService
   - Verify services work without real database
   - Ensure dependency injection pattern works

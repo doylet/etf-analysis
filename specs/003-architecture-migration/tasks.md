@@ -119,14 +119,14 @@
 
 ### Domain Models for User Story 3
 
-- [ ] T030 [P] [US3] Create `PortfolioSummary` Pydantic model in `src/domain/portfolio.py` (total_value, base_currency, holdings list, performance metrics: mwr, twr, irr, sharpe, sortino, volatility, max_drawdown, dividend_yield)
-- [ ] T031 [P] [US3] Create `InstrumentDomainModel` in `src/domain/portfolio.py` (symbol, name, type enum, sector, currency, quantity, current_value_local, current_value_base, weight_pct)
-- [ ] T032 [P] [US3] Create `OrderRecord` model in `src/domain/portfolio.py` (symbol, order_type enum, volume, order_date, price, notes)
-- [ ] T033 [P] [US3] Create `PriceHistory` model in `src/domain/portfolio.py` (symbol, start_date, end_date, prices DataFrame/dict, dividends list)
+- [X] T030 [P] [US3] Create `PortfolioSummary` Pydantic model in `src/domain/portfolio.py` (total_value, base_currency, holdings list, performance metrics: mwr, twr, irr, sharpe, sortino, volatility, max_drawdown, dividend_yield)
+- [X] T031 [P] [US3] Create `InstrumentDomainModel` in `src/domain/portfolio.py` (symbol, name, type enum, sector, currency, quantity, current_value_local, current_value_base, weight_pct)
+- [X] T032 [P] [US3] Create `OrderRecord` model in `src/domain/portfolio.py` (symbol, order_type enum, volume, order_date, price, notes)
+- [X] T033 [P] [US3] Create `PriceHistory` model in `src/domain/portfolio.py` (symbol, start_date, end_date, prices DataFrame/dict, dividends list)
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] Unit test domain models validation in `tests/unit/test_domain_models.py`
+- [X] T034 [P] [US3] Unit test domain models validation in `tests/unit/test_domain_models.py`
   - Test valid `SimulationParameters` creation
   - Test invalid parameters raise ValidationError (negative years, weights sum ≠ 1.0, missing required fields)
   - Test `PortfolioSummary` JSON serialization/deserialization

@@ -83,4 +83,35 @@ class DomainModel(BaseModel):
         return cls.model_validate_json(json_str)
 
 
-__all__ = ['DomainModel']
+from .simulation import SimulationParameters, SimulationResults
+from .optimization import OptimizationRequest, OptimizationResults, OptimizationObjective
+from .rebalancing import RebalancingRecommendation
+from .news import SurpriseEvent, NewsArticle, EventNewsCorrelation, EventType
+from .portfolio import (
+    PortfolioSummary,
+    InstrumentDomainModel,
+    OrderRecord,
+    PriceHistory,
+    InstrumentType,
+    OrderType
+)
+
+__all__ = [
+    'DomainModel',
+    'SimulationParameters',
+    'SimulationResults',
+    'OptimizationRequest',
+    'OptimizationResults',
+    'OptimizationObjective',
+    'RebalancingRecommendation',
+    'SurpriseEvent',
+    'NewsArticle',
+    'EventNewsCorrelation',
+    'EventType',
+    'PortfolioSummary',
+    'InstrumentDomainModel',
+    'OrderRecord',
+    'PriceHistory',
+    'InstrumentType',
+    'OrderType',
+]

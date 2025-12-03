@@ -221,28 +221,28 @@
 
 ### API Routers for User Story 2
 
-- [ ] T048 [US2] Implement simulation router in `src/api/routers/simulation.py`
+- [X] T048 [US2] Implement simulation router in `src/api/routers/simulation.py`
   - `POST /api/simulation/monte-carlo` - Accepts SimulationRequest, returns SimulationResponse or TaskStatusResponse for long-running sims
   - Use `MonteCarloService` from dependency injection
   - For >1000 simulations, queue Celery task and return task ID
   - Include OpenAPI documentation with examples
-- [ ] T049 [US2] Implement optimization router in `src/api/routers/optimization.py`
+- [X] T049 [US2] Implement optimization router in `src/api/routers/optimization.py`
   - `POST /api/optimization/max-sharpe` - Returns optimal weights for max Sharpe
   - `POST /api/optimization/min-volatility` - Returns optimal weights for min volatility
   - `POST /api/optimization/efficient-frontier` - Returns list of frontier points
   - Use `OptimizationService` from dependency injection
-- [ ] T050 [US2] Implement portfolio router in `src/api/routers/portfolio.py`
+- [X] T050 [US2] Implement portfolio router in `src/api/routers/portfolio.py`
   - `GET /api/portfolio/summary` - Returns PortfolioSummaryResponse with current holdings and performance
   - `GET /api/portfolio/holdings` - Returns list of holdings with values and weights
   - Use repositories from dependency injection
-- [ ] T051 [US2] Implement instruments router in `src/api/routers/instruments.py`
+- [X] T051 [US2] Implement instruments router in `src/api/routers/instruments.py`
   - `GET /api/instruments` - Returns paginated list of tracked instruments
   - `GET /api/instruments/{symbol}` - Returns single instrument details
   - `POST /api/instruments` - Add new tracked instrument
   - `PATCH /api/instruments/{symbol}` - Update instrument details
   - `DELETE /api/instruments/{symbol}` - Remove instrument
   - Use `InstrumentRepository` from dependency injection
-- [ ] T052 [US2] Implement rebalancing router in `src/api/routers/rebalancing.py`
+- [X] T052 [US2] Implement rebalancing router in `src/api/routers/rebalancing.py`
   - `POST /api/rebalancing/analyze` - Accepts drift threshold, returns RebalancingRecommendation
   - Use `RebalancingService` from dependency injection
 - [ ] T053 [US2] Implement tasks router in `src/api/routers/tasks.py`

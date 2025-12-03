@@ -1,7 +1,7 @@
 # Implementation Plan: Framework-Agnostic Architecture Migration
 
-**Branch**: `001-architecture-migration` | **Date**: 2025-12-03 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-architecture-migration/spec.md`
+**Branch**: `003-architecture-migration` | **Date**: 2025-12-03 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/003-architecture-migration/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
@@ -66,7 +66,7 @@ Migrate ETF analysis application from tightly-coupled Streamlit framework to a c
 ### Documentation (this feature)
 
 ```text
-specs/001-architecture-migration/
+specs/003-architecture-migration/
 ├── plan.md              # This file (/speckit.plan command output)
 ├── research.md          # Phase 0 output (/speckit.plan command)
 ├── data-model.md        # Phase 1 output (/speckit.plan command)

@@ -1,6 +1,6 @@
 # Feature Specification: Framework-Agnostic Architecture Migration
 
-**Feature Branch**: `001-architecture-migration`  
+**Feature Branch**: `003-architecture-migration`  
 **Created**: 2025-12-03  
 **Status**: Draft  
 **Input**: Migrate application from Streamlit framework to framework-agnostic architecture with separate business logic layer, REST API, and support for bespoke UX design

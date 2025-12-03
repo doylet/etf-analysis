@@ -63,23 +63,23 @@
 
 ### Service Extraction for User Story 1
 
-- [ ] T020 [US1] Extract `MonteCarloService` from `src/widgets/monte_carlo_widget.py` into `src/services/monte_carlo_service.py`
+- [X] T020 [US1] Extract `MonteCarloService` from `src/widgets/monte_carlo_widget.py` into `src/services/monte_carlo_service.py`
   - Extract `_run_monte_carlo()` static method (lines ~1093-1263)
   - Method signature: `run_simulation(params: SimulationParameters, returns_df: pd.DataFrame) -> SimulationResults`
   - Preserve all GBM simulation logic, contribution handling, percentile calculations
   - Remove ALL Streamlit dependencies
-- [ ] T021 [US1] Extract `RebalancingService` from `src/widgets/monte_carlo_widget.py` into `src/services/rebalancing_service.py`
+- [X] T021 [US1] Extract `RebalancingService` from `src/widgets/monte_carlo_widget.py` into `src/services/rebalancing_service.py`
   - Extract `_analyze_rebalancing_timing()` static method (lines ~1297-1474)
   - Method signature: `analyze_timing(params: RebalancingRequest, returns_df: pd.DataFrame) -> RebalancingRecommendation`
   - Preserve drift analysis, cost-benefit calculations
-- [ ] T022 [US1] Extract `OptimizationService` from `src/widgets/portfolio_optimizer_widget.py` into `src/services/optimization_service.py`
+- [X] T022 [US1] Extract `OptimizationService` from `src/widgets/portfolio_optimizer_widget.py` into `src/services/optimization_service.py`
   - Extract `_calculate_optimal_weights()` method
   - Methods: `maximize_sharpe()`, `minimize_volatility()`, `efficient_frontier()`, `constrained_optimization()`
   - Use `OptimizationRequest` and `OptimizationResults` models
-- [ ] T023 [US1] Create `RiskAnalysisService` in `src/services/risk_analysis_service.py` wrapping `src/utils/performance_metrics.py`
+- [X] T023 [US1] Create `RiskAnalysisService` in `src/services/risk_analysis_service.py` wrapping `src/utils/performance_metrics.py`
   - Methods: `calculate_sharpe()`, `calculate_sortino()`, `calculate_var()`, `calculate_cvar()`, `calculate_max_drawdown()`, `calculate_beta()`
   - Accept DataFrames or numpy arrays, return structured results
-- [ ] T024 [US1] Extract `NewsAnalysisService` from `src/widgets/news_event_analysis_widget.py` into `src/services/news_analysis_service.py`
+- [X] T024 [US1] Extract `NewsAnalysisService` from `src/widgets/news_event_analysis_widget.py` into `src/services/news_analysis_service.py`
   - Extract event detection logic (volatility spikes, unusual returns, correlation breaks, portfolio shocks)
   - Method signature: `detect_surprise_events(price_data: pd.DataFrame, threshold: float) -> List[SurpriseEvent]`
   - Method signature: `correlate_with_news(events: List[SurpriseEvent], news_data: List[Dict]) -> List[EventNewsCorrelation]`

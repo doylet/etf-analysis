@@ -129,6 +129,7 @@ As a **product owner**, I need a proof-of-concept new frontend (React/Vue/Svelte
   
 - How does authentication work across Streamlit app and new API during migration?
   - Compatibility layer shares authentication mechanism (JWT tokens stored in session/cookies work for both)
+  - **Note**: Cross-application SSO/OAuth integration is FUTURE WORK outside MVP scope; if required, will be specified in separate feature
 
 ## Requirements *(mandatory)*
 
@@ -168,7 +169,7 @@ As a **product owner**, I need a proof-of-concept new frontend (React/Vue/Svelte
 - **FR-024**: API MUST implement JWT-based authentication for all protected endpoints
 - **FR-025**: API MUST validate all request payloads using Pydantic models and return 422 errors for invalid data
 - **FR-026**: API MUST return appropriate HTTP status codes (200 success, 400 bad request, 401 unauthorized, 404 not found, 500 server error)
-- **FR-027**: API MUST implement async task execution for long-running operations (simulations >1000 iterations) with task status endpoints
+- **FR-027**: API MUST implement async task execution for long-running operations (simulations >1000 iterations) with task status endpoints (GET `/api/tasks/{task_id}` - supports polling at max 1 request/second per task; returns 429 Too Many Requests if exceeded; consider WebSocket notifications for production)
 - **FR-028**: API MUST include OpenAPI/Swagger documentation accessible at `/docs` endpoint
 
 #### Repository Layer (P2)
@@ -184,7 +185,7 @@ As a **product owner**, I need a proof-of-concept new frontend (React/Vue/Svelte
 #### Compatibility Layer (P3)
 
 - **FR-036**: System MUST provide `StreamlitServiceBridge` class that wraps service layer calls to maintain API compatibility with existing widgets
-- **FR-037**: Existing Streamlit widgets MUST be able to toggle between direct service calls and compatibility layer via feature flag
+- **FR-037**: Existing Streamlit widgets MUST be able to toggle between direct service calls and compatibility layer via feature flag (flags: `USE_NEW_SERVICE_LAYER` for global toggle, `ENABLE_API_AUTH` for JWT authentication, `ENABLE_ASYNC_TASKS` for Celery task queue, `ENABLE_FRONTEND_POC` for new frontend access; all default to false for safe rollback)
 - **FR-038**: Compatibility layer MUST translate between current dict-based returns and new domain model returns
 - **FR-039**: System MUST preserve all existing session state management during migration period
 - **FR-040**: System MUST maintain backward compatibility with saved dashboard configurations stored in database
@@ -240,8 +241,8 @@ As a **product owner**, I need a proof-of-concept new frontend (React/Vue/Svelte
 
 - **SC-009**: Repository layer supports swapping from SQLite to PostgreSQL without any changes to service layer code (verified via integration tests against both databases)
 
-- **SC-010**: Migration to new architecture reduces average widget response time by 20% due to removal of Streamlit rendering overhead in service layer
+- **SC-010**: Migration to new architecture reduces average widget response time by 20% due to removal of Streamlit rendering overhead in service layer (baseline: median response time of 10 representative operations per widget, measured before migration - see tasks.md T085)
 
-- **SC-011**: 90% of existing codebase complexity is reduced as measured by cyclomatic complexity scores after extracting business logic from UI code
+- **SC-011**: 90% of existing codebase complexity is reduced as measured by McCabe cyclomatic complexity per method (baseline: average complexity across widget methods, measured before migration - see tasks.md T086)
 
 - **SC-012**: Zero downtime during migration - existing Streamlit app remains fully functional at all times while new architecture is built alongside

@@ -108,10 +108,11 @@ class PortfolioSummaryWidget(LayeredBaseWidget):
             metrics: Portfolio metrics object
         """
         st.markdown("**Risk-Adjusted Performance**")
+        st.caption("Based on actual portfolio value changes including transactions, cash flows, and rebalancing")
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.metric("Sharpe Ratio", f"{metrics.sharpe:.2f}", help="Return per unit of total risk")
+            st.metric("Sharpe Ratio", f"{metrics.sharpe:.2f}", help="Return per unit of total risk (actual portfolio performance)")
         
         with col2:
             st.metric("Sortino Ratio", f"{metrics.sortino:.2f}", help="Return per unit of downside risk")

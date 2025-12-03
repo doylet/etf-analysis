@@ -19,11 +19,11 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create new directory structure: `src/domain/`, `src/repositories/`, `src/api/`, `src/compat/`, `tests/unit/`, `tests/integration/`, `tests/regression/`
-- [ ] T002 Install new dependencies: `pip install fastapi uvicorn pydantic celery redis pytest-asyncio httpx`
-- [ ] T003 [P] Create `requirements-api.txt` with FastAPI stack dependencies
-- [ ] T004 [P] Create `requirements-dev.txt` with testing dependencies (pytest-mock, httpx, pytest-asyncio)
-- [ ] T005 [P] Setup pytest configuration in `pytest.ini` with coverage thresholds (80%+)
+- [X] T001 Create new directory structure: `src/domain/`, `src/repositories/`, `src/api/`, `src/compat/`, `tests/unit/`, `tests/integration/`, `tests/regression/`
+- [X] T002 Install new dependencies: `pip install fastapi uvicorn pydantic celery redis pytest-asyncio httpx`
+- [X] T003 [P] Create `requirements-api.txt` with FastAPI stack dependencies
+- [X] T004 [P] Create `requirements-dev.txt` with testing dependencies (pytest-mock, httpx, pytest-asyncio)
+- [X] T005 [P] Setup pytest configuration in `pytest.ini` with coverage thresholds (80%+)
 
 ---
 
@@ -33,14 +33,14 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T006 Create abstract repository base classes in `src/repositories/base.py` with common CRUD interfaces
-- [ ] T007 [P] Create domain model base class in `src/domain/__init__.py` with JSON serialization helpers
-- [ ] T008 [P] Setup FastAPI application skeleton in `src/api/main.py` with CORS, middleware, basic health endpoint
-- [ ] T009 Create dependency injection container in `src/api/dependencies.py` for repositories and services
-- [ ] T010 Setup JWT authentication utilities in `src/api/auth.py` (token generation, validation, password hashing)
-- [ ] T011 [P] Create Celery application and task queue configuration in `src/api/tasks.py`
-- [ ] T012 [P] Create common API response schemas in `src/api/schemas/common.py` (ErrorResponse, PaginatedResponse, TaskStatusResponse)
-- [ ] T013 Create Docker Compose configuration for local development (FastAPI, Redis, PostgreSQL)
+- [X] T006 Create abstract repository base classes in `src/repositories/base.py` with common CRUD interfaces
+- [X] T007 [P] Create domain model base class in `src/domain/__init__.py` with JSON serialization helpers
+- [X] T008 [P] Setup FastAPI application skeleton in `src/api/main.py` with CORS, middleware, basic health endpoint
+- [X] T009 Create dependency injection container in `src/api/dependencies.py` for repositories and services
+- [X] T010 Setup JWT authentication utilities in `src/api/auth.py` (token generation, validation, password hashing)
+- [X] T011 [P] Create Celery application and task queue configuration in `src/api/tasks.py`
+- [X] T012 [P] Create common API response schemas in `src/api/schemas/common.py` (ErrorResponse, PaginatedResponse, TaskStatusResponse)
+- [X] T013 Create Docker Compose configuration for local development (FastAPI, Redis, PostgreSQL)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -54,12 +54,12 @@
 
 ### Domain Models for User Story 1
 
-- [ ] T014 [P] [US1] Create `SimulationParameters` Pydantic model in `src/domain/simulation.py` with validation (symbols list, weights array summing to 1.0, years ≥1, num_simulations ≥100, initial_value >0, contribution settings, rebalancing settings)
-- [ ] T015 [P] [US1] Create `SimulationResults` Pydantic model in `src/domain/simulation.py` (paths array, time_points, percentiles dict, final_values, risk metrics: var_95, cvar_95, max_drawdown_median, cagr_*, historical_sharpe, historical_volatility)
-- [ ] T016 [P] [US1] Create `OptimizationRequest` Pydantic model in `src/domain/optimization.py` (symbols, objective enum, constraints dict, time_period)
-- [ ] T017 [P] [US1] Create `OptimizationResults` Pydantic model in `src/domain/optimization.py` (optimal_weights dict, expected_return, volatility, sharpe_ratio, efficient_frontier list of points)
-- [ ] T018 [P] [US1] Create `RebalancingRecommendation` Pydantic model in `src/domain/rebalancing.py` (rebalance_dates, drift_at_rebalance, trigger_threshold, avg_drift, cost_benefit_ratio, sharpe_improvement, instruments_to_rebalance)
-- [ ] T019 [P] [US1] Create `SurpriseEvent` and `EventNewsCorrelation` models in `src/domain/news.py` (date, event_type, magnitude, statistical_significance, correlated_news)
+- [X] T014 [P] [US1] Create `SimulationParameters` Pydantic model in `src/domain/simulation.py` with validation (symbols list, weights array summing to 1.0, years ≥1, num_simulations ≥100, initial_value >0, contribution settings, rebalancing settings)
+- [X] T015 [P] [US1] Create `SimulationResults` Pydantic model in `src/domain/simulation.py` (paths array, time_points, percentiles dict, final_values, risk metrics: var_95, cvar_95, max_drawdown_median, cagr_*, historical_sharpe, historical_volatility)
+- [X] T016 [P] [US1] Create `OptimizationRequest` Pydantic model in `src/domain/optimization.py` (symbols, objective enum, constraints dict, time_period)
+- [X] T017 [P] [US1] Create `OptimizationResults` Pydantic model in `src/domain/optimization.py` (optimal_weights dict, expected_return, volatility, sharpe_ratio, efficient_frontier list of points)
+- [X] T018 [P] [US1] Create `RebalancingRecommendation` Pydantic model in `src/domain/rebalancing.py` (rebalance_dates, drift_at_rebalance, trigger_threshold, avg_drift, cost_benefit_ratio, sharpe_improvement, instruments_to_rebalance)
+- [X] T019 [P] [US1] Create `SurpriseEvent` and `EventNewsCorrelation` models in `src/domain/news.py` (date, event_type, magnitude, statistical_significance, correlated_news)
 
 ### Service Extraction for User Story 1
 
@@ -439,34 +439,53 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T085 [P] Create comprehensive API documentation in `docs/api-guide.md`
+### Baseline Measurement (Required for SC-010, SC-011 validation)
+
+- [ ] T085 Measure baseline Streamlit widget performance in `tests/regression/fixtures/baseline_performance.json`
+  - Run 10 representative operations per widget (Monte Carlo 1000 sims, optimization 5 symbols, portfolio summary load, etc.)
+  - Record median response time for each operation
+  - Save results as JSON: `{"widget_name": {"operation": "duration_ms", ...}, ...}`
+  - Baseline for SC-010 (20% improvement target)
+- [ ] T086 Measure baseline widget complexity in `tests/regression/fixtures/baseline_complexity.json`
+  - Use `radon cc src/widgets/*.py` or `mccabe` to calculate McCabe cyclomatic complexity
+  - Calculate average complexity per method across all widget files
+  - Save results as JSON: `{"widget_name": {"avg_complexity": N, "max_complexity": M, ...}, ...}`
+  - Baseline for SC-011 (90% reduction target)
+
+### Documentation & Polish
+
+- [ ] T087 [P] Create comprehensive API documentation in `docs/api-guide.md`
   - Overview of all endpoints
   - Authentication flow
   - Example requests/responses with curl
   - Error codes reference
-- [ ] T086 [P] Create migration guide in `docs/migration-guide.md`
+- [ ] T088 [P] Create migration guide in `docs/migration-guide.md`
   - How to enable new service layer via feature flag
   - Rollback procedure
   - Testing checklist for developers
-- [ ] T087 [P] Add performance monitoring to API
+- [ ] T089 [P] Add performance monitoring to API
   - Log request duration for all endpoints
   - Add `/api/metrics` endpoint with request counts, average response times
-- [ ] T088 Code cleanup: Remove commented-out old code from widgets after full migration
-- [ ] T089 [P] Add API rate limiting middleware (100 requests/minute per user)
-- [ ] T090 [P] Add comprehensive logging throughout service layer
+  - Compare against baseline from T085 for SC-010 validation
+- [ ] T090 Code cleanup: Remove commented-out old code from widgets after full migration
+- [ ] T091 [P] Add API rate limiting middleware (100 requests/minute per user)
+  - Implement rate limiting for task status polling (1 req/sec per task, per FR-028)
+- [ ] T092 [P] Add comprehensive logging throughout service layer
   - Log all service method calls with parameters
   - Log calculation results for auditing
   - Use structured logging (JSON format)
-- [ ] T091 Update README.md with new architecture overview
+- [ ] T093 Update README.md with new architecture overview
   - Add architecture diagram (Streamlit + API + Services + Repositories)
   - Document how to run API server
   - Document how to run new frontend
-  - Document feature flag usage
-- [ ] T092 Run full regression test suite before production deployment
+  - Document feature flag usage (USE_NEW_SERVICE_LAYER, ENABLE_API_AUTH, ENABLE_ASYNC_TASKS, ENABLE_FRONTEND_POC)
+- [ ] T094 Run full regression test suite before production deployment
   - All 15 widgets tested with new service layer
   - API integration tests pass
   - Frontend tests pass
   - Performance benchmarks meet targets (80%+ coverage, <500ms API, <30s simulation)
+  - Validate SC-010: 20% response time improvement vs baseline (T085)
+  - Validate SC-011: 90% complexity reduction vs baseline (T086)
 
 ---
 
@@ -613,7 +632,7 @@ With 5 developers (optimal for this project):
 - **[P]** tasks = different files, no shared state, can run truly in parallel
 - **[Story]** label enables tracking which user story each task belongs to
 - **Tests included**: This is major refactoring requiring validation at every step
-- **Estimated total**: ~92 tasks organized across 6 user stories
+- **Estimated total**: ~94 tasks organized across 6 user stories (includes 2 baseline measurement tasks for SC-010/SC-011 validation)
 - **Critical path duration**: ~4-6 weeks with 1 developer, ~2-3 weeks with 5 developers (assuming 2-3 tasks/day/developer)
 - **MVP delivery**: After Phase 4 (US1+US3) - framework-agnostic services ready (~40 tasks, ~2 weeks solo)
 - **API delivery**: After Phase 6 (US1+US3+US4+US2) - full REST API (~70 tasks, ~4 weeks solo)

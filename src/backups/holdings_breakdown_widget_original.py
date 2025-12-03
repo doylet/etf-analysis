@@ -60,7 +60,7 @@ class HoldingsBreakdownWidget(BaseWidget):
             
             # Portfolio summary
             st.markdown(f"**Total Portfolio Value:** ${total_value:,.2f}")
-            st.divider()
+            
             
             # Breakdown selector
             breakdown_by = st.selectbox(

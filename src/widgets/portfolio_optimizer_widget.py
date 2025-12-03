@@ -66,7 +66,8 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                 return
             
             # Get all instruments (including those not in portfolio)
-            all_instruments = self.storage.get_all_instruments()
+            # Use active_only=False to include ALL instruments for selection
+            all_instruments = self.storage.get_all_instruments(active_only=False)
             
             if not all_instruments:
                 st.info("No instruments available for optimization")
@@ -91,7 +92,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             mode = st.radio(
                 "Optimization Mode:",
                 options=["Custom Weights", "Efficient Frontier", "Target Return", 
-                        "Max Diversification", "Min Drawdown", "Mean-CVaR"],
+                        "Max Diversification", "Min Drawdown", "Mean-CVaR", "Max Income-Growth"],
                 horizontal=False,
                 key=self._get_session_key("mode")
             )
@@ -116,6 +117,8 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                 self._render_min_drawdown_mode(selected_symbols, returns_df, include_dividends)
             elif mode == "Mean-CVaR":
                 self._render_mean_cvar_mode(selected_symbols, returns_df, include_dividends)
+            elif mode == "Max Income-Growth":
+                self._render_max_income_growth_mode(selected_symbols, returns_df, include_dividends)
     
     def _render_instrument_and_period_selectors(self, instruments: List[Dict]) -> Tuple[List[str], int]:
         """Render instrument and period selectors.
@@ -182,7 +185,8 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             return
         
         # Get current portfolio weights
-        all_instruments = self.storage.get_all_instruments()
+        # Use active_only=True since we only care about current holdings
+        all_instruments = self.storage.get_all_instruments(active_only=True)
         instrument_dict = {i['symbol']: i for i in all_instruments}
         
         # Calculate total portfolio value for selected symbols
@@ -230,7 +234,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            if st.button("Apply Max Sharpe", help="Optimize for maximum risk-adjusted returns", use_container_width=True):
+            if st.button("Apply Max Sharpe", help="Optimize for maximum risk-adjusted returns", width="stretch"):
                 frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=50)
                 if frontier:
                     # Store optimal weights in session state
@@ -240,7 +244,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                     st.rerun()
         
         with col2:
-            if st.button("Apply Min Volatility", help="Optimize for minimum risk", use_container_width=True):
+            if st.button("Apply Min Volatility", help="Optimize for minimum risk", width="stretch"):
                 frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=50)
                 if frontier:
                     for idx, symbol in enumerate(returns_df.columns):
@@ -249,13 +253,11 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                     st.rerun()
         
         with col3:
-            if st.button("Equal Weights", help="Distribute evenly across all instruments", use_container_width=True):
+            if st.button("Equal Weights", help="Distribute evenly across all instruments", width="stretch"):
                 equal_weight = 100.0 / len(available_symbols)
                 for symbol in available_symbols:
                     st.session_state[self._get_session_key(f"weight_{symbol}")] = round(equal_weight)
                 st.rerun()
-        
-        st.divider()
         
         # Create weight inputs
         weights = {}
@@ -295,6 +297,12 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         
         # Display metrics
         self._render_portfolio_metrics(available_symbols, metrics, include_dividends=include_dividends)
+        
+        # Calculate and show efficient frontier
+        with st.spinner("Calculating efficient frontier..."):
+            frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=100)
+        if frontier:
+            self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
     
     def _render_efficient_frontier_mode(self, symbols: List[str], returns_df: pd.DataFrame, include_dividends: bool = False):
         """Render efficient frontier visualization and optimal portfolios.
@@ -317,7 +325,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             return
         
         # Display optimal portfolios
-        col1, col2 = st.columns(2, borders=True)
+        col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("**Minimum Volatility Portfolio**")
@@ -327,10 +335,17 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             st.markdown("**Maximum Sharpe Ratio Portfolio**")
             self._render_portfolio_metrics(available_symbols, frontier.max_sharpe_portfolio, show_weights=True, include_dividends=include_dividends)
         
-        st.divider()
-        
+
         # Plot efficient frontier
         self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
+        
+        # Render recommendations for Max Sharpe portfolio
+        self._render_instrument_recommendations(
+            available_symbols,
+            frontier.max_sharpe_portfolio,
+            returns_df,
+            "Max Sharpe"
+        )
     
     def _render_target_return_mode(self, symbols: List[str], returns_df: pd.DataFrame, include_dividends: bool = False):
         """Render target return optimization.
@@ -365,6 +380,20 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         
         # Display results
         self._render_portfolio_metrics(available_symbols, metrics, show_weights=True)
+        
+        # Calculate and show efficient frontier
+        with st.spinner("Calculating efficient frontier..."):
+            frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=100)
+        if frontier:
+            self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
+        
+        # Render recommendations
+        self._render_instrument_recommendations(
+            available_symbols,
+            metrics,
+            returns_df,
+            "Target Return"
+        )
     
     def _render_max_diversification_mode(self, symbols: List[str], returns_df: pd.DataFrame, include_dividends: bool = False):
         """Render maximum diversification optimization.
@@ -387,6 +416,20 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             return
         
         self._render_portfolio_metrics(available_symbols, metrics, show_weights=True, include_dividends=include_dividends)
+        
+        # Calculate and show efficient frontier
+        with st.spinner("Calculating efficient frontier..."):
+            frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=100)
+        if frontier:
+            self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
+        
+        # Render recommendations
+        self._render_instrument_recommendations(
+            available_symbols,
+            metrics,
+            returns_df,
+            "Max Diversification"
+        )
     
     def _render_min_drawdown_mode(self, symbols: List[str], returns_df: pd.DataFrame, include_dividends: bool = False):
         """Render minimum drawdown optimization.
@@ -409,6 +452,20 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             return
         
         self._render_portfolio_metrics(available_symbols, metrics, show_weights=True, include_dividends=include_dividends)
+        
+        # Calculate and show efficient frontier
+        with st.spinner("Calculating efficient frontier..."):
+            frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=100)
+        if frontier:
+            self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
+        
+        # Render recommendations
+        self._render_instrument_recommendations(
+            available_symbols,
+            metrics,
+            returns_df,
+            "Min Drawdown"
+        )
     
     def _render_mean_cvar_mode(self, symbols: List[str], returns_df: pd.DataFrame, include_dividends: bool = False):
         """Render Mean-CVaR optimization.
@@ -435,6 +492,84 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             return
         
         self._render_portfolio_metrics(available_symbols, metrics, show_weights=True, include_dividends=include_dividends)
+        
+        # Calculate and show efficient frontier
+        with st.spinner("Calculating efficient frontier..."):
+            frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=100)
+        if frontier:
+            self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
+        
+        # Render recommendations
+        self._render_instrument_recommendations(
+            available_symbols,
+            metrics,
+            returns_df,
+            "Mean-CVaR"
+        )
+    
+    def _render_max_income_growth_mode(self, symbols: List[str], returns_df: pd.DataFrame, include_dividends: bool = False):
+        """Render Max Income-Growth optimization.
+        
+        Parameters:
+            symbols: List of instrument symbols
+            returns_df: DataFrame of returns for each instrument
+            include_dividends: Whether dividends are included in returns
+        """
+        available_symbols = list(returns_df.columns)
+        
+        st.markdown("**Max Income-Growth Portfolio**")
+        st.caption("Optimizes for the best balance between dividend yield (cash flow) and capital appreciation (growth)")
+        
+        # Weight slider for yield vs growth preference
+        yield_weight = st.slider(
+            "Income vs Growth Balance", 
+            min_value=0.0, 
+            max_value=1.0, 
+            value=0.5, 
+            step=0.1,
+            help="0.0 = Pure growth (no yield consideration), 1.0 = Pure income (no growth consideration), 0.5 = Equal balance",
+            format="%.1f"
+        )
+        
+        # Show interpretation
+        if yield_weight < 0.3:
+            st.info("Focus: Capital Appreciation (Growth)")
+        elif yield_weight > 0.7:
+            st.info("Focus: Dividend Income (Yield)")
+        else:
+            st.info("Focus: Balanced Income-Growth")
+        
+        with st.spinner("Optimizing for income-growth balance..."):
+            metrics = self._optimize_for_income_growth(returns_df, available_symbols, yield_weight)
+        
+        if metrics is None:
+            st.error("Failed to optimize for income-growth balance")
+            return
+        
+        self._render_portfolio_metrics(available_symbols, metrics, show_weights=True, include_dividends=include_dividends)
+        
+        # Show portfolio dividend yield if available
+        if hasattr(metrics, 'dividend_yield'):
+            # Format dividend yield, showing 0.00% for very small values
+            if abs(metrics.dividend_yield) < 0.0001:  # Less than 0.01%
+                yield_display = "0.00%"
+            else:
+                yield_display = f"{metrics.dividend_yield * 100:.2f}%"
+            st.metric("Portfolio Dividend Yield", yield_display)
+        
+        # Calculate and show efficient frontier
+        with st.spinner("Calculating efficient frontier..."):
+            frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=100)
+        if frontier:
+            self._render_efficient_frontier_chart(frontier, returns_df, available_symbols)
+        
+        # Render recommendations
+        self._render_instrument_recommendations(
+            available_symbols,
+            metrics,
+            returns_df,
+            "Max Income-Growth"
+        )
     
     def _render_portfolio_metrics(self, symbols: List[str], metrics: PortfolioMetrics, 
                                   show_weights: bool = False, include_dividends: bool = False):
@@ -482,7 +617,12 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                 st.metric("Sharpe Ratio", f"{metrics.sharpe_ratio:.3g}")
             
             with col4:
-                st.metric("Dividend Yield", f"{portfolio_yield * 100:.3g}%",
+                # Format dividend yield, showing 0.00% for very small values
+                if abs(portfolio_yield) < 0.0001:  # Less than 0.01%
+                    yield_display = "0.00%"
+                else:
+                    yield_display = f"{portfolio_yield * 100:.2f}%"
+                st.metric("Dividend Yield", yield_display,
                          help="Weighted average dividend yield based on portfolio allocation")
         else:
             # Display with 3 columns (no dividend yield)
@@ -501,10 +641,19 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             st.markdown("**Portfolio Allocation:**")
             
             # Create DataFrame for weights
-            weights_df = pd.DataFrame({
-                'Symbol': symbols,
-                'Weight (%)': [f"{w * 100:.3g}" for w in metrics.weights]
-            }).sort_values('Weight (%)', ascending=False, key=lambda x: x.str.replace('%', '').astype(float))
+            weights_data = []
+            for symbol, weight in zip(symbols, metrics.weights):
+                weight_pct = weight * 100
+                if weight_pct < 0.01:
+                    formatted_weight = "<0.01%"
+                else:
+                    formatted_weight = f"{weight_pct:.2f}%"
+                weights_data.append({'Symbol': symbol, 'Weight (%)': formatted_weight})
+            
+            weights_df = pd.DataFrame(weights_data)
+            # Sort by numeric value for proper ordering
+            weights_df['_sort_key'] = [w * 100 for w in metrics.weights]
+            weights_df = weights_df.sort_values('_sort_key', ascending=False).drop('_sort_key', axis=1)
             
             # Display as table
             st.dataframe(
@@ -523,6 +672,9 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             symbols: List of symbols
         """
         st.markdown("**Efficient Frontier Visualization**")
+        
+        # Calculate current portfolio metrics
+        current_portfolio_metrics = self._calculate_current_portfolio_metrics(symbols, returns_df)
         
         # Extract data for plotting
         volatilities = [p.volatility * 100 for p in frontier.portfolios]
@@ -544,28 +696,42 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
                 showscale=True,
                 colorbar=dict(
                     title="Sharpe Ratio",
-                    tickformat=".3g"
+                    tickformat=".2f"
                 ),
                 line=dict(width=0.5, color='white')
             ),
-            text=[f"<b>Portfolio</b><br>Return: {r:.3g}%<br>Volatility: {v:.3g}%<br>Sharpe: {s:.3g}" 
+            text=[f"<b>Portfolio</b><br>Return: {r:.2f}%<br>Volatility: {v:.2f}%<br>Sharpe: {s:.2f}" 
                   for r, v, s in zip(returns, volatilities, sharpes)],
             hovertemplate='%{text}<extra></extra>',
             name='Portfolio',
             showlegend=False
         ))
         
+        # Add current portfolio if it exists
+        if current_portfolio_metrics is not None:
+            fig.add_trace(go.Scatter(
+                x=[current_portfolio_metrics.volatility * 100],
+                y=[current_portfolio_metrics.expected_return * 100],
+                mode='markers+text',
+                marker=dict(size=20, color='#9467BD', symbol='star', line=dict(width=2, color='white')),
+                name='Current Portfolio',
+                text=['Current'],
+                textposition='top right',
+                textfont=dict(size=11, color='#9467BD', family='Arial Black'),
+                hovertemplate=f"<b>Current Portfolio</b><br>Return: {current_portfolio_metrics.expected_return * 100:.2f}%<br>Volatility: {current_portfolio_metrics.volatility * 100:.2f}%<br>Sharpe: {current_portfolio_metrics.sharpe_ratio:.2f}<extra></extra>"
+            ))
+        
         # Add minimum volatility portfolio
         fig.add_trace(go.Scatter(
             x=[frontier.min_vol_portfolio.volatility * 100],
             y=[frontier.min_vol_portfolio.expected_return * 100],
             mode='markers+text',
-            marker=dict(size=18, color='#00CC96', symbol='star', line=dict(width=2, color='white')),
+            marker=dict(size=18, color='#00CC96', symbol='circle', line=dict(width=2, color='white')),
             name='Min Volatility',
             text=['Min Vol'],
             textposition='top center',
             textfont=dict(size=10, color='#00CC96'),
-            hovertemplate=f"<b>Min Volatility Portfolio</b><br>Return: {frontier.min_vol_portfolio.expected_return * 100:.3g}%<br>Volatility: {frontier.min_vol_portfolio.volatility * 100:.3g}%<br>Sharpe: {frontier.min_vol_portfolio.sharpe_ratio:.3g}<extra></extra>"
+            hovertemplate=f"<b>Min Volatility Portfolio</b><br>Return: {frontier.min_vol_portfolio.expected_return * 100:.2f}%<br>Volatility: {frontier.min_vol_portfolio.volatility * 100:.2f}%<br>Sharpe: {frontier.min_vol_portfolio.sharpe_ratio:.2f}<extra></extra>"
         ))
         
         # Add maximum Sharpe portfolio
@@ -573,12 +739,12 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             x=[frontier.max_sharpe_portfolio.volatility * 100],
             y=[frontier.max_sharpe_portfolio.expected_return * 100],
             mode='markers+text',
-            marker=dict(size=18, color='#EF553B', symbol='star', line=dict(width=2, color='white')),
+            marker=dict(size=18, color='#EF553B', symbol='circle', line=dict(width=2, color='white')),
             name='Max Sharpe',
             text=['Max Sharpe'],
             textposition='bottom center',
             textfont=dict(size=10, color='#EF553B'),
-            hovertemplate=f"<b>Max Sharpe Portfolio</b><br>Return: {frontier.max_sharpe_portfolio.expected_return * 100:.3g}%<br>Volatility: {frontier.max_sharpe_portfolio.volatility * 100:.3g}%<br>Sharpe: {frontier.max_sharpe_portfolio.sharpe_ratio:.3g}<extra></extra>"
+            hovertemplate=f"<b>Max Sharpe Portfolio</b><br>Return: {frontier.max_sharpe_portfolio.expected_return * 100:.2f}%<br>Volatility: {frontier.max_sharpe_portfolio.volatility * 100:.2f}%<br>Sharpe: {frontier.max_sharpe_portfolio.sharpe_ratio:.2f}<extra></extra>"
         ))
         
         # Add individual assets
@@ -599,7 +765,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             textposition='top center',
             textfont=dict(size=11, color='#636EFA'),
             name='Individual Assets',
-            hovertemplate='<b>%{text}</b><br>Return: %{y:.3g}%<br>Volatility: %{x:.3g}%<extra></extra>'
+            hovertemplate='<b>%{text}</b><br>Return: %{y:.2f}%<br>Volatility: %{x:.2f}%<extra></extra>'
         ))
         
         # Update layout with improved styling
@@ -627,7 +793,7 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
             hovermode='closest',
             showlegend=True,
             legend=dict(
-                yanchor="top",
+                yanchor="bottom",
                 y=0.99,
                 xanchor="left",
                 x=0.01,
@@ -641,6 +807,119 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         )
         
         st.plotly_chart(fig, width='stretch')
+    
+    def _render_instrument_recommendations(
+        self,
+        current_symbols: List[str],
+        optimal_metrics: PortfolioMetrics,
+        returns_df: pd.DataFrame,
+        optimization_mode: str
+    ):
+        """Render instrument recommendations section.
+        
+        Parameters:
+            current_symbols: Current portfolio symbols
+            optimal_metrics: Optimal portfolio metrics
+            returns_df: Historical returns data
+            optimization_mode: Type of optimization
+        """
+        st.subheader("Alternative Instrument Recommendations")
+        
+        # Create cache key based on current portfolio and optimization settings
+        cache_key = f"recommendations_{'-'.join(sorted(current_symbols))}_{optimization_mode}"
+        
+        # Check if we have cached recommendations
+        if cache_key in st.session_state:
+            recommendations = st.session_state[cache_key]
+            st.caption(f"✓ Showing cached recommendations")
+        else:
+            with st.spinner("Analyzing alternative instruments..."):
+                # Get all instruments and filter to candidates
+                # CRITICAL: Pass active_only=False to get ALL instruments from database
+                all_instruments = self.storage.get_all_instruments(active_only=False)
+                
+                # Filter to candidates: exclude current portfolio only
+                # Include ALL instruments regardless of is_active flag
+                candidate_symbols = [
+                    i['symbol'] for i in all_instruments 
+                    if i['symbol'] not in current_symbols
+                ]
+                
+                total_available = len(candidate_symbols)
+                
+                # Sample up to 100 candidates randomly for better diversity
+                if len(candidate_symbols) > 100:
+                    import random
+                    random.seed(42)  # For reproducibility
+                    candidate_symbols = random.sample(candidate_symbols, 100)
+                
+                st.caption(f"Analyzing {len(candidate_symbols)} candidate instruments (of {total_available} total available)...")
+                
+                if not candidate_symbols:
+                    st.info("No alternative instruments available for recommendation.")
+                    return
+                
+                # Calculate recommendations
+                recommendations = self._calculate_instrument_recommendations(
+                    current_symbols,
+                    candidate_symbols,
+                    returns_df,
+                    optimal_metrics,
+                    optimization_mode
+                )
+                
+                # Cache the results
+                st.session_state[cache_key] = recommendations
+            
+            if not recommendations:
+                st.info("No recommendations found that would improve the current optimization.")
+                return
+            
+            # Display top 5 recommendations
+            top_recommendations = recommendations[:5]
+            
+            st.markdown(f"**Top {len(top_recommendations)} instruments to add to your portfolio:**")
+            st.caption("💡 Suggested weights show how much to allocate when ADDING to your current portfolio (not replacing it)")
+            
+            for idx, rec in enumerate(top_recommendations, 1):
+                # Expand first 2 by default
+                improvement_metric = rec.get('improvement_label', 'Sharpe')
+                with st.expander(
+                    f"**{idx}. {rec['symbol']}** - {rec['name']} ({rec['type']}) "
+                    f"[+{rec['improvement']:.1f}% {improvement_metric} improvement]",
+                    expanded=(idx <= 2)
+                ):
+                    # Show dividend yield for income-growth mode
+                    if optimization_mode == "Max Income-Growth" and 'dividend_yield' in rec:
+                        col1, col2, col3, col4 = st.columns(4)
+                    else:
+                        col1, col2, col3 = st.columns(3)
+                    
+                    with col1:
+                        st.metric("New Sharpe Ratio", f"{rec['new_sharpe']:.3g}")
+                        st.metric("Add to Portfolio", f"{rec['suggested_weight']*100:.1f}%",
+                                 help="Suggested allocation when adding this instrument")
+                    
+                    with col2:
+                        st.metric("New Expected Return", f"{rec['new_return']*100:.2f}%")
+                        st.metric("Correlation", f"{rec['correlation']:.2f}")
+                    
+                    with col3:
+                        st.metric("New Volatility", f"{rec['new_volatility']*100:.2f}%")
+                        st.metric(f"{improvement_metric} Improvement", f"+{rec['improvement']:.1f}%")
+                    
+                    if optimization_mode == "Max Income-Growth" and 'dividend_yield' in rec:
+                        with col4:
+                            div_yield = rec['dividend_yield']
+                            if abs(div_yield) < 0.0001:
+                                yield_display = "0.00%"
+                            else:
+                                yield_display = f"{div_yield * 100:.2f}%"
+                            st.metric("Dividend Yield", yield_display)
+                            st.metric("New Portfolio Yield", f"{rec.get('new_portfolio_yield', 0) * 100:.2f}%")
+                    
+                    st.markdown("**Rationale:**")
+                    st.markdown(rec['rationale'])
     
     # ========================================================================
     # DATA LAYER - Data fetching and validation methods
@@ -1013,6 +1292,93 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         
         return self._calculate_portfolio_metrics(result.x, returns_df)
     
+    def _optimize_for_income_growth(self, returns_df: pd.DataFrame, symbols: List[str], yield_weight: float = 0.5) -> Optional[PortfolioMetrics]:
+        """Optimize for balance between dividend yield and capital growth with risk management.
+        
+        Parameters:
+            returns_df: DataFrame of returns
+            symbols: List of instrument symbols
+            yield_weight: Weight given to yield vs growth (0=all growth, 1=all yield)
+            
+        Returns:
+            PortfolioMetrics: Optimal portfolio, or None if optimization fails
+        """
+        n_assets = len(returns_df.columns)
+        
+        # Fetch dividend yields for all symbols
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=365)
+        dividend_yields = {}
+        
+        for symbol in symbols:
+            try:
+                dividends = self.storage.get_dividends(symbol, start_date, end_date)
+                price_df = self.storage.get_price_data(symbol, start_date, end_date)
+                
+                if dividends and len(dividends) > 0 and price_df is not None:
+                    # Calculate trailing 12-month yield
+                    total_dividends = sum(d['amount'] for d in dividends)
+                    avg_price = price_df['close'].mean()
+                    dividend_yields[symbol] = (total_dividends / avg_price) if avg_price > 0 else 0.0
+                else:
+                    dividend_yields[symbol] = 0.0
+            except Exception as e:
+                dividend_yields[symbol] = 0.0
+        
+        # Convert to array matching returns_df column order
+        yields_array = np.array([dividend_yields.get(sym, 0.0) for sym in returns_df.columns])
+        
+        # Calculate annualized capital appreciation (price returns)
+        mean_returns = returns_df.mean().values * 252
+        
+        # Calculate covariance matrix
+        cov_matrix = returns_df.cov().values * 252
+        
+        def objective(weights):
+            # Portfolio yield (weighted average)
+            portfolio_yield = np.dot(weights, yields_array)
+            # Portfolio capital appreciation
+            portfolio_growth = np.dot(weights, mean_returns)
+            # Portfolio volatility (risk)
+            portfolio_vol = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights)))
+            
+            # Combined total return (yield + growth)
+            total_return = yield_weight * portfolio_yield + (1 - yield_weight) * portfolio_growth
+            
+            # Risk-adjusted return: maximize (return - risk_penalty * volatility)
+            # This ensures we don't just pick the highest return instrument
+            risk_penalty = 2.0  # Penalize volatility
+            risk_adjusted_return = total_return - risk_penalty * portfolio_vol
+            
+            # Negative because we minimize
+            return -risk_adjusted_return
+        
+        # Constraints: weights sum to 1, and max 40% in any single asset for diversification
+        constraints = [
+            {'type': 'eq', 'fun': lambda w: np.sum(w) - 1}
+        ]
+        
+        # Bounds: min 0%, max 40% per asset (prevents concentration)
+        bounds = tuple((0, 0.40) for _ in range(n_assets))
+        initial_weights = np.array([1/n_assets] * n_assets)
+        
+        result = minimize(
+            objective,
+            initial_weights,
+            method='SLSQP',
+            bounds=bounds,
+            constraints=constraints
+        )
+        
+        if not result.success:
+            return None
+        
+        metrics = self._calculate_portfolio_metrics(result.x, returns_df)
+        # Add dividend yield to metrics
+        if metrics:
+            metrics.dividend_yield = float(np.dot(result.x, yields_array))
+        return metrics
+    
     def _calculate_total_returns(self, prices: pd.Series, dividends: List[Dict], 
                                   start_date: datetime, end_date: datetime) -> pd.Series:
         """Calculate total returns including dividends.
@@ -1040,3 +1406,249 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         total_returns = total_change / prices.shift(1)
         
         return total_returns.dropna()
+    
+    def _calculate_current_portfolio_metrics(self, symbols: List[str], returns_df: pd.DataFrame) -> Optional[PortfolioMetrics]:
+        """Calculate metrics for the current portfolio allocation.
+        
+        Parameters:
+            symbols: List of symbols
+            returns_df: Returns DataFrame
+            
+        Returns:
+            PortfolioMetrics for current portfolio, or None if no current holdings
+        """
+        # Get current holdings
+        # Use active_only=True since we only need current portfolio holdings
+        all_instruments = self.storage.get_all_instruments(active_only=True)
+        instrument_dict = {i['symbol']: i for i in all_instruments}
+        
+        # Calculate current weights based on market value
+        total_value = 0.0
+        symbol_values = {}
+        
+        for symbol in symbols:
+            inst = instrument_dict.get(symbol, {})
+            quantity = inst.get('quantity', 0)
+            if quantity > 0:
+                latest_prices = self.storage.get_latest_prices([symbol])
+                price = latest_prices.get(symbol, {}).get('close', 0)
+                symbol_values[symbol] = quantity * price
+                total_value += symbol_values[symbol]
+        
+        if total_value == 0:
+            return None  # No current holdings
+        
+        # Calculate weights matching returns_df column order
+        weights = np.array([symbol_values.get(s, 0) / total_value for s in returns_df.columns])
+        
+        if weights.sum() == 0:
+            return None
+        
+        # Calculate metrics
+        return self._calculate_portfolio_metrics(weights, returns_df)
+    
+    def _calculate_instrument_recommendations(
+        self, 
+        current_symbols: List[str],
+        candidate_symbols: List[str],
+        returns_df: pd.DataFrame,
+        optimal_metrics: PortfolioMetrics,
+        optimization_mode: str
+    ) -> List[Dict]:
+        """Calculate recommendations for alternative instruments.
+        
+        Parameters:
+            current_symbols: Current portfolio symbols
+            candidate_symbols: Candidate symbols to evaluate
+            returns_df: Historical returns data
+            optimal_metrics: Optimal portfolio metrics
+            optimization_mode: Type of optimization
+            
+        Returns:
+            List of recommendation dictionaries sorted by improvement
+        """
+        recommendations = []
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=730)  # 2 years
+        
+        for candidate in candidate_symbols:
+            try:
+                # Fetch returns for candidate
+                price_df = self.storage.get_price_data(candidate, start_date, end_date)
+                if price_df is None or len(price_df) < 100:
+                    continue
+                
+                candidate_returns = calculate_returns(price_df['close'])
+                
+                # Create augmented returns dataframe
+                augmented_returns = returns_df.copy()
+                augmented_returns[candidate] = candidate_returns
+                augmented_returns = augmented_returns.dropna()
+                
+                if len(augmented_returns) < 50:
+                    continue
+                
+                # Re-optimize with candidate included
+                if optimization_mode == "Max Sharpe":
+                    new_metrics = self._optimize_for_max_sharpe(augmented_returns)
+                elif optimization_mode == "Target Return":
+                    target_return = optimal_metrics.expected_return
+                    new_metrics = self._optimize_for_target_return(augmented_returns, target_return)
+                elif optimization_mode == "Max Diversification":
+                    new_metrics = self._optimize_for_max_diversification(augmented_returns)
+                elif optimization_mode == "Min Drawdown":
+                    new_metrics = self._optimize_for_min_drawdown(augmented_returns)
+                elif optimization_mode == "Mean-CVaR":
+                    new_metrics = self._optimize_for_mean_cvar(augmented_returns)
+                elif optimization_mode == "Max Income-Growth":
+                    augmented_symbols = list(augmented_returns.columns)
+                    new_metrics = self._optimize_for_income_growth(augmented_returns, augmented_symbols)
+                else:
+                    new_metrics = self._optimize_for_max_sharpe(augmented_returns)
+                
+                if new_metrics is None:
+                    continue
+                
+                # Calculate improvement based on optimization mode
+                if optimization_mode == "Max Income-Growth":
+                    # For income-growth, use combined score of yield and return improvement
+                    old_combined = optimal_metrics.expected_return + getattr(optimal_metrics, 'dividend_yield', 0)
+                    new_combined = new_metrics.expected_return + getattr(new_metrics, 'dividend_yield', 0)
+                    improvement = ((new_combined - old_combined) / abs(old_combined) * 100) if old_combined != 0 else 0
+                    improvement_label = "Total Return + Yield"
+                else:
+                    # For other modes, use Sharpe improvement
+                    improvement = ((new_metrics.sharpe_ratio - optimal_metrics.sharpe_ratio) / 
+                                         abs(optimal_metrics.sharpe_ratio) * 100)
+                    improvement_label = "Sharpe"
+                
+                # Only recommend if there's meaningful improvement
+                if improvement > 1.0:  # At least 1% improvement
+                    # Get candidate weight in new optimal portfolio
+                    candidate_idx = list(augmented_returns.columns).index(candidate)
+                    optimal_candidate_weight = new_metrics.weights[candidate_idx]
+                    
+                    # Calculate REALISTIC incremental weight (5-20% of portfolio)
+                    # This is what you'd actually add, not replace everything with
+                    min_realistic_weight = 0.05  # 5% minimum
+                    max_realistic_weight = 0.20  # 20% maximum
+                    candidate_weight = np.clip(optimal_candidate_weight, min_realistic_weight, max_realistic_weight)
+                    
+                    # Calculate average correlation with current portfolio
+                    correlations = augmented_returns[[candidate]].corrwith(
+                        augmented_returns[current_symbols]
+                    )
+                    # Get the mean correlation value, handling NaN
+                    avg_correlation = correlations.iloc[0] if len(correlations) > 0 else 0.0
+                    if pd.isna(avg_correlation):
+                        avg_correlation = 0.0
+                    
+                    # Get instrument details
+                    instrument = self.storage.get_instrument(candidate)
+                    
+                    # Generate rationale
+                    rationale = self._generate_recommendation_rationale(
+                        candidate, candidate_weight, avg_correlation, 
+                        new_metrics, optimal_metrics, optimization_mode
+                    )
+                    
+                    rec_dict = {
+                        'symbol': candidate,
+                        'name': instrument.get('name', candidate) if instrument else candidate,
+                        'type': instrument.get('type', 'Unknown') if instrument else 'Unknown',
+                        'improvement': improvement,
+                        'improvement_label': improvement_label,
+                        'new_sharpe': new_metrics.sharpe_ratio,
+                        'new_return': new_metrics.expected_return,
+                        'new_volatility': new_metrics.volatility,
+                        'suggested_weight': candidate_weight,
+                        'correlation': avg_correlation,
+                        'rationale': rationale
+                    }
+                    
+                    # Add dividend yield info for income-growth mode
+                    if optimization_mode == "Max Income-Growth":
+                        # Get candidate's dividend yield
+                        end_date = datetime.now()
+                        start_date = end_date - timedelta(days=365)
+                        dividends = self.storage.get_dividends(candidate, start_date, end_date)
+                        price_df = self.storage.get_price_data(candidate, start_date, end_date)
+                        
+                        if dividends and price_df is not None and not price_df.empty:
+                            total_divs = sum(d['amount'] for d in dividends)
+                            avg_price = price_df['close'].mean()
+                            candidate_yield = (total_divs / avg_price) if avg_price > 0 else 0.0
+                        else:
+                            candidate_yield = 0.0
+                        
+                        rec_dict['dividend_yield'] = candidate_yield
+                        rec_dict['new_portfolio_yield'] = getattr(new_metrics, 'dividend_yield', 0)
+                    
+                    recommendations.append(rec_dict)
+                    
+            except Exception as e:
+                # Skip instruments that fail
+                continue
+        
+        # Sort by improvement (descending)
+        recommendations.sort(key=lambda x: x['improvement'], reverse=True)
+        
+        return recommendations
+    
+    def _generate_recommendation_rationale(
+        self,
+        symbol: str,
+        weight: float,
+        correlation: float,
+        new_metrics: PortfolioMetrics,
+        old_metrics: PortfolioMetrics,
+        mode: str
+    ) -> str:
+        """Generate human-readable rationale for recommendation.
+        
+        Parameters:
+            symbol: Candidate symbol
+            weight: Suggested weight in portfolio
+            correlation: Average correlation with current holdings
+            new_metrics: Metrics with candidate
+            old_metrics: Metrics without candidate
+            mode: Optimization mode
+            
+        Returns:
+            Rationale string
+        """
+        rationale_parts = []
+        
+        # Handle NaN correlation
+        if pd.isna(correlation):
+            correlation = 0.0
+        
+        # Correlation-based insights
+        if abs(correlation) < 0.3:
+            rationale_parts.append(f"Low correlation ({correlation:.2f}) provides excellent diversification benefits")
+        elif abs(correlation) < 0.6:
+            rationale_parts.append(f"Moderate correlation ({correlation:.2f}) offers good diversification")
+        else:
+            rationale_parts.append(f"High correlation ({correlation:.2f}) but strong individual performance")
+        
+        # Volatility impact
+        vol_change = (new_metrics.volatility - old_metrics.volatility) / old_metrics.volatility * 100
+        if vol_change < -2:
+            rationale_parts.append(f"reduces portfolio volatility by {abs(vol_change):.1f}%")
+        elif vol_change > 2:
+            rationale_parts.append(f"increases volatility by {vol_change:.1f}% but with higher returns")
+        
+        # Return impact
+        return_change = (new_metrics.expected_return - old_metrics.expected_return) / old_metrics.expected_return * 100
+        if return_change > 2:
+            rationale_parts.append(f"boosts expected returns by {return_change:.1f}%")
+        
+        # Weight recommendation
+        if weight > 0.15:
+            rationale_parts.append(f"recommended as core holding ({weight*100:.1f}% allocation)")
+        elif weight > 0.05:
+            rationale_parts.append(f"suggested as supporting position ({weight*100:.1f}% allocation)")
+        else:
+            rationale_parts.append(f"adds value in small allocation ({weight*100:.1f}%)")
+        
+        return ". ".join(rationale_parts) + "."

@@ -53,40 +53,49 @@ class DividendAnalysisWidget(LayeredBaseWidget):
                 st.info("No instruments in portfolio")
                 return
             
-            # Prepare data
-            holdings, symbols = self._prepare_holdings_and_symbols(instruments)
+            # Get ALL instruments for dividend fetching (not just holdings)
+            all_instruments = self.storage.get_all_instruments(active_only=False)
+            all_symbols = [i['symbol'] for i in all_instruments]
             
-            if not symbols:
-                st.info("No holdings to track dividends for")
-                return
+            # Prepare data for holdings-specific features
+            holdings, holding_symbols = self._prepare_holdings_and_symbols(instruments)
             
             # Tab selection
             tab1, tab2, tab3 = st.tabs(["Dividend History", "Cash Flow Tracker", "Summary"])
             
             with tab1:
-                self._render_dividend_history(symbols)
+                # Allow fetching dividends for ANY instrument
+                self._render_dividend_history(all_symbols, holding_symbols)
             
             with tab2:
-                self._render_cash_flow_tracker(holdings)
+                if not holding_symbols:
+                    st.info("No holdings to track cash flows for. Add positions to use this feature.")
+                else:
+                    self._render_cash_flow_tracker(holdings)
             
             with tab3:
-                self._render_dividend_summary(symbols)
+                if not holding_symbols:
+                    st.info("No holdings to summarize. Add positions to use this feature.")
+                else:
+                    self._render_dividend_summary(holding_symbols)
     
-    def _render_dividend_history(self, symbols: List[str]):
+    def _render_dividend_history(self, all_symbols: List[str], holding_symbols: List[str]):
         """Render historical dividend data.
         
         Parameters:
-            symbols: List of symbols to show dividends for
+            all_symbols: All available symbols (for fetching)
+            holding_symbols: Symbols in current holdings (for filtering)
         """
         st.subheader("Dividend History")
         
-        # Fetch button
+        # Fetch button - allow fetching for ANY instrument
         col1, col2 = st.columns([3, 1])
         with col1:
             fetch_symbol = st.selectbox(
                 "Fetch dividend data for:",
-                options=symbols,
-                key=self._get_session_key("fetch_symbol")
+                options=all_symbols,
+                key=self._get_session_key("fetch_symbol"),
+                help="Fetch dividends for any instrument (not just holdings)"
             )
         
         with col2:
@@ -101,8 +110,9 @@ class DividendAnalysisWidget(LayeredBaseWidget):
         
         st.space("small")
         
-        # Filter options
-        selected_symbol, start_date = self._render_history_filters(symbols)
+        # Filter options - use holding_symbols if available, otherwise all_symbols
+        filter_symbols = holding_symbols if holding_symbols else all_symbols
+        selected_symbol, start_date = self._render_history_filters(filter_symbols)
         
         # Get dividend data
         symbol_filter = None if selected_symbol == 'All' else selected_symbol

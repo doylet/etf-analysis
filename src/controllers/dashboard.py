@@ -14,7 +14,11 @@ from src.widgets import (
     DividendAnalysisWidget,
     CorrelationMatrixWidget,
     PortfolioOptimizerWidget,
-    MonteCarloWidget
+    MonteCarloWidget,
+    ConstrainedOptimizationWidget,
+    TimeSeriesAnalysisWidget,
+    PortfolioTransitionWidget,
+    NewsEventAnalysisWidget
 )
 
 
@@ -26,8 +30,12 @@ class DashboardPage(BaseController):
         'portfolio_summary': PortfolioSummaryWidget,
         'benchmark_comparison': BenchmarkComparisonWidget,
         'portfolio_optimizer': PortfolioOptimizerWidget,
+        'constrained_optimization': ConstrainedOptimizationWidget,
         'monte_carlo': MonteCarloWidget,
+        'timeseries_analysis': TimeSeriesAnalysisWidget,
         'holdings_breakdown': HoldingsBreakdownWidget,
+        'portfolio_transition': PortfolioTransitionWidget,
+        'news_event_analysis': NewsEventAnalysisWidget,
         'performance': PerformanceWidget,
         'dividend_analysis': DividendAnalysisWidget,
         'correlation_matrix': CorrelationMatrixWidget

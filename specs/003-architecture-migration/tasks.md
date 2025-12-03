@@ -145,7 +145,7 @@
 
 ### Repository Implementation for User Story 4
 
-- [ ] T035 [US4] Implement `InstrumentRepository` in `src/repositories/instrument_repository.py`
+- [X] T035 [US4] Implement `InstrumentRepository` in `src/repositories/instrument_repository.py`
   - Methods: `find_by_symbol(symbol: str) -> Optional[InstrumentDomainModel]`
   - Methods: `find_all_active() -> List[InstrumentDomainModel]`
   - Methods: `search(query: str) -> List[InstrumentDomainModel]`
@@ -153,19 +153,19 @@
   - Methods: `update(symbol: str, updates: Dict) -> InstrumentDomainModel`
   - Methods: `remove(symbol: str) -> bool`
   - Use existing `DataStorageAdapter` as underlying storage
-- [ ] T036 [US4] Implement `OrderRepository` in `src/repositories/order_repository.py`
+- [X] T036 [US4] Implement `OrderRepository` in `src/repositories/order_repository.py`
   - Methods: `create(order: OrderRecord) -> OrderRecord`
   - Methods: `find_by_symbol(symbol: str) -> List[OrderRecord]`
   - Methods: `find_in_date_range(start: datetime, end: datetime) -> List[OrderRecord]`
   - Methods: `calculate_holdings_at_date(date: datetime) -> Dict[str, float]`
   - Wrap storage adapter, return domain models
-- [ ] T037 [US4] Implement `PriceDataRepository` in `src/repositories/price_data_repository.py`
+- [X] T037 [US4] Implement `PriceDataRepository` in `src/repositories/price_data_repository.py`
   - Methods: `get_price_history(symbol: str, start: datetime, end: datetime) -> PriceHistory`
   - Methods: `get_latest_prices(symbols: List[str]) -> Dict[str, float]`
   - Methods: `get_returns(symbol: str, start: datetime, end: datetime) -> pd.Series`
   - Methods: `store_prices(symbol: str, prices: pd.DataFrame) -> bool`
   - Wrap storage adapter's `get_price_data()` method
-- [ ] T038 [US4] Implement `DividendRepository` in `src/repositories/dividend_repository.py`
+- [X] T038 [US4] Implement `DividendRepository` in `src/repositories/dividend_repository.py`
   - Methods: `get_dividends(symbol: str, start: datetime, end: datetime) -> List[Dict]`
   - Methods: `get_cash_flows(symbol: str) -> pd.DataFrame`
   - Methods: `calculate_yield(symbol: str) -> float`

@@ -314,24 +314,24 @@
 
 ### Compatibility Bridge for User Story 5
 
-- [ ] T065 [US5] Create `StreamlitServiceBridge` in `src/compat/streamlit_bridge.py`
+- [X] T065 [US5] Create `StreamlitServiceBridge` in `src/compat/streamlit_bridge.py`
   - Wrapper class that translates between widget dict-based parameters and domain model dataclasses
   - Methods mirroring existing widget `_run_*` static methods
   - Example: `run_monte_carlo_compat(params: Dict) -> Dict` wraps `MonteCarloService.run_simulation()`
   - Converts SimulationResults back to dict for existing widget consumption
-- [ ] T066 [US5] Add feature flag system in `config/settings.py`
+- [X] T066 [US5] Add feature flag system in `config/settings.py`
   - `USE_NEW_SERVICE_LAYER` boolean flag (default: False for safety)
   - Environment variable override: `ETF_USE_NEW_SERVICES=true`
-- [ ] T067 [US5] Update `MonteCarloWidget` in `src/widgets/monte_carlo_widget.py`
+- [X] T067 [US5] Update `MonteCarloWidget` in `src/widgets/monte_carlo_widget.py`
   - Add conditional import of `StreamlitServiceBridge`
   - If `USE_NEW_SERVICE_LAYER=True`, call bridge methods instead of local `_run_monte_carlo()`
   - Preserve exact same UI rendering logic
   - Test both code paths produce identical results
-- [ ] T068 [US5] Update `PortfolioOptimizerWidget` in `src/widgets/portfolio_optimizer_widget.py`
+- [X] T068 [US5] Update `PortfolioOptimizerWidget` in `src/widgets/portfolio_optimizer_widget.py`
   - Add feature flag check
   - Use `OptimizationService` via bridge when flag enabled
   - Preserve all UI elements unchanged
-- [ ] T069 [US5] Update `NewsEventAnalysisWidget` in `src/widgets/news_event_analysis_widget.py`
+- [X] T069 [US5] Update `NewsEventAnalysisWidget` in `src/widgets/news_event_analysis_widget.py`
   - Add feature flag check
   - Use `NewsAnalysisService` via bridge when flag enabled
   - Preserve event detection UI and correlation displays

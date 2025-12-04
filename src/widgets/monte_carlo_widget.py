@@ -18,6 +18,11 @@ from scipy.optimize import minimize
 
 from .layered_base_widget import LayeredBaseWidget
 from src.utils.performance_metrics import calculate_returns
+from config.settings import USE_NEW_SERVICE_LAYER
+
+# Conditional import of compatibility bridge
+if USE_NEW_SERVICE_LAYER:
+    from src.compat.streamlit_bridge import StreamlitServiceBridge
 
 
 @dataclass
@@ -123,14 +128,27 @@ class MonteCarloWidget(LayeredBaseWidget):
                     st.error("Insufficient historical data for simulation")
                     return
                 
-                # Run simulation
+                # Run simulation (use new service layer if feature flag enabled)
                 with st.spinner(f"Running {sim_params['num_sims']:,} simulations..."):
-                    results = self._run_monte_carlo(
-                        symbols=selected_symbols,
-                        weights=weights,
-                        returns_df=returns_df,
-                        **sim_params
-                    )
+                    if USE_NEW_SERVICE_LAYER:
+                        # Use new service layer via compatibility bridge
+                        bridge = StreamlitServiceBridge(self.storage)
+                        results_dict = bridge.run_monte_carlo_compat(
+                            symbols=selected_symbols,
+                            weights=weights,
+                            returns_df=returns_df,
+                            **sim_params
+                        )
+                        # Convert dict back to SimulationResults dataclass for rendering
+                        results = self._dict_to_simulation_results(results_dict)
+                    else:
+                        # Use original implementation
+                        results = self._run_monte_carlo(
+                            symbols=selected_symbols,
+                            weights=weights,
+                            returns_df=returns_df,
+                            **sim_params
+                        )
                 
                 # Add weights dict to params for display purposes
                 sim_params['weights'] = {symbol: weight for symbol, weight in zip(selected_symbols, weights)}
@@ -1469,5 +1487,36 @@ class MonteCarloWidget(LayeredBaseWidget):
             description=description,
             instruments_to_rebalance=instruments_to_rebalance,
             symbols=symbols
+        )
+    
+    @staticmethod
+    def _dict_to_simulation_results(results_dict: Dict) -> SimulationResults:
+        """Convert dict results from compatibility bridge to SimulationResults dataclass.
+        
+        This enables the new service layer to return results in the format expected
+        by the existing rendering code.
+        """
+        risk_metrics = results_dict.get('risk_metrics', {})
+        
+        return SimulationResults(
+            paths=results_dict['paths'],
+            time_points=results_dict['time_points'],
+            percentiles=results_dict['percentiles'],
+            final_values=results_dict['final_values'],
+            num_sims=len(results_dict['final_values']),
+            initial_value=results_dict['paths'][0][0] if len(results_dict['paths']) > 0 else 0,
+            paths_below_initial=int(np.sum(results_dict['final_values'] < results_dict['paths'][0][0])),
+            percentile_10=np.percentile(results_dict['final_values'], 10),
+            percentile_50=results_dict.get('median_outcome', np.percentile(results_dict['final_values'], 50)),
+            percentile_90=np.percentile(results_dict['final_values'], 90),
+            var_95=risk_metrics.get('var_95', 0.0),
+            cvar_95=risk_metrics.get('cvar_95', 0.0),
+            max_drawdown_median=risk_metrics.get('max_drawdown_median', 0.0),
+            cagr_median=risk_metrics.get('cagr_median', 0.0),
+            cagr_10th=risk_metrics.get('cagr_5th', 0.0),  # Note: bridge uses 5th
+            cagr_90th=risk_metrics.get('cagr_95th', 0.0),  # Note: bridge uses 95th
+            historical_sharpe=risk_metrics.get('historical_sharpe', 0.0),
+            historical_volatility=risk_metrics.get('historical_volatility', 0.0),
+            rebalancing_rec=None  # Rebalancing analyzed separately
         )
 

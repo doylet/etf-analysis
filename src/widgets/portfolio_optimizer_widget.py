@@ -18,6 +18,11 @@ from scipy.optimize import minimize
 
 from .layered_base_widget import LayeredBaseWidget
 from src.utils.performance_metrics import calculate_returns, calculate_sharpe_ratio
+from config.settings import USE_NEW_SERVICE_LAYER
+
+# Conditional import of compatibility bridge
+if USE_NEW_SERVICE_LAYER:
+    from src.compat.streamlit_bridge import StreamlitServiceBridge
 
 
 @dataclass
@@ -235,22 +240,48 @@ class PortfolioOptimizerWidget(LayeredBaseWidget):
         
         with col1:
             if st.button("Apply Max Sharpe", help="Optimize for maximum risk-adjusted returns", width="stretch"):
-                frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=50)
-                if frontier:
-                    # Store optimal weights in session state
-                    for idx, symbol in enumerate(returns_df.columns):
-                        weight_pct = round(frontier.max_sharpe_portfolio.weights[idx] * 100)
+                if USE_NEW_SERVICE_LAYER:
+                    # Use new service layer via compatibility bridge
+                    bridge = StreamlitServiceBridge(self.storage)
+                    result = bridge.run_optimization_compat(
+                        returns_df=returns_df,
+                        objective="max_sharpe"
+                    )
+                    # Apply optimal weights
+                    for symbol, weight in result['optimal_weights'].items():
+                        weight_pct = round(weight * 100)
                         st.session_state[self._get_session_key(f"weight_{symbol}")] = float(weight_pct)
-                    st.rerun()
+                else:
+                    # Use original implementation
+                    frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=50)
+                    if frontier:
+                        # Store optimal weights in session state
+                        for idx, symbol in enumerate(returns_df.columns):
+                            weight_pct = round(frontier.max_sharpe_portfolio.weights[idx] * 100)
+                            st.session_state[self._get_session_key(f"weight_{symbol}")] = float(weight_pct)
+                st.rerun()
         
         with col2:
             if st.button("Apply Min Volatility", help="Optimize for minimum risk", width="stretch"):
-                frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=50)
-                if frontier:
-                    for idx, symbol in enumerate(returns_df.columns):
-                        weight_pct = round(frontier.min_vol_portfolio.weights[idx] * 100)
+                if USE_NEW_SERVICE_LAYER:
+                    # Use new service layer via compatibility bridge
+                    bridge = StreamlitServiceBridge(self.storage)
+                    result = bridge.run_optimization_compat(
+                        returns_df=returns_df,
+                        objective="min_volatility"
+                    )
+                    # Apply optimal weights
+                    for symbol, weight in result['optimal_weights'].items():
+                        weight_pct = round(weight * 100)
                         st.session_state[self._get_session_key(f"weight_{symbol}")] = float(weight_pct)
-                    st.rerun()
+                else:
+                    # Use original implementation
+                    frontier = self._calculate_efficient_frontier(returns_df, num_portfolios=50)
+                    if frontier:
+                        for idx, symbol in enumerate(returns_df.columns):
+                            weight_pct = round(frontier.min_vol_portfolio.weights[idx] * 100)
+                            st.session_state[self._get_session_key(f"weight_{symbol}")] = float(weight_pct)
+                st.rerun()
         
         with col3:
             if st.button("Equal Weights", help="Distribute evenly across all instruments", width="stretch"):

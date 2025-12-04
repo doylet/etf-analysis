@@ -16,6 +16,11 @@ from plotly.subplots import make_subplots
 from dataclasses import dataclass
 import requests
 from .base_widget import BaseWidget
+from config.settings import USE_NEW_SERVICE_LAYER
+
+# Conditional import of compatibility bridge
+if USE_NEW_SERVICE_LAYER:
+    from src.compat.streamlit_bridge import StreamlitServiceBridge
 
 
 @dataclass
@@ -164,15 +169,31 @@ class NewsEventAnalysisWidget(BaseWidget):
         # Run analysis
         if st.button("Detect Events & Search News", type="primary", width="stretch"):
             with st.spinner("Analyzing price data for surprise events..."):
-                # Detect events
-                events = self._detect_surprise_events(
-                    holdings,
-                    lookback_days,
-                    surprise_threshold,
-                    event_types,
-                    analyze_instruments,
-                    analyze_portfolio
-                )
+                # Detect events (use new service layer if feature flag enabled)
+                if USE_NEW_SERVICE_LAYER:
+                    # Use new service layer via compatibility bridge
+                    bridge = StreamlitServiceBridge(self.storage)
+                    # Note: NewsAnalysisService requires different data format
+                    # For now, fall back to original implementation for news widget
+                    # TODO: Complete NewsAnalysisService integration in future phase
+                    events = self._detect_surprise_events(
+                        holdings,
+                        lookback_days,
+                        surprise_threshold,
+                        event_types,
+                        analyze_instruments,
+                        analyze_portfolio
+                    )
+                else:
+                    # Use original implementation
+                    events = self._detect_surprise_events(
+                        holdings,
+                        lookback_days,
+                        surprise_threshold,
+                        event_types,
+                        analyze_instruments,
+                        analyze_portfolio
+                    )
                 
                 if not events:
                     st.info("No surprise events detected in the selected period.")

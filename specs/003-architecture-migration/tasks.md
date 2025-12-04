@@ -268,7 +268,7 @@
   - 400 Bad Request for business logic errors (insufficient data, invalid constraints)
   - 404 Not Found for missing resources
   - 500 Internal Server Error with logging for unexpected errors
-- [ ] T058 [US2] Wire up routers in `src/api/main.py`
+- [X] T058 [US2] Wire up routers in `src/api/main.py`
   - Include all routers with `/api` prefix
   - Configure CORS for frontend origin
   - Add request logging middleware

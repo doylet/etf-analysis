@@ -11,6 +11,14 @@ from fastapi.responses import JSONResponse
 import logging
 from datetime import datetime
 
+from .routers import (
+    simulation_router,
+    optimization_router,
+    portfolio_router,
+    instruments_router,
+    rebalancing_router,
+)
+
 
 # Configure logging
 logging.basicConfig(
@@ -44,6 +52,14 @@ app.add_middleware(
 )
 
 
+# Include API routers
+app.include_router(simulation_router, prefix="/api")
+app.include_router(optimization_router, prefix="/api")
+app.include_router(portfolio_router, prefix="/api")
+app.include_router(instruments_router, prefix="/api")
+app.include_router(rebalancing_router, prefix="/api")
+
+
 @app.middleware("http")
 async def log_requests(request, call_next):
     """Log all HTTP requests with duration."""
@@ -73,6 +89,13 @@ async def root():
         "version": "1.0.0",
         "status": "online",
         "docs": "/docs",
+        "endpoints": {
+            "simulation": "/api/simulation",
+            "optimization": "/api/optimization",
+            "portfolio": "/api/portfolio",
+            "instruments": "/api/instruments",
+            "rebalancing": "/api/rebalancing"
+        },
         "timestamp": datetime.now().isoformat()
     }
 

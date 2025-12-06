@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, XCircle } from 'lucide-react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 
 // Simple utility functions
 const formatCurrency = (amount: number | undefined | null): string => {
@@ -32,56 +32,8 @@ const isPositiveChange = (value: number | undefined | null): boolean => {
   return value >= 0;
 };
 
-// Types
-interface PortfolioSummary {
-  total_value: number;
-  total_return: number;
-  total_return_percent: number;
-  day_change: number;
-  day_change_percent: number;
-  positions: number;
-  cash: number;
-}
-
-interface UsePortfolioDataResult {
-  summary: PortfolioSummary | null;
-  loading: boolean;
-  error: Error | null;
-}
-
-// Custom hook for portfolio data
-const usePortfolioData = (): UsePortfolioDataResult => {
-  const [summary, setSummary] = useState<PortfolioSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    const fetchPortfolioData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/portfolio/summary');
-        if (!response.ok) {
-          throw new Error('Failed to fetch portfolio data');
-        }
-        const data = await response.json();
-        setSummary(data);
-        setError(null);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Unknown error'));
-        setSummary(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPortfolioData();
-  }, []);
-
-  return { summary, loading, error };
-};
-
 export default function PortfolioSummaryComponent() {
-  const { summary, loading, error } = usePortfolioData();
+  const { summary, loading, error } = usePortfolioSummary();
 
   if (loading) {
     return (
@@ -114,7 +66,7 @@ export default function PortfolioSummaryComponent() {
         <XCircle className="h-4 w-4" />
         <AlertTitle>Portfolio Data Error</AlertTitle>
         <AlertDescription>
-          {error?.message || 'Unable to load portfolio data. Please try refreshing the page.'}
+          {error || 'Unable to load portfolio data. Please try refreshing the page.'}
         </AlertDescription>
       </Alert>
     );
@@ -147,7 +99,7 @@ export default function PortfolioSummaryComponent() {
     {
       title: 'Positions',
       value: (summary.positions ?? 0).toString(),
-      subtitle: `${formatCurrency(summary.cash)} cash`,
+      subtitle: `${formatCurrency(summary.allocated_cash || summary.cash)} cash`,
       icon: PieChart,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',

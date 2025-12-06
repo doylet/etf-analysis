@@ -15,6 +15,21 @@ export interface PortfolioSummary {
   positions: number;
   cash: number;
   allocated_cash: number;
+  holdings?: BackendHolding[]; // Add holdings to the interface
+}
+
+export interface BackendHolding {
+  symbol: string;
+  name: string;
+  type: string;
+  quantity: number;
+  average_cost: number;
+  current_price: number;
+  current_value: number;
+  cost_basis: number;
+  unrealized_gain_loss: number;
+  unrealized_gain_loss_pct: number;
+  weight_pct: number;
 }
 
 export interface PortfolioHolding {
@@ -41,13 +56,39 @@ export interface PortfolioPerformance {
   };
 }
 
+// Backend API response interface (different from frontend interface)
+interface BackendPortfolioSummary {
+  total_value: number;
+  total_cost_basis: number;
+  total_unrealized_gain_loss: number;
+  total_unrealized_gain_loss_pct: number;
+  num_holdings: number;
+  holdings: BackendHolding[];
+  last_updated: string;
+}
+
 class PortfolioService {
   /**
    * Get portfolio summary
    */
   async getSummary(): Promise<PortfolioSummary> {
-    const response = await apiClient.get<PortfolioSummary>('/api/portfolio/summary');
-    return response.data;
+    const response = await apiClient.get<BackendPortfolioSummary>('/api/portfolio/summary');
+    const backendData = response.data;
+    
+    // Transform backend data to frontend interface
+    const transformedData: PortfolioSummary = {
+      total_value: backendData.total_value,
+      total_return: backendData.total_unrealized_gain_loss,
+      total_return_percent: backendData.total_unrealized_gain_loss_pct,
+      day_change: 0, // Not provided by backend yet
+      day_change_percent: 0, // Not provided by backend yet
+      positions: backendData.num_holdings,
+      cash: 0, // Not provided by backend yet
+      allocated_cash: 0, // Not provided by backend yet
+      holdings: backendData.holdings, // Pass through holdings data
+    };
+    
+    return transformedData;
   }
 
   /**

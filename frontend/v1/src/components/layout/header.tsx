@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Notifications } from '@/components/features/notifications';
-import { Button } from '@/components/shared';
+import { Button } from '@/components/ui/button';
 import { LogOut, User, BarChart3 } from 'lucide-react';
 
 interface HeaderProps {

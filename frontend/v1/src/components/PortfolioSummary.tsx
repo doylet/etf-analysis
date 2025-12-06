@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react';
-import { Card, CardHeader, CardContent, Alert, Skeleton } from '@/components/shared';
+import { TrendingUp, TrendingDown, DollarSign, PieChart, XCircle } from 'lucide-react';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
 // Simple utility functions
@@ -83,21 +85,21 @@ export default function PortfolioSummaryComponent() {
 
   if (loading) {
     return (
-      <Card variant="default" size="md">
+      <Card>
         <CardHeader>
-          <Skeleton width="200px" height="24px" />
-          <Skeleton width="300px" height="16px" />
+          <Skeleton className="h-6 w-[200px]" />
+          <Skeleton className="h-4 w-[300px]" />
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="border border-gray-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <Skeleton width="80px" height="16px" />
-                  <Skeleton variant="circle" width="32px" height="32px" />
+                  <Skeleton className="h-4 w-[80px]" />
+                  <Skeleton className="h-8 w-8 rounded-full" />
                 </div>
-                <Skeleton width="100px" height="32px" />
-                <Skeleton width="60px" height="16px" />
+                <Skeleton className="h-8 w-[100px]" />
+                <Skeleton className="h-4 w-[60px]" />
               </div>
             ))}
           </div>
@@ -108,12 +110,12 @@ export default function PortfolioSummaryComponent() {
 
   if (error || !summary) {
     return (
-      <Alert 
-        variant="error" 
-        title="Portfolio Data Error"
-        size="md"
-      >
-        {error?.message || 'Unable to load portfolio data. Please try refreshing the page.'}
+      <Alert variant="destructive">
+        <XCircle className="h-4 w-4" />
+        <AlertTitle>Portfolio Data Error</AlertTitle>
+        <AlertDescription>
+          {error?.message || 'Unable to load portfolio data. Please try refreshing the page.'}
+        </AlertDescription>
       </Alert>
     );
   }
@@ -153,10 +155,10 @@ export default function PortfolioSummaryComponent() {
   ];
 
   return (
-    <Card variant="default" size="md">
+    <Card>
       <CardHeader>
-        <h2 className="text-xl font-semibold text-gray-900">Portfolio Summary</h2>
-        <p className="text-gray-600 text-sm mt-1">Real-time portfolio overview</p>
+        <h2 className="text-xl font-semibold text-foreground">Portfolio Summary</h2>
+        <p className="text-muted-foreground text-sm mt-1">Real-time portfolio overview</p>
       </CardHeader>
       
       <CardContent>
@@ -166,17 +168,17 @@ export default function PortfolioSummaryComponent() {
             return (
               <div
                 key={index}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-500">{metric.title}</h3>
+                  <h3 className="text-sm font-medium text-muted-foreground">{metric.title}</h3>
                   <div className={cn('p-2 rounded-lg', metric.bgColor)}>
                     <Icon className={cn('h-4 w-4', metric.color)} />
                   </div>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-2xl font-bold text-gray-900">{metric.value}</p>
+                  <p className="text-2xl font-bold text-foreground">{metric.value}</p>
                   {metric.subtitle && (
                     <p className={cn('text-sm', metric.color)}>{metric.subtitle}</p>
                   )}

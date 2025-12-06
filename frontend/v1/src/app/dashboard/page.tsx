@@ -1,7 +1,7 @@
 'use client';
 
 import PortfolioSummary from '@/components/PortfolioSummary';
-import { Card, CardHeader, CardContent } from '@/components/shared/card';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/layout/page-header';
 
 export default function DashboardPage() {
@@ -21,24 +21,24 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Placeholder for Holdings */}
-        <Card variant="default" size="md">
+        <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Holdings</h3>
+            <h3 className="text-lg font-semibold text-foreground">Holdings</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               Holdings component coming soon...
             </p>
           </CardContent>
         </Card>
 
         {/* Placeholder for Performance Chart */}
-        <Card variant="outlined" size="md">
+        <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Performance</h3>
+            <h3 className="text-lg font-semibold text-foreground">Performance</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               Performance chart coming soon...
             </p>
           </CardContent>

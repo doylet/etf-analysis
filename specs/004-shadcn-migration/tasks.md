@@ -15,9 +15,9 @@
 
 **Purpose**: Clean up existing base-ui dependencies and prepare workspace
 
-- [ ] T001 Remove existing base-ui dependencies from frontend/v1/package.json
-- [ ] T002 [P] Backup existing component implementations in src/components/shared/
-- [ ] T003 Create git branch checkpoint before starting migration
+- [X] T001 Remove existing base-ui dependencies from frontend/v1/package.json
+- [X] T002 [P] Backup existing component implementations in src/components/shared/
+- [X] T003 Create git branch checkpoint before starting migration
 
 ---
 
@@ -27,13 +27,13 @@
 
 **⚠️ CRITICAL**: No component migration work can begin until this phase is complete
 
-- [ ] T004 Install shadcn/ui CLI and core dependencies in frontend/v1/
-- [ ] T005 Initialize shadcn/ui project with `npx shadcn-ui@latest init`
-- [ ] T006 Configure components.json with proper paths and aliases
-- [ ] T007 Update tailwind.config.js with shadcn/ui theme configuration
-- [ ] T008 Update tsconfig.json paths for @/ alias resolution
-- [ ] T009 Create initial src/components/ui/ directory structure
-- [ ] T010 Validate shadcn/ui CLI installation with test component addition
+- [X] T004 Install shadcn/ui CLI and core dependencies in frontend/v1/
+- [X] T005 Initialize shadcn/ui project with `npx shadcn-ui@latest init`
+- [X] T006 Configure components.json with proper paths and aliases
+- [X] T007 Update tailwind.config.js with shadcn/ui theme configuration
+- [X] T008 Update tsconfig.json paths for @/ alias resolution
+- [X] T009 Create initial src/components/ui/ directory structure
+- [X] T010 Validate shadcn/ui CLI installation with test component addition
 
 **Checkpoint**: Foundation ready - component replacement can now begin
 
@@ -47,13 +47,13 @@
 
 ### Component Replacement for User Story 1
 
-- [ ] T011 [P] [US1] Add shadcn/ui Card component via CLI to src/components/ui/card.tsx
-- [ ] T012 [P] [US1] Add shadcn/ui Alert component via CLI to src/components/ui/alert.tsx  
-- [ ] T013 [P] [US1] Add shadcn/ui Skeleton component via CLI to src/components/ui/skeleton.tsx
-- [ ] T014 [P] [US1] Add shadcn/ui Button component via CLI to src/components/ui/button.tsx
-- [ ] T015 [US1] Update src/lib/utils.ts to use shadcn/ui cn utility function
-- [ ] T016 [US1] Create new barrel export in src/components/ui/index.ts
-- [ ] T017 [US1] Update PortfolioSummary.tsx imports to use shadcn/ui components
+- [X] T011 [P] [US1] Add shadcn/ui Card component via CLI to src/components/ui/card.tsx
+- [X] T012 [P] [US1] Add shadcn/ui Alert component via CLI to src/components/ui/alert.tsx  
+- [X] T013 [P] [US1] Add shadcn/ui Skeleton component via CLI to src/components/ui/skeleton.tsx
+- [X] T014 [P] [US1] Add shadcn/ui Button component via CLI to src/components/ui/button.tsx
+- [X] T015 [US1] Update src/lib/utils.ts to use shadcn/ui cn utility function
+- [X] T016 [US1] Create new barrel export in src/components/ui/index.ts
+- [X] T017 [US1] Update PortfolioSummary.tsx imports to use shadcn/ui components
 - [ ] T018 [US1] Verify visual consistency and adjust styling if needed
 - [ ] T019 [US1] Remove old custom components from src/components/shared/
 - [ ] T020 [US1] Test Portfolio Summary functionality end-to-end

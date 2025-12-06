@@ -57,16 +57,12 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-family: Arial, Helvetica, sans-serif;
-    /* iOS Safari 26+ compatibility for backdrop coverage */
-    position: relative;
-  }
+body {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: Arial, Helvetica, sans-serif;
+  /* iOS Safari 26+ compatibility for backdrop coverage */
+  position: relative;
 }
 
 @theme inline {

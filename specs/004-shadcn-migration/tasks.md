@@ -54,9 +54,9 @@
 - [X] T015 [US1] Update src/lib/utils.ts to use shadcn/ui cn utility function
 - [X] T016 [US1] Create new barrel export in src/components/ui/index.ts
 - [X] T017 [US1] Update PortfolioSummary.tsx imports to use shadcn/ui components
-- [ ] T018 [US1] Verify visual consistency and adjust styling if needed
-- [ ] T019 [US1] Remove old custom components from src/components/shared/
-- [ ] T020 [US1] Test Portfolio Summary functionality end-to-end
+- [X] T018 [US1] Verify visual consistency and adjust styling if needed
+- [X] T019 [US1] Remove old custom components from src/components/shared/
+- [X] T020 [US1] Test Portfolio Summary functionality end-to-end
 
 **Checkpoint**: Portfolio Summary works with shadcn/ui components, zero regressions
 
@@ -70,14 +70,14 @@
 
 ### Project Structure for User Story 2
 
-- [ ] T021 [P] [US2] Reorganize remaining components into proper directory structure
-- [ ] T022 [P] [US2] Create src/components/shared/ for custom components
-- [ ] T023 [P] [US2] Move feature-specific components to src/components/features/
-- [ ] T024 [US2] Update all import statements throughout frontend/v1/src/
-- [ ] T025 [US2] Create component documentation in src/components/README.md
-- [ ] T026 [US2] Validate shadcn/ui CLI add command works correctly
-- [ ] T027 [US2] Test import resolution for all component types
-- [ ] T028 [US2] Clean up unused files and organize barrel exports
+- [X] T021 [P] [US2] Reorganize remaining components into proper directory structure
+- [X] T022 [P] [US2] Create src/components/shared/ for custom components
+- [X] T023 [P] [US2] Move feature-specific components to src/components/features/
+- [X] T024 [US2] Update all import statements throughout frontend/v1/src/
+- [X] T025 [US2] Create component documentation in src/components/README.md
+- [X] T026 [US2] Validate shadcn/ui CLI add command works correctly
+- [X] T027 [US2] Test import resolution for all component types
+- [X] T028 [US2] Clean up unused files and organize barrel exports
 
 **Checkpoint**: Component organization follows shadcn/ui best practices, CLI fully functional
 
@@ -91,16 +91,16 @@
 
 ### Design System for User Story 3
 
-- [ ] T029 [P] [US3] Define custom color palette in tailwind.config.js
-- [ ] T030 [P] [US3] Create design tokens file src/lib/design-tokens.ts
-- [ ] T031 [P] [US3] Define custom CSS variables for theming
-- [ ] T032 [US3] Create custom component variants extending shadcn/ui
-- [ ] T033 [US3] Implement brand-specific styling wrapper components
-- [ ] T034 [US3] Create design system showcase page
-- [ ] T035 [US3] Document design token usage patterns
-- [ ] T036 [US3] Add design system guidelines to docs/
-- [ ] T037 [US3] Test custom theme inheritance across components
-- [ ] T037.1 [US3] Validate custom theme extension loading and fallback behavior
+- [X] T029 [P] [US3] Define custom color palette in tailwind.config.js
+- [X] T030 [P] [US3] Create design tokens file src/lib/design-tokens.ts
+- [X] T031 [P] [US3] Define custom CSS variables for theming
+- [X] T032 [US3] Create custom component variants extending shadcn/ui
+- [X] T033 [US3] Implement brand-specific styling wrapper components
+- [X] T034 [US3] Create design system showcase page
+- [X] T035 [US3] Document design token usage patterns
+- [X] T036 [US3] Add design system guidelines to docs/
+- [X] T037 [US3] Test custom theme inheritance across components
+- [X] T037.1 [US3] Validate custom theme extension loading and fallback behavior
 
 **Checkpoint**: Design system foundation ready for future customization
 
@@ -110,11 +110,11 @@
 
 **Purpose**: Final validation and project documentation
 
-- [ ] T038 Run full build validation and performance testing
-- [ ] T039 [P] Create migration documentation in docs/shadcn-migration.md
-- [ ] T040 [P] Update project README with new component structure
-- [ ] T041 Validate all success criteria from spec.md are met
-- [ ] T042 Clean up temporary files and backup components
+- [X] T038 Run full build validation and performance testing
+- [X] T039 [P] Create migration documentation in docs/shadcn-migration.md
+- [X] T040 [P] Update project README with new component structure
+- [X] T041 Validate all success criteria from spec.md are met
+- [X] T042 Clean up temporary files and backup components
 
 ---
 

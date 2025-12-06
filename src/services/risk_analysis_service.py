@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, Optional
 
-from ..utils.performance_metrics import (
+from utils.performance_metrics import (
     calculate_sharpe_ratio,
     calculate_sortino_ratio,
     calculate_max_drawdown,

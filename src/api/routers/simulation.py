@@ -4,23 +4,24 @@ Monte Carlo simulation API router.
 Endpoints for running portfolio simulations.
 """
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import Dict
-import pandas as pd
+from fastapi import APIRouter, HTTPException, Depends
+from typing import Union
 from datetime import datetime
-import uuid
 
-from ..schemas.simulation import SimulationRequest, SimulationResponse, TaskStatusResponse
-from ...services.monte_carlo_service import MonteCarloService
-from ...services.storage_adapter import DataStorageAdapter
-from ...repositories.price_data_repository import PriceDataRepository
-from ...domain.simulation import SimulationParameters
+from api.schemas.simulation import SimulationRequest, SimulationResponse, TaskStatusResponse
+from services.monte_carlo_service import MonteCarloService
+from services.storage_adapter import DataStorageAdapter
+from repositories.price_data_repository import PriceDataRepository
+from domain.simulation import SimulationParameters
+from api.auth import get_current_user, User
+from api.tasks import monte_carlo_simulation_task, get_task_status as get_celery_task_status
+from api.exceptions import BusinessLogicError, SimulationError
 
 
 router = APIRouter(prefix="/simulation", tags=["Simulation"])
 
-# In-memory task storage (replace with Redis/Celery in production)
-_task_store: Dict[str, Dict] = {}
+# Threshold for async processing (simulations with more paths will be async)
+ASYNC_THRESHOLD = 1000
 
 
 def get_simulation_service() -> MonteCarloService:
@@ -30,45 +31,9 @@ def get_simulation_service() -> MonteCarloService:
     return MonteCarloService(price_data_repository=price_repo)
 
 
-async def run_simulation_task(task_id: str, params: SimulationParameters):
-    """Background task for running simulation."""
-    try:
-        _task_store[task_id]["status"] = "running"
-        _task_store[task_id]["started_at"] = datetime.utcnow()
-        
-        service = get_simulation_service()
-        results = service.run_simulation(params)
-        
-        # Convert results to response format
-        response = SimulationResponse(
-            median_outcome=results.median_outcome,
-            best_case=results.best_case,
-            worst_case=results.worst_case,
-            percentiles=results.percentiles,
-            probability_of_loss=results.probability_of_loss,
-            expected_return=results.expected_return,
-            expected_volatility=results.expected_volatility,
-            sharpe_ratio=results.sharpe_ratio,
-            max_drawdown=results.max_drawdown,
-            value_at_risk_95=results.value_at_risk_95,
-            simulation_paths=None,  # Omit paths to reduce response size
-            rebalancing_analysis=None
-        )
-        
-        _task_store[task_id]["status"] = "completed"
-        _task_store[task_id]["completed_at"] = datetime.utcnow()
-        _task_store[task_id]["result"] = response
-        
-    except Exception as e:
-        _task_store[task_id]["status"] = "failed"
-        _task_store[task_id]["error"] = str(e)
-        _task_store[task_id]["completed_at"] = datetime.utcnow()
-
-
-@router.post("/monte-carlo", response_model=SimulationResponse | TaskStatusResponse)
+@router.post("/monte-carlo", response_model=Union[SimulationResponse, TaskStatusResponse])
 async def run_monte_carlo_simulation(
-    request: SimulationRequest,
-    background_tasks: BackgroundTasks
+    request: SimulationRequest
 ):
     """
     Run Monte Carlo portfolio simulation.
@@ -87,50 +52,43 @@ async def run_monte_carlo_simulation(
     
     # Validate weights sum to 1
     if abs(sum(request.weights) - 1.0) > 0.01:
-        raise HTTPException(
-            status_code=400,
-            detail="Portfolio weights must sum to 1.0"
-        )
+        raise BusinessLogicError("Portfolio weights must sum to 1.0")
     
     # Validate symbols and weights match
     if len(request.symbols) != len(request.weights):
-        raise HTTPException(
-            status_code=400,
-            detail="Number of symbols must match number of weights"
-        )
+        raise BusinessLogicError("Number of symbols must match number of weights")
     
-    # For large simulations, use background task
-    if request.num_simulations > 1000:
-        task_id = str(uuid.uuid4())
-        _task_store[task_id] = {
-            "task_id": task_id,
-            "status": "pending",
-            "progress": 0.0,
-            "created_at": datetime.utcnow(),
-            "started_at": None,
-            "completed_at": None,
-            "result": None,
-            "error": None
+    # For large simulations, use Celery background task
+    if request.num_simulations > ASYNC_THRESHOLD:
+        # Convert parameters to serializable dict for Celery
+        params_dict = {
+            'symbols': params.symbols,
+            'start_date': params.start_date,
+            'end_date': params.end_date,
+            'num_simulations': params.num_simulations,
+            'time_horizon': params.time_horizon,
+            'initial_investment': params.initial_investment,
+            'risk_free_rate': getattr(params, 'risk_free_rate', 0.02),
+            'confidence_level': getattr(params, 'confidence_level', 0.95),
+            'rebalancing_frequency': getattr(params, 'rebalancing_frequency', 'monthly')
         }
         
-        background_tasks.add_task(run_simulation_task, task_id, params)
+        # Start Celery task
+        task = monte_carlo_simulation_task.delay(params_dict)
         
         return TaskStatusResponse(
-            task_id=task_id,
+            task_id=task.id,
             status="pending",
             progress=0.0,
-            created_at=_task_store[task_id]["created_at"],
-            started_at=None,
-            completed_at=None,
-            result=None,
-            error=None
+            message=f"Monte Carlo simulation queued for {request.num_simulations} paths"
         )
     
-    # For small simulations, run synchronously
+    # For smaller simulations, run synchronously
     try:
         service = get_simulation_service()
         results = service.run_simulation(params)
         
+        # Convert results to response format
         return SimulationResponse(
             median_outcome=results.median_outcome,
             best_case=results.best_case,
@@ -142,27 +100,31 @@ async def run_monte_carlo_simulation(
             sharpe_ratio=results.sharpe_ratio,
             max_drawdown=results.max_drawdown,
             value_at_risk_95=results.value_at_risk_95,
-            simulation_paths=None,
+            simulation_paths=None,  # Omit paths to reduce response size
             rebalancing_analysis=None
         )
+        
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Simulation failed: {str(e)}")
+        raise SimulationError(str(e))
 
 
 @router.get("/tasks/{task_id}", response_model=TaskStatusResponse)
-async def get_task_status(task_id: str):
+async def get_simulation_task_status(task_id: str):
     """Get status of background simulation task."""
-    if task_id not in _task_store:
-        raise HTTPException(status_code=404, detail="Task not found")
-    
-    task = _task_store[task_id]
-    return TaskStatusResponse(
-        task_id=task_id,
-        status=task["status"],
-        progress=task.get("progress", 0.0),
-        created_at=task["created_at"],
-        started_at=task.get("started_at"),
-        completed_at=task.get("completed_at"),
-        result=task.get("result"),
-        error=task.get("error")
-    )
+    try:
+        # Get status from Celery
+        status_info = get_celery_task_status(task_id)
+        
+        return TaskStatusResponse(
+            task_id=task_id,
+            status=status_info.get('state', 'unknown').lower(),
+            progress=status_info.get('current', 0),
+            message=status_info.get('status', 'Task status unknown'),
+            error=status_info.get('error')
+        )
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to get task status: {str(e)}"
+        )

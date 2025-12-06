@@ -4,24 +4,26 @@ Portfolio optimization API router.
 Endpoints for portfolio optimization operations.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 import pandas as pd
 import numpy as np
 from typing import List
 
-from ..schemas.optimization import (
+from api.schemas.optimization import (
     OptimizationRequest,
     OptimizationResponse,
     EfficientFrontierResponse,
     EfficientFrontierPoint,
 )
-from ...services.optimization_service import OptimizationService
-from ...services.storage_adapter import DataStorageAdapter
-from ...repositories.price_data_repository import PriceDataRepository
-from ...domain.optimization import (
+from services.optimization_service import OptimizationService
+from services.storage_adapter import DataStorageAdapter
+from repositories.price_data_repository import PriceDataRepository
+from domain.optimization import (
     OptimizationRequest as DomainOptRequest,
     OptimizationObjective,
 )
+from api.auth import get_current_user, User
+from api.exceptions import BusinessLogicError, InsufficientDataError, InvalidConstraintsError
 
 
 router = APIRouter(prefix="/optimization", tags=["Optimization"])
@@ -42,10 +44,7 @@ async def maximize_sharpe_ratio(request: OptimizationRequest):
     Returns optimal allocation for best risk-adjusted returns.
     """
     if len(request.symbols) < 2:
-        raise HTTPException(
-            status_code=400,
-            detail="Optimization requires at least 2 symbols"
-        )
+        raise BusinessLogicError("Optimization requires at least 2 symbols")
     
     try:
         # Convert to domain request
@@ -82,10 +81,7 @@ async def minimize_volatility(request: OptimizationRequest):
     Returns optimal allocation for lowest risk.
     """
     if len(request.symbols) < 2:
-        raise HTTPException(
-            status_code=400,
-            detail="Optimization requires at least 2 symbols"
-        )
+        raise BusinessLogicError("Optimization requires at least 2 symbols")
     
     try:
         # Convert to domain request
@@ -123,10 +119,7 @@ async def calculate_efficient_frontier(request: OptimizationRequest):
     from minimum volatility to maximum Sharpe ratio.
     """
     if len(request.symbols) < 2:
-        raise HTTPException(
-            status_code=400,
-            detail="Efficient frontier requires at least 2 symbols"
-        )
+        raise BusinessLogicError("Efficient frontier requires at least 2 symbols")
     
     try:
         service = get_optimization_service()

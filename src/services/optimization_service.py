@@ -10,7 +10,7 @@ from scipy.optimize import minimize
 from typing import Optional
 from datetime import datetime, timedelta
 
-from ..domain.optimization import (
+from domain.optimization import (
     OptimizationRequest,
     OptimizationResults,
     OptimizationObjective

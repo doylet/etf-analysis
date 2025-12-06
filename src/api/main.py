@@ -11,13 +11,16 @@ from fastapi.responses import JSONResponse
 import logging
 from datetime import datetime
 
-from .routers import (
+from api.routers import (
     simulation_router,
     optimization_router,
     portfolio_router,
     instruments_router,
     rebalancing_router,
+    tasks_router,
 )
+from api.auth import router as auth_router
+from api.exceptions import exception_handlers
 
 
 # Configure logging
@@ -31,7 +34,7 @@ logger = logging.getLogger(__name__)
 # Create FastAPI application
 app = FastAPI(
     title="ETF Analysis API",
-    description="REST API for portfolio analysis, optimization, and risk metrics",
+    description="REST API for portfolio analysis, optimization, and risk metrics with JWT authentication",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
@@ -43,6 +46,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",  # React dev server
+        "http://localhost:3001",  # NextJS dev server (backup port)
         "http://localhost:5173",  # Vite dev server
         "http://localhost:8501",  # Streamlit app
     ],
@@ -53,11 +57,13 @@ app.add_middleware(
 
 
 # Include API routers
+app.include_router(auth_router, prefix="/api")
 app.include_router(simulation_router, prefix="/api")
 app.include_router(optimization_router, prefix="/api")
 app.include_router(portfolio_router, prefix="/api")
 app.include_router(instruments_router, prefix="/api")
 app.include_router(rebalancing_router, prefix="/api")
+app.include_router(tasks_router, prefix="/api")
 
 
 @app.middleware("http")
@@ -90,11 +96,13 @@ async def root():
         "status": "online",
         "docs": "/docs",
         "endpoints": {
+            "auth": "/api/auth",
             "simulation": "/api/simulation",
             "optimization": "/api/optimization",
             "portfolio": "/api/portfolio",
             "instruments": "/api/instruments",
-            "rebalancing": "/api/rebalancing"
+            "rebalancing": "/api/rebalancing",
+            "tasks": "/api/tasks"
         },
         "timestamp": datetime.now().isoformat()
     }
@@ -109,18 +117,9 @@ async def health_check():
     }
 
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request, exc):
-    """Global exception handler for unhandled errors."""
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "Internal server error",
-            "message": "An unexpected error occurred",
-            "timestamp": datetime.now().isoformat()
-        }
-    )
+# Register exception handlers
+for exception_type, handler in exception_handlers.items():
+    app.add_exception_handler(exception_type, handler)
 
 
 if __name__ == "__main__":

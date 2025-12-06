@@ -4,19 +4,21 @@ Instruments CRUD API router.
 Endpoints for managing tracked financial instruments.
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from typing import List, Optional
 
-from ..schemas.portfolio import (
+from api.schemas.portfolio import (
     InstrumentResponse,
     InstrumentListResponse,
     InstrumentCreateRequest,
     InstrumentUpdateRequest,
     InstrumentTypeEnum,
 )
-from ...services.storage_adapter import DataStorageAdapter
-from ...repositories.instrument_repository import InstrumentRepository
-from ...domain.portfolio import InstrumentDomainModel, InstrumentType
+from services.storage_adapter import DataStorageAdapter
+from repositories.instrument_repository import InstrumentRepository
+from domain.portfolio import InstrumentDomainModel, InstrumentType
+from api.auth import get_current_user, User
+from api.exceptions import ResourceNotFoundError, BusinessLogicError
 
 
 router = APIRouter(prefix="/instruments", tags=["Instruments"])
@@ -33,7 +35,8 @@ async def list_instruments(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     active_only: bool = Query(True, description="Only return active instruments"),
-    search: Optional[str] = Query(None, description="Search by symbol or name")
+    search: Optional[str] = Query(None, description="Search by symbol or name"),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Get paginated list of tracked instruments.
@@ -95,10 +98,7 @@ async def get_instrument(symbol: str):
         instrument = repo.find_by_symbol(symbol.upper())
         
         if not instrument:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Instrument '{symbol}' not found"
-            )
+            raise ResourceNotFoundError("Instrument", symbol)
         
         return InstrumentResponse(
             symbol=instrument.symbol,
@@ -129,10 +129,7 @@ async def create_instrument(request: InstrumentCreateRequest):
         # Check if instrument already exists
         existing = repo.find_by_symbol(request.symbol)
         if existing:
-            raise HTTPException(
-                status_code=409,
-                detail=f"Instrument '{request.symbol}' already exists"
-            )
+            raise BusinessLogicError(f"Instrument '{request.symbol}' already exists", 409)
         
         # Create domain model
         instrument = InstrumentDomainModel(

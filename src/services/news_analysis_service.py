@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict
 
-from ..domain.news import SurpriseEvent, NewsArticle, EventNewsCorrelation, EventType
+from domain.news import SurpriseEvent, NewsArticle, EventNewsCorrelation, EventType
 
 
 class NewsAnalysisService:

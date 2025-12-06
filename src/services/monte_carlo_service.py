@@ -8,9 +8,13 @@ import numpy as np
 import pandas as pd
 from typing import Optional
 from datetime import datetime, timedelta
+import logging
 
-from ..domain.simulation import SimulationParameters, SimulationResults
-from ..domain.rebalancing import RebalancingRecommendation
+from domain.simulation import SimulationParameters, SimulationResults
+from domain.rebalancing import RebalancingRecommendation
+
+
+logger = logging.getLogger(__name__)
 
 
 class MonteCarloService:
@@ -52,11 +56,41 @@ class MonteCarloService:
         Returns:
             SimulationResults with paths, percentiles, and risk metrics
         """
+        # Validate input parameters
+        if not params.symbols or len(params.symbols) == 0:
+            raise ValueError("At least one symbol must be provided")
+            
+        if len(params.weights) != len(params.symbols):
+            raise ValueError("Number of weights must match number of symbols")
+            
+        if abs(sum(params.weights) - 1.0) > 0.01:
+            raise ValueError("Portfolio weights must sum to 1.0")
+            
+        if params.num_simulations <= 0:
+            raise ValueError("Number of simulations must be positive")
+            
+        if params.years <= 0:
+            raise ValueError("Simulation years must be positive")
+        
         # Fetch returns if not provided and repository available
         if returns_df is None:
             if self.price_data_repository is None:
                 raise ValueError("Either returns_df or price_data_repository must be provided")
-            returns_df = self._fetch_returns(params)
+            try:
+                returns_df = self._fetch_returns(params)
+            except Exception as e:
+                logger.error(f"Failed to fetch price data: {e}")
+                raise ValueError(f"Unable to fetch historical price data: {str(e)}")
+                
+        # Validate we have sufficient data
+        min_required_days = 252  # One year of trading days
+        if len(returns_df) < min_required_days:
+            raise ValueError(f"Insufficient historical data. Required: {min_required_days} days, Available: {len(returns_df)} days")
+            
+        # Validate all symbols exist in the data
+        missing_symbols = [symbol for symbol in params.symbols if symbol not in returns_df.columns]
+        if missing_symbols:
+            raise ValueError(f"Missing price data for symbols: {missing_symbols}")
         
         # 1. Estimate parameters from historical data
         weights = np.array(params.weights)
@@ -101,7 +135,7 @@ class MonteCarloService:
             )
             
             # Add contribution at specified intervals
-            if params.enable_contributions and t % contrib_interval == 0:
+            if params.contribution_amount > 0 and t % contrib_interval == 0:
                 # Prorate contribution based on frequency
                 if params.contribution_frequency == "Monthly":
                     periodic_contrib = params.contribution_amount / 12
@@ -121,7 +155,7 @@ class MonteCarloService:
         
         percentiles = {}
         for pct in [5, 10, lower_pct, 25, 40, 50, 60, 75, upper_pct, 90, 95]:
-            percentiles[pct] = np.percentile(paths, pct, axis=0)
+            percentiles[f"p{pct}"] = np.percentile(paths, pct, axis=0).tolist()  # Convert to list for JSON serialization
         
         final_values = paths[:, -1]
         
@@ -131,15 +165,15 @@ class MonteCarloService:
         cvar_95 = np.mean(worst_5_percent) if len(worst_5_percent) > 0 else var_95
         
         # Calculate max drawdown for median path
-        median_path = percentiles[50]
+        median_path = np.array(percentiles["p50"])
         cumulative_max = np.maximum.accumulate(median_path)
         drawdowns = (median_path - cumulative_max) / cumulative_max
         max_drawdown_median = np.min(drawdowns) * 100  # As percentage
         
         # Calculate CAGR for different percentiles
-        cagr_median = ((percentiles[50][-1] / params.initial_value) ** (1/params.years) - 1) * 100
-        cagr_10th = ((percentiles[lower_pct][-1] / params.initial_value) ** (1/params.years) - 1) * 100
-        cagr_90th = ((percentiles[upper_pct][-1] / params.initial_value) ** (1/params.years) - 1) * 100
+        cagr_median = ((percentiles["p50"][-1] / params.initial_value) ** (1/params.years) - 1) * 100
+        cagr_10th = ((percentiles[f"p{lower_pct}"][-1] / params.initial_value) ** (1/params.years) - 1) * 100
+        cagr_90th = ((percentiles[f"p{upper_pct}"][-1] / params.initial_value) ** (1/params.years) - 1) * 100
         
         # 5. Rebalancing analysis (if enabled)
         rebalancing_dates = None
@@ -159,19 +193,20 @@ class MonteCarloService:
             rebalancing_dates = rebalancing_rec.rebalance_dates if rebalancing_rec else None
         
         return SimulationResults(
-            paths=paths,
-            time_points=time_points,
+            paths=paths.tolist(),  # Convert numpy array to list
+            time_points=time_points.tolist(),  # Convert numpy array to list
             percentiles=percentiles,
-            final_values=final_values,
-            var_95=var_95,
-            cvar_95=cvar_95,
-            max_drawdown_median=max_drawdown_median,
-            cagr_median=cagr_median,
-            cagr_10th=cagr_10th,
-            cagr_90th=cagr_90th,
-            historical_sharpe=historical_sharpe,
-            historical_volatility=sigma,
-            rebalancing_dates=rebalancing_dates
+            final_values=final_values.tolist(),  # Convert numpy array to list
+            var_95=float(var_95),
+            cvar_95=float(cvar_95),
+            max_drawdown_median=float(max_drawdown_median),
+            cagr_median=float(cagr_median),
+            cagr_5th=float(cagr_10th),  # Map 10th percentile to 5th for compatibility
+            cagr_95th=float(cagr_90th),  # Map 90th percentile to 95th for compatibility
+            historical_sharpe=float(historical_sharpe),
+            historical_volatility=float(sigma),
+            rebalancing_dates=rebalancing_dates,
+            parameters=params  # Include the parameters used
         )
     
     @staticmethod

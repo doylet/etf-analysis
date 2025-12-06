@@ -8,9 +8,9 @@ from typing import List, Dict
 from datetime import datetime
 import pandas as pd
 
-from ..domain.portfolio import PriceHistory
-from ..services.storage_adapter import DataStorageAdapter
-from ..utils.performance_metrics import calculate_returns
+from domain.portfolio import PriceHistory
+from services.storage_adapter import DataStorageAdapter
+from utils.performance_metrics import calculate_returns
 
 
 class PriceDataRepository:

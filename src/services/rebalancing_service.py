@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Optional
 
-from ..domain.rebalancing import RebalancingRecommendation
+from domain.rebalancing import RebalancingRecommendation
 
 
 class RebalancingService:
@@ -164,7 +164,12 @@ class RebalancingService:
             sharpe_improvement=sharpe_improvement,
             total_transaction_costs=total_transaction_costs,
             instruments_to_rebalance=[],  # Will be populated by higher-level logic if needed
-            portfolio_value_at_dates=portfolio_value_at_dates
+            portfolio_value_at_dates=portfolio_value_at_dates,
+            analysis_period={
+                "start": start_date,
+                "end": start_date + timedelta(days=int(years * 365))
+            },
+            max_rebalances_per_year=max_rebalances_per_year
         )
     
     def _fetch_returns(self, symbols: list) -> pd.DataFrame:

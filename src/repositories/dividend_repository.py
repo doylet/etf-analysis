@@ -8,7 +8,7 @@ from typing import List, Dict
 from datetime import datetime
 import pandas as pd
 
-from ..services.storage_adapter import DataStorageAdapter
+from services.storage_adapter import DataStorageAdapter
 
 
 class DividendRepository:

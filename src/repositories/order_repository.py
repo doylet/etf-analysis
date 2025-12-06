@@ -7,8 +7,8 @@ Wraps DataStorageAdapter to provide domain-focused API returning OrderRecord.
 from typing import List, Dict
 from datetime import datetime
 
-from ..domain.portfolio import OrderRecord, OrderType
-from ..services.storage_adapter import DataStorageAdapter
+from domain.portfolio import OrderRecord, OrderType
+from services.storage_adapter import DataStorageAdapter
 
 
 class OrderRepository:

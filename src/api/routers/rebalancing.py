@@ -4,18 +4,19 @@ Rebalancing analysis API router.
 Endpoints for portfolio rebalancing recommendations.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 import numpy as np
 from datetime import datetime
 
-from ..schemas.rebalancing import (
+from api.schemas.rebalancing import (
     RebalancingRequest,
     RebalancingResponse,
     InstrumentRebalanceAction,
 )
-from ...services.rebalancing_service import RebalancingService
-from ...services.storage_adapter import DataStorageAdapter
-from ...repositories.price_data_repository import PriceDataRepository
+from services.rebalancing_service import RebalancingService
+from services.storage_adapter import DataStorageAdapter
+from repositories.price_data_repository import PriceDataRepository
+from api.auth import get_current_user, User
 
 
 router = APIRouter(prefix="/rebalancing", tags=["Rebalancing"])

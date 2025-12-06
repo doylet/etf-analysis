@@ -86,24 +86,24 @@
 
 ### Tests for User Story 1
 
-- [ ] T025 [P] [US1] Unit test `MonteCarloService.run_simulation()` in `tests/unit/test_monte_carlo_service.py`
+- [X] T025 [P] [US1] Unit test `MonteCarloService.run_simulation()` in `tests/unit/test_monte_carlo_service.py`
   - Test with synthetic returns data (3 symbols, 252 days)
   - Verify SimulationResults structure, percentiles in order, paths shape correct
   - Test validation: negative years, weights not summing to 1.0
   - Mock storage adapter if needed
   - Target: 80%+ coverage
-- [ ] T026 [P] [US1] Unit test `RebalancingService.analyze_timing()` in `tests/unit/test_rebalancing_service.py`
+- [X] T026 [P] [US1] Unit test `RebalancingService.analyze_timing()` in `tests/unit/test_rebalancing_service.py`
   - Test drift detection with known asset price paths
   - Verify rebalance dates identified correctly
   - Test max_rebalances_per_year constraint
-- [ ] T027 [P] [US1] Unit test `OptimizationService` in `tests/unit/test_optimization_service.py`
+- [X] T027 [P] [US1] Unit test `OptimizationService` in `tests/unit/test_optimization_service.py`
   - Test max Sharpe, min volatility, efficient frontier
   - Verify weights sum to 1.0, constraints respected
   - Test with 5 symbols, 2 years of synthetic data
-- [ ] T028 [P] [US1] Unit test `RiskAnalysisService` in `tests/unit/test_risk_analysis_service.py`
+- [X] T028 [P] [US1] Unit test `RiskAnalysisService` in `tests/unit/test_risk_analysis_service.py`
   - Test each risk metric function with known returns
   - Verify calculations match expected values (known Sharpe, VaR, etc.)
-- [ ] T029 [P] [US1] Unit test `NewsAnalysisService` in `tests/unit/test_news_analysis_service.py`
+- [X] T029 [P] [US1] Unit test `NewsAnalysisService` in `tests/unit/test_news_analysis_service.py`
   - Test event detection with synthetic volatility spike
   - Test correlation scoring with mock news data
 
@@ -245,25 +245,25 @@
 - [X] T052 [US2] Implement rebalancing router in `src/api/routers/rebalancing.py`
   - `POST /api/rebalancing/analyze` - Accepts drift threshold, returns RebalancingRecommendation
   - Use `RebalancingService` from dependency injection
-- [ ] T053 [US2] Implement tasks router in `src/api/routers/tasks.py`
+- [X] T053 [US2] Implement tasks router in `src/api/routers/tasks.py`
   - `GET /api/tasks/{task_id}` - Returns task status (pending/running/completed/failed)
   - `GET /api/tasks/{task_id}/result` - Returns task result if completed
   - Query Celery task status
 
 ### API Infrastructure for User Story 2
 
-- [ ] T054 [US2] Implement JWT authentication endpoints in `src/api/auth.py`
+- [X] T054 [US2] Implement JWT authentication endpoints in `src/api/auth.py`
   - `POST /api/auth/login` - Accepts credentials, returns JWT token
   - `POST /api/auth/refresh` - Refreshes expired token
   - Create authentication dependency for protecting routes
-- [ ] T055 [US2] Add authentication to protected routes
+- [X] T055 [US2] Add authentication to protected routes
   - Apply `Depends(get_current_user)` to all endpoints except `/docs`, `/health`, `/auth/*`
   - Return 401 Unauthorized for invalid/missing tokens
-- [ ] T056 [US2] Implement Celery task for long-running Monte Carlo simulations
+- [X] T056 [US2] Implement Celery task for long-running Monte Carlo simulations
   - Task definition in `src/api/tasks.py`
   - Accepts SimulationParameters, runs MonteCarloService, stores result
   - Updates task progress for status endpoint
-- [ ] T057 [US2] Configure API error handling and validation
+- [X] T057 [US2] Configure API error handling and validation
   - 422 Unprocessable Entity for Pydantic validation errors
   - 400 Bad Request for business logic errors (insufficient data, invalid constraints)
   - 404 Not Found for missing resources
@@ -275,30 +275,30 @@
 
 ### Tests for User Story 2
 
-- [ ] T059 [P] [US2] API integration test for simulation endpoint in `tests/integration/test_api_simulation.py`
+- [X] T059 [P] [US2] API integration test for simulation endpoint in `tests/integration/test_api_simulation.py`
   - Test `POST /api/simulation/monte-carlo` with valid parameters
   - Verify 200 response with SimulationResults
   - Test async task creation for large simulations (>5000 iterations)
   - Test task status polling with `GET /api/tasks/{task_id}`
   - Use httpx.AsyncClient for testing
-- [ ] T060 [P] [US2] API integration test for optimization endpoints in `tests/integration/test_api_optimization.py`
+- [X] T060 [P] [US2] API integration test for optimization endpoints in `tests/integration/test_api_optimization.py`
   - Test max Sharpe, min volatility, efficient frontier endpoints
   - Verify optimal weights returned
   - Test with 5 symbols
-- [ ] T061 [P] [US2] API integration test for portfolio endpoints in `tests/integration/test_api_portfolio.py`
+- [X] T061 [P] [US2] API integration test for portfolio endpoints in `tests/integration/test_api_portfolio.py`
   - Test `GET /api/portfolio/summary`
   - Test `GET /api/portfolio/holdings`
   - Verify PortfolioSummary structure
-- [ ] T062 [P] [US2] API integration test for instruments CRUD in `tests/integration/test_api_instruments.py`
+- [X] T062 [P] [US2] API integration test for instruments CRUD in `tests/integration/test_api_instruments.py`
   - Test GET, POST, PATCH, DELETE for instruments
   - Test pagination on list endpoint
   - Test search functionality
-- [ ] T063 [P] [US2] API authentication tests in `tests/integration/test_api_auth.py`
+- [X] T063 [P] [US2] API authentication tests in `tests/integration/test_api_auth.py`
   - Test login with valid credentials returns JWT
   - Test protected endpoints reject missing/invalid tokens (401)
   - Test token refresh
   - Test expired token handling
-- [ ] T064 [P] [US2] API validation tests in `tests/integration/test_api_validation.py`
+- [X] T064 [P] [US2] API validation tests in `tests/integration/test_api_validation.py`
   - Test 422 responses for invalid request bodies
   - Test clear validation error messages (negative years, invalid symbols, weights sum ≠ 1.0)
 
@@ -338,21 +338,21 @@
 
 ### Tests for User Story 5
 
-- [ ] T070 [P] [US5] Regression test for Monte Carlo widget in `tests/regression/test_widget_parity.py`
+- [X] T070 [P] [US5] Regression test for Monte Carlo widget in `tests/regression/test_widget_parity.py`
   - Run widget with `USE_NEW_SERVICE_LAYER=False` (old implementation)
   - Run widget with `USE_NEW_SERVICE_LAYER=True` (new service layer)
   - Compare outputs: percentiles, final values, risk metrics
   - Assert byte-identical results (or within floating-point tolerance)
   - Save known-good outputs in `tests/regression/fixtures/monte_carlo_baseline.json`
-- [ ] T071 [P] [US5] Regression test for Optimization widget in `tests/regression/test_widget_parity.py`
+- [X] T071 [P] [US5] Regression test for Optimization widget in `tests/regression/test_widget_parity.py`
   - Compare old vs new optimal weights for max Sharpe
   - Compare efficient frontier points
   - Assert identical results
-- [ ] T072 [P] [US5] Regression test for all 15 widgets in `tests/regression/test_all_widgets.py`
+- [X] T072 [P] [US5] Regression test for all 15 widgets in `tests/regression/test_all_widgets.py`
   - Automated test loading each widget
   - Verify no import errors when flag toggled
   - Verify UI renders without errors (using Streamlit testing utilities if available)
-- [ ] T073 [US5] End-to-end Streamlit app test with compatibility layer
+- [X] T073 [US5] End-to-end Streamlit app test with compatibility layer
   - Launch Streamlit app with `USE_NEW_SERVICE_LAYER=True`
   - Manually test 5 core widgets: Portfolio Summary, Holdings Breakdown, Monte Carlo, Optimizer, News Analysis
   - Verify all features work identically
@@ -370,7 +370,7 @@
 
 ### Frontend Setup for User Story 6
 
-- [ ] T074 [US6] Initialize React/Vue/Svelte frontend project in `frontend/`
+- [X] T074 [US6] Initialize React/Vue/Svelte frontend project in `frontend/`
   - Run `npm create vite@latest frontend -- --template react-ts` (or Vue/Svelte equivalent)
   - Install dependencies: axios/fetch, chart.js/recharts for visualizations, react-router-dom
   - Configure `vite.config.js` with API proxy to `localhost:8000/api`

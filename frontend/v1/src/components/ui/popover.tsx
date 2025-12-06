@@ -27,6 +27,7 @@ const PopoverContent = React.forwardRef<
 PopoverContent.displayName = PopoverPrimitive.Content.displayName
 
 // Temporary compatibility layer for NotificationPopover
+// TODO: Implement full functionality with action handlers
 export interface NotificationItem {
   id: string;
   title: string;

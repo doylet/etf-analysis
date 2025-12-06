@@ -6,6 +6,7 @@ import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 
 // Temporarily disabled due to network issues during build
+// TODO: Re-enable when network access is available or use local font files
 // const geistSans = Geist({
 //   variable: "--font-geist-sans",
 //   subsets: ["latin"],

@@ -23,10 +23,10 @@ export default function DashboardPage() {
         {/* Placeholder for Holdings */}
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Holdings</h3>
+            <h3 className="text-lg font-semibold text-foreground">Holdings</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               Holdings component coming soon...
             </p>
           </CardContent>
@@ -35,10 +35,10 @@ export default function DashboardPage() {
         {/* Placeholder for Performance Chart */}
         <Card>
           <CardHeader>
-            <h3 className="text-lg font-semibold text-gray-900">Performance</h3>
+            <h3 className="text-lg font-semibold text-foreground">Performance</h3>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500 text-center py-8">
+            <p className="text-muted-foreground text-center py-8">
               Performance chart coming soon...
             </p>
           </CardContent>

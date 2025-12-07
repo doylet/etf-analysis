@@ -17,11 +17,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
     <div className={`mb-6 ${className}`}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
             {title}
           </h1>
           {description && (
-            <p className="mt-1 text-sm text-gray-500 sm:text-base">
+            <p className="mt-1 text-sm text-muted-foreground sm:text-base">
               {description}
             </p>
           )}

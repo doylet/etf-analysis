@@ -89,7 +89,7 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-md">
+              <div className="flex items-center space-x-2 text-financial-negative bg-financial-negative-subtle p-3 rounded-md">
                 <AlertCircle className="h-4 w-4" />
                 <span className="text-sm">{error}</span>
               </div>

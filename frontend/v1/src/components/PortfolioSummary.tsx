@@ -4,10 +4,10 @@ import { TrendingUp, TrendingDown, DollarSign, PieChart, XCircle } from 'lucide-
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { MetricCard } from '@/components/ui/metric-card';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
 
-// Simple utility functions
+// Utility functions
 const formatCurrency = (amount: number | undefined | null): string => {
   if (amount === undefined || amount === null || isNaN(amount)) {
     return '$0.00';
@@ -25,11 +25,11 @@ const formatPercent = (value: number | undefined | null): string => {
   return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
 };
 
-const isPositiveChange = (value: number | undefined | null): boolean => {
+const determineMetricTrend = (value: number | undefined | null): 'positive' | 'negative' | 'neutral' => {
   if (value === undefined || value === null || isNaN(value)) {
-    return false;
+    return 'neutral';
   }
-  return value >= 0;
+  return value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral';
 };
 
 export default function PortfolioSummaryComponent() {
@@ -45,14 +45,13 @@ export default function PortfolioSummaryComponent() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <Skeleton className="h-4 w-[80px]" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-                <Skeleton className="h-8 w-[100px]" />
-                <Skeleton className="h-4 w-[60px]" />
-              </div>
+              <MetricCard
+                key={i}
+                title="Loading..."
+                value="$0.00"
+                loading
+                variant="default"
+              />
             ))}
           </div>
         </CardContent>
@@ -77,32 +76,32 @@ export default function PortfolioSummaryComponent() {
       title: 'Total Value',
       value: formatCurrency(summary.total_value),
       icon: DollarSign,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      variant: 'highlighted' as const,
+      trend: 'neutral' as const,
     },
     {
       title: 'Total Return',
       value: formatCurrency(summary.total_return),
       subtitle: formatPercent(summary.total_return_percent),
-      icon: isPositiveChange(summary.total_return) ? TrendingUp : TrendingDown,
-      color: isPositiveChange(summary.total_return) ? 'text-green-600' : 'text-red-600',
-      bgColor: isPositiveChange(summary.total_return) ? 'bg-green-50' : 'bg-red-50',
+      icon: summary.total_return >= 0 ? TrendingUp : TrendingDown,
+      variant: 'default' as const,
+      trend: determineMetricTrend(summary.total_return),
     },
     {
       title: 'Day Change',
       value: formatCurrency(summary.day_change),
       subtitle: formatPercent(summary.day_change_percent),
-      icon: isPositiveChange(summary.day_change) ? TrendingUp : TrendingDown,
-      color: isPositiveChange(summary.day_change) ? 'text-green-600' : 'text-red-600',
-      bgColor: isPositiveChange(summary.day_change) ? 'bg-green-50' : 'bg-red-50',
+      icon: summary.day_change >= 0 ? TrendingUp : TrendingDown,
+      variant: 'default' as const,
+      trend: determineMetricTrend(summary.day_change),
     },
     {
       title: 'Positions',
       value: (summary.positions ?? 0).toString(),
       subtitle: `${formatCurrency(summary.allocated_cash || summary.cash)} cash`,
       icon: PieChart,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
+      variant: 'subtle' as const,
+      trend: 'neutral' as const,
     },
   ];
 
@@ -115,29 +114,17 @@ export default function PortfolioSummaryComponent() {
       
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {metrics.map((metric, index) => {
-            const Icon = metric.icon;
-            return (
-              <div
-                key={index}
-                className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-muted-foreground">{metric.title}</h3>
-                  <div className={cn('p-2 rounded-lg', metric.bgColor)}>
-                    <Icon className={cn('h-4 w-4', metric.color)} />
-                  </div>
-                </div>
-                
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold text-foreground">{metric.value}</p>
-                  {metric.subtitle && (
-                    <p className={cn('text-sm', metric.color)}>{metric.subtitle}</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {metrics.map((metric, index) => (
+            <MetricCard
+              key={index}
+              title={metric.title}
+              value={metric.value}
+              subtitle={metric.subtitle}
+              icon={metric.icon}
+              variant={metric.variant}
+              trend={metric.trend}
+            />
+          ))}
         </div>
       </CardContent>
     </Card>

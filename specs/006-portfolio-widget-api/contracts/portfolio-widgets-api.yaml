@@ -1,0 +1,690 @@
+openapi: 3.0.3
+info:
+  title: Portfolio Widget API
+  description: REST API endpoints for portfolio analysis widgets
+  version: 1.0.0
+  contact:
+    name: ETF Analysis Team
+    email: support@etf-analysis.com
+
+servers:
+  - url: http://localhost:8000/api
+    description: Local development server
+  - url: https://api.etf-analysis.com/api  
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /widgets/portfolio/summary:
+    get:
+      summary: Get portfolio performance summary
+      description: Returns comprehensive portfolio performance metrics including returns, ratios, and risk measures
+      tags:
+        - Portfolio Widgets
+      parameters:
+        - name: period_days
+          in: query
+          description: Historical period for calculations in days
+          required: false
+          schema:
+            type: integer
+            minimum: 30
+            maximum: 3650
+            default: 365
+        - name: benchmark_symbol
+          in: query
+          description: Benchmark symbol for comparison
+          required: false
+          schema:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+            default: 'SPY'
+        - name: include_risk_metrics
+          in: query
+          description: Include detailed risk analysis
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Portfolio summary data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetResponse'
+              examples:
+                successful_response:
+                  value:
+                    success: true
+                    data:
+                      total_value: 125000.50
+                      total_return: 15000.50
+                      total_return_percent: 13.64
+                      day_change: 450.25
+                      day_change_percent: 0.36
+                      positions_count: 12
+                      cash: 5000.00
+                      sharpe_ratio: 1.45
+                      max_drawdown: -12.5
+                      volatility: 15.3
+                    metadata:
+                      widget_id: "portfolio_summary"
+                      calculation_time: 0.234
+                      data_quality: 0.95
+                      cache_status: "HIT"
+                    warnings: []
+                    errors: []
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /widgets/portfolio/holdings-breakdown:
+    post:
+      summary: Analyze portfolio holdings breakdown
+      description: Returns portfolio allocation breakdown by sector, geography, or asset class
+      tags:
+        - Portfolio Widgets
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HoldingsBreakdownRequest'
+            examples:
+              sector_breakdown:
+                value:
+                  breakdown_type: "SECTOR"
+                  min_allocation: 1.0
+              geography_breakdown:
+                value:
+                  breakdown_type: "GEOGRAPHY"
+                  min_allocation: 2.0
+      responses:
+        '200':
+          description: Holdings breakdown data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/HoldingsBreakdownData'
+              examples:
+                sector_breakdown:
+                  value:
+                    success: true
+                    data:
+                      breakdown_type: "SECTOR"
+                      allocations:
+                        - category: "Technology"
+                          value: 45000.00
+                          percentage: 36.0
+                          symbols: ["AAPL", "MSFT", "GOOGL"]
+                        - category: "Healthcare"
+                          value: 25000.00
+                          percentage: 20.0
+                          symbols: ["JNJ", "PFE"]
+                        - category: "Financial"
+                          value: 18750.00
+                          percentage: 15.0
+                          symbols: ["JPM", "BAC"]
+                      concentration_risk: false
+                      diversification_score: 0.78
+                    metadata:
+                      widget_id: "holdings_breakdown"
+                      calculation_time: 0.156
+                      data_quality: 0.98
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /widgets/portfolio/correlation-matrix:
+    post:
+      summary: Calculate correlation matrix
+      description: Analyze correlations between portfolio holdings and benchmarks
+      tags:
+        - Advanced Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrelationMatrixRequest'
+      responses:
+        '200':
+          description: Correlation matrix data
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CorrelationMatrixData'
+
+  /widgets/simulation/monte-carlo:
+    post:
+      summary: Run Monte Carlo portfolio simulation
+      description: Performs Monte Carlo simulation for portfolio future performance
+      tags:
+        - Advanced Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonteCarloRequest'
+      responses:
+        '200':
+          description: Monte Carlo simulation results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MonteCarloData'
+        '202':
+          description: Simulation started asynchronously
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AsyncTaskResponse'
+
+  /widgets/optimization/efficient-frontier:
+    post:
+      summary: Calculate efficient frontier
+      description: Optimize portfolio allocation for risk/return efficiency
+      tags:
+        - Advanced Analytics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptimizationRequest'
+      responses:
+        '200':
+          description: Optimization results
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/OptimizationData'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    WidgetResponse:
+      type: object
+      required:
+        - success
+        - data
+        - metadata
+      properties:
+        success:
+          type: boolean
+          description: Whether the request was successful
+        data:
+          type: object
+          description: Widget calculation results
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Non-critical issues with calculations
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ErrorDetail'
+          description: Error details if success is false
+
+    ResponseMetadata:
+      type: object
+      required:
+        - widget_id
+        - calculation_time
+        - data_quality
+      properties:
+        widget_id:
+          type: string
+          description: Identifier of the widget that generated this response
+        calculation_time:
+          type: number
+          format: float
+          description: Time taken to compute results in seconds
+        data_quality:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Data quality score (0-1)
+        cache_status:
+          type: string
+          enum: [HIT, MISS, BYPASS]
+          description: Cache status for this request
+        generated_at:
+          type: string
+          format: date-time
+          description: Timestamp when results were generated
+
+    HoldingsBreakdownRequest:
+      type: object
+      required:
+        - breakdown_type
+      properties:
+        breakdown_type:
+          type: string
+          enum: [SECTOR, GEOGRAPHY, ASSET_CLASS, SIZE]
+          description: Type of breakdown analysis
+        min_allocation:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          default: 1.0
+          description: Minimum allocation percentage to display
+
+    HoldingsBreakdownData:
+      type: object
+      required:
+        - breakdown_type
+        - allocations
+        - concentration_risk
+        - diversification_score
+      properties:
+        breakdown_type:
+          type: string
+          enum: [SECTOR, GEOGRAPHY, ASSET_CLASS, SIZE]
+        allocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllocationItem'
+        concentration_risk:
+          type: boolean
+          description: Whether portfolio has concerning concentration
+        diversification_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Portfolio diversification score
+
+    AllocationItem:
+      type: object
+      required:
+        - category
+        - value
+        - percentage
+      properties:
+        category:
+          type: string
+          description: Category name (e.g., "Technology", "North America")
+        value:
+          type: number
+          format: float
+          description: Absolute value allocated to this category
+        percentage:
+          type: number
+          format: float
+          description: Percentage of total portfolio
+        symbols:
+          type: array
+          items:
+            type: string
+          description: Symbols included in this category
+
+    CorrelationMatrixRequest:
+      type: object
+      properties:
+        period_days:
+          type: integer
+          minimum: 60
+          maximum: 2520
+          default: 252
+          description: Analysis period in trading days
+        benchmark_symbols:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          maxItems: 10
+          description: Additional benchmark symbols to include
+        correlation_threshold:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.7
+          description: Minimum correlation to highlight
+
+    CorrelationMatrixData:
+      type: object
+      required:
+        - correlation_matrix
+        - symbols
+      properties:
+        correlation_matrix:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: float
+          description: 2D correlation matrix
+        symbols:
+          type: array
+          items:
+            type: string
+          description: Symbol names corresponding to matrix rows/columns
+        high_correlations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorrelationPair'
+          description: Pairs with correlations above threshold
+
+    CorrelationPair:
+      type: object
+      required:
+        - symbol1
+        - symbol2
+        - correlation
+      properties:
+        symbol1:
+          type: string
+        symbol2:
+          type: string
+        correlation:
+          type: number
+          format: float
+          minimum: -1
+          maximum: 1
+
+    MonteCarloRequest:
+      type: object
+      required:
+        - iterations
+        - years
+      properties:
+        iterations:
+          type: integer
+          minimum: 100
+          maximum: 10000
+          default: 1000
+          description: Number of simulation iterations
+        years:
+          type: number
+          format: float
+          minimum: 0.1
+          maximum: 50
+          default: 1
+          description: Simulation time horizon in years
+        confidence_levels:
+          type: array
+          items:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 1
+          default: [0.05, 0.25, 0.5, 0.75, 0.95]
+          description: Percentiles to calculate
+
+    MonteCarloData:
+      type: object
+      required:
+        - percentiles
+        - final_values
+        - statistics
+      properties:
+        percentiles:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+          description: Portfolio value percentiles
+        final_values:
+          type: array
+          items:
+            type: number
+            format: float
+          description: All simulation final values
+        statistics:
+          $ref: '#/components/schemas/SimulationStatistics'
+        time_series:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              percentiles:
+                type: object
+                additionalProperties:
+                  type: number
+
+    SimulationStatistics:
+      type: object
+      properties:
+        expected_value:
+          type: number
+          format: float
+        standard_deviation:
+          type: number
+          format: float
+        probability_of_loss:
+          type: number
+          format: float
+        maximum_drawdown:
+          type: number
+          format: float
+
+    OptimizationRequest:
+      type: object
+      properties:
+        target_return:
+          type: number
+          format: float
+          description: Target annual return (optional)
+        risk_tolerance:
+          type: string
+          enum: [CONSERVATIVE, MODERATE, AGGRESSIVE]
+          default: MODERATE
+        candidate_symbols:
+          type: array
+          items:
+            type: string
+            pattern: '^[A-Z]{1,5}$'
+          maxItems: 50
+          description: Universe of symbols for optimization
+        constraints:
+          $ref: '#/components/schemas/OptimizationConstraints'
+
+    OptimizationConstraints:
+      type: object
+      properties:
+        max_weight_per_asset:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.4
+        min_weight_per_asset:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          default: 0.01
+        sector_constraints:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              min_weight:
+                type: number
+                format: float
+              max_weight:
+                type: number
+                format: float
+
+    OptimizationData:
+      type: object
+      required:
+        - optimal_weights
+        - expected_return
+        - expected_risk
+        - sharpe_ratio
+      properties:
+        optimal_weights:
+          type: object
+          additionalProperties:
+            type: number
+            format: float
+          description: Optimal portfolio weights by symbol
+        expected_return:
+          type: number
+          format: float
+          description: Expected annual return
+        expected_risk:
+          type: number
+          format: float
+          description: Expected annual volatility
+        sharpe_ratio:
+          type: number
+          format: float
+          description: Expected Sharpe ratio
+        efficient_frontier:
+          type: array
+          items:
+            type: object
+            properties:
+              risk:
+                type: number
+                format: float
+              return:
+                type: number
+                format: float
+
+    AsyncTaskResponse:
+      type: object
+      required:
+        - task_id
+        - status
+      properties:
+        task_id:
+          type: string
+          description: Unique identifier for tracking the task
+        status:
+          type: string
+          enum: [PENDING, RUNNING]
+          description: Current task status
+        estimated_duration:
+          type: integer
+          description: Estimated completion time in seconds
+        status_url:
+          type: string
+          description: URL to check task status
+
+    ErrorDetail:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum: [INSUFFICIENT_DATA, INVALID_PARAMETERS, CALCULATION_TIMEOUT, DATA_QUALITY_LOW]
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: string
+          description: Technical error details
+        suggested_action:
+          type: string
+          description: Suggested user action to resolve the error
+
+  responses:
+    BadRequest:
+      description: Invalid request parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid parameters provided"
+              details:
+                type: string
+
+    Unauthorized:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Authentication required"
+
+    ValidationError:
+      description: Request body validation failed
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Validation error"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Internal server error"
+              request_id:
+                type: string
+
+tags:
+  - name: Portfolio Widgets
+    description: Basic portfolio analysis widgets
+  - name: Advanced Analytics  
+    description: Complex portfolio analysis and optimization

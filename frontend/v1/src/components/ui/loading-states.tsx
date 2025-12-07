@@ -116,10 +116,10 @@ const LoadingTable = React.forwardRef<HTMLDivElement, LoadingTableProps>(
         className={cn("w-full animate-pulse", className)}
       >
         {showHeader && (
-          <div className="grid gap-4 pb-4 border-b border-gray-200 mb-4"
+          <div className="grid gap-4 pb-4 border-b border-border mb-4"
                style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}>
             {Array.from({ length: columns }).map((_, i) => (
-              <div key={i} className="h-4 bg-gray-200 rounded"></div>
+              <div key={i} className="h-4 bg-muted rounded"></div>
             ))}
           </div>
         )}
@@ -135,7 +135,7 @@ const LoadingTable = React.forwardRef<HTMLDivElement, LoadingTableProps>(
                   key={colIndex}
                   className={cn(
                     "h-4 rounded",
-                    colIndex === 0 ? "bg-gray-200" : "bg-gray-100"
+                    colIndex === 0 ? "bg-muted" : "bg-muted/60"
                   )}
                 ></div>
               ))}
@@ -169,16 +169,16 @@ export const LoadingMetricCard = React.forwardRef<HTMLDivElement, { className?: 
     <div
       ref={ref}
       className={cn(
-        "p-4 bg-white rounded-lg border border-gray-200 shadow-sm animate-pulse",
+        "p-4 bg-card rounded-lg border border-border shadow-sm animate-pulse",
         className
       )}
     >
       <div className="space-y-3">
-        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-        <div className="h-8 bg-gray-100 rounded w-3/4"></div>
+        <div className="h-3 bg-muted rounded w-1/2"></div>
+        <div className="h-8 bg-muted/60 rounded w-3/4"></div>
         <div className="flex items-center space-x-2">
-          <div className="h-3 bg-gray-200 rounded w-8"></div>
-          <div className="h-3 bg-green-200 rounded w-12"></div>
+          <div className="h-3 bg-muted rounded w-8"></div>
+          <div className="h-3 bg-accent/60 rounded w-12"></div>
         </div>
       </div>
     </div>
@@ -192,15 +192,15 @@ export const LoadingChart = React.forwardRef<HTMLDivElement, { className?: strin
     <div
       ref={ref}
       className={cn(
-        "p-6 bg-white rounded-lg border border-gray-200 shadow-sm",
+        "p-6 bg-card rounded-lg border border-border shadow-sm",
         className
       )}
     >
       <div className="animate-pulse">
-        <div className="h-5 bg-gray-200 rounded w-1/4 mb-4"></div>
-        <div className="h-64 bg-gradient-to-t from-gray-100 to-gray-50 rounded relative overflow-hidden">
-          <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-blue-100 rounded-t"></div>
-          <div className="absolute top-1/2 left-1/4 w-1/2 h-1/4 bg-green-100 rounded"></div>
+        <div className="h-5 bg-muted rounded w-1/4 mb-4"></div>
+        <div className="h-64 bg-gradient-to-t from-muted/40 to-muted/20 rounded relative overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-primary/20 rounded-t"></div>
+          <div className="absolute top-1/2 left-1/4 w-1/2 h-1/4 bg-accent/40 rounded"></div>
         </div>
       </div>
     </div>

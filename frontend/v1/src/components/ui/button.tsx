@@ -19,7 +19,7 @@ const buttonVariants = cva(
         ghost: "hover:bg-accent hover:text-accent-foreground hover:shadow-sm",
         link: "text-primary underline-offset-4 hover:underline hover:scale-105 hover:translate-y-0",
         professional: 
-          "bg-slate-900 text-white hover:bg-slate-800 shadow-sm font-medium hover:shadow-xl hover:shadow-slate-900/40 hover:bg-gradient-to-r hover:from-slate-800 hover:to-slate-900",
+          "bg-foreground text-background hover:bg-foreground/90 shadow-sm font-medium hover:shadow-xl hover:shadow-foreground/40 hover:bg-gradient-to-r hover:from-foreground/90 hover:to-foreground",
         "data-action": 
           "bg-blue-600 text-white hover:bg-blue-700 tabular-nums shadow-sm font-medium hover:shadow-lg hover:shadow-blue-600/40 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-700",
         success: 

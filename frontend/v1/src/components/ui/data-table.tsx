@@ -8,10 +8,10 @@ const dataTableVariants = cva(
   {
     variants: {
       variant: {
-        default: "border border-gray-200 rounded-lg overflow-hidden",
+        default: "border border-border rounded-lg overflow-hidden",
         minimal: "border-0",
-        striped: "border border-gray-200 rounded-lg overflow-hidden [&_tbody_tr:nth-child(even)]:bg-gray-50/50",
-        bordered: "border-2 border-gray-300 rounded-lg overflow-hidden",
+        striped: "border border-border rounded-lg overflow-hidden [&_tbody_tr:nth-child(even)]:bg-muted/30",
+        bordered: "border-2 border-border rounded-lg overflow-hidden",
       },
       size: {
         sm: "[&_th]:px-3 [&_th]:py-2 [&_td]:px-3 [&_td]:py-2 text-sm",
@@ -141,12 +141,12 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
 
     const getSortIcon = (columnKey: string) => {
       if (sortState.key !== columnKey) {
-        return <ChevronsUpDown className="h-3 w-3 text-gray-400" />
+        return <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
       }
       
       return sortState.direction === "asc" 
-        ? <ChevronUp className="h-3 w-3 text-gray-600" />
-        : <ChevronDown className="h-3 w-3 text-gray-600" />
+        ? <ChevronUp className="h-3 w-3 text-foreground" />
+        : <ChevronDown className="h-3 w-3 text-foreground" />
     }
 
     const getAlignmentClass = (align?: string) => {
@@ -183,12 +183,12 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
         <div className="w-full">
           <table className={cn(dataTableVariants({ variant, size }), className)} {...props}>
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
+              <tr className="border-b border-border bg-muted/50">
                 {columns.map((column) => (
                   <th 
                     key={column.key}
                     className={cn(
-                      "font-medium text-gray-900 border-b border-gray-200",
+                      "font-medium text-foreground border-b border-border",
                       getAlignmentClass(column.align),
                       column.className
                     )}
@@ -203,10 +203,10 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
             </thead>
             <tbody>
               {[...Array(3)].map((_, index) => (
-                <tr key={index} className="border-b border-gray-100">
+                <tr key={index} className="border-b border-border/50">
                   {columns.map((column) => (
-                    <td key={column.key} className="border-b border-gray-100">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse" />
+                    <td key={column.key} className="border-b border-border/50">
+                      <div className="h-4 bg-muted rounded animate-pulse" />
                     </td>
                   ))}
                 </tr>
@@ -228,7 +228,7 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
           {...props}
         >
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
+            <tr className="border-b border-border bg-muted/50">
               {columns.map((column) => {
                 const isSortable = column.sortable !== false && sortable
                 
@@ -236,9 +236,9 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
                   <th 
                     key={column.key}
                     className={cn(
-                      "font-medium text-gray-900 border-b border-gray-200",
+                      "font-medium text-foreground border-b border-border",
                       getAlignmentClass(column.align),
-                      isSortable && "cursor-pointer hover:bg-gray-100 transition-colors",
+                      isSortable && "cursor-pointer hover:bg-muted/50 transition-colors",
                       column.className
                     )}
                     style={{ width: column.width }}
@@ -258,7 +258,7 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
               <tr>
                 <td 
                   colSpan={columns.length} 
-                  className="text-center text-gray-500 py-8 border-b border-gray-100"
+                  className="text-center text-muted-foreground py-8 border-b border-border/50"
                 >
                   {emptyMessage}
                 </td>
@@ -268,15 +268,15 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
                 <tr 
                   key={index}
                   className={cn(
-                    "border-b border-gray-100",
-                    hoverable && "hover:bg-gray-50 transition-colors"
+                    "border-b border-border/50",
+                    hoverable && "hover:bg-muted/30 transition-colors"
                   )}
                 >
                   {columns.map((column) => (
                     <td 
                       key={column.key}
                       className={cn(
-                        "border-b border-gray-100",
+                        "border-b border-border/50",
                         getAlignmentClass(column.align),
                         column.className
                       )}

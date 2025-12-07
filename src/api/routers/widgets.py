@@ -16,6 +16,7 @@ from api.schemas.widgets import (
 )
 from api.widgets.portfolio_summary import PortfolioSummaryAdapter
 from api.widgets.holdings_breakdown import HoldingsBreakdownAdapter
+from api.widgets.correlation_matrix import CorrelationMatrixAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -136,20 +137,48 @@ async def get_holdings_breakdown(
 @router.get("/portfolio/correlation", 
     response_model=CorrelationMatrixResponse,
     summary="Get correlation matrix",
-    description="Calculate correlation matrix between portfolio assets"
+    description="Calculate correlation matrix between portfolio assets and benchmarks"
 )
 async def get_correlation_matrix(
     db = Depends(get_database),
     portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
-    lookback_days: int = Query(252, description="Historical data lookback period"),
-    method: str = Query("pearson", description="Correlation calculation method")
+    time_window_days: int = Query(252, description="Time window for correlation analysis (default 1 year)"),
+    additional_symbols: Optional[str] = Query("SPY,QQQ", description="Additional benchmark symbols (comma-separated)"),
+    include_holdings: bool = Query(True, description="Include portfolio holdings in analysis")
 ) -> CorrelationMatrixResponse:
-    """Get asset correlation matrix."""
-    # This will be implemented in Phase 3 User Story tasks  
-    raise HTTPException(
-        status_code=501,
-        detail="Correlation matrix widget implementation pending"
-    )
+    """Get asset correlation matrix analysis."""
+    try:
+        # Parse additional symbols
+        additional_symbols_list = []
+        if additional_symbols:
+            additional_symbols_list = [s.strip().upper() for s in additional_symbols.split(",") if s.strip()]
+        
+        # Create correlation matrix adapter
+        adapter = CorrelationMatrixAdapter(db)
+        
+        # Execute widget calculation
+        result = adapter.execute(
+            portfolio_id=portfolio_id,
+            time_window_days=time_window_days,
+            additional_symbols=additional_symbols_list,
+            include_holdings=include_holdings
+        )
+        
+        # Return typed response
+        return CorrelationMatrixResponse(
+            widget_name=result["widget_name"],
+            success=result["success"],
+            data=result["data"],
+            metadata=result["metadata"],
+            error=result["error"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in correlation matrix endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate correlation matrix: {str(e)}"
+        )
 
 
 @router.get("/portfolio/monte-carlo",

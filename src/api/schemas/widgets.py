@@ -87,16 +87,56 @@ class HoldingsBreakdownResponse(WidgetResponse):
 
 
 # Correlation Matrix Widget Schemas
+class CorrelationPair(BaseModel):
+    """Correlation between two assets."""
+    
+    symbol1: str = Field(..., description="First asset symbol")
+    symbol2: str = Field(..., description="Second asset symbol")
+    correlation: float = Field(..., description="Correlation coefficient (-1 to 1)")
+
+
+class CorrelationPairs(BaseModel):
+    """Correlation pairs data."""
+    
+    asset1: str = Field(..., description="First asset symbol") 
+    asset2: str = Field(..., description="Second asset symbol")
+    correlation: float = Field(..., description="Correlation coefficient (-1 to 1)")
+
+
+class BenchmarkComparison(BaseModel):
+    """Benchmark correlation comparison."""
+    
+    benchmark: str = Field(..., description="Benchmark symbol")
+    correlations: Dict[str, Optional[float]] = Field(..., description="Correlations with portfolio assets")
+
+
+class CorrelationStatistics(BaseModel):
+    """Correlation matrix summary statistics."""
+    
+    avg_correlation: float = Field(..., description="Average correlation coefficient")
+    max_correlation: float = Field(..., description="Maximum correlation coefficient") 
+    min_correlation: float = Field(..., description="Minimum correlation coefficient")
+    num_days: int = Field(..., description="Number of trading days analyzed")
+
+
+class AnalysisPeriod(BaseModel):
+    """Analysis time period information."""
+    
+    start_date: str = Field(..., description="Analysis start date (ISO format)")
+    end_date: str = Field(..., description="Analysis end date (ISO format)")
+    days_analyzed: int = Field(..., description="Number of days with data")
+
+
 class CorrelationMatrixData(BaseModel):
     """Correlation matrix calculation results."""
     
-    correlation_matrix: Dict[str, Dict[str, float]] = Field(
-        ..., description="Correlation coefficients between assets"
-    )
     symbols: List[str] = Field(..., description="Asset symbols in the matrix")
-    time_period: str = Field(..., description="Analysis time period") 
-    calculation_date: datetime = Field(..., description="When analysis was performed")
-    data_quality_score: float = Field(..., description="Data completeness score 0-1")
+    correlation_matrix: List[CorrelationPair] = Field(..., description="Correlation matrix data")
+    correlation_pairs: List[CorrelationPairs] = Field(..., description="Strongest correlation pairs")
+    benchmark_comparison: List[Dict[str, Any]] = Field(..., description="Benchmark correlation comparison")
+    statistics: CorrelationStatistics = Field(..., description="Summary statistics")
+    analysis_period: AnalysisPeriod = Field(..., description="Analysis time period")
+    last_updated: str = Field(..., description="Last calculation timestamp")
 
 
 class CorrelationMatrixResponse(WidgetResponse):

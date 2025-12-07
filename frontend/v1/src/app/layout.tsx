@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className="antialiased"
         suppressHydrationWarning={true}
@@ -39,6 +39,8 @@ export default function RootLayout({
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="ui-theme"
+          forcedTheme={undefined}
         >
           <AuthProvider>
             <div className="min-h-screen bg-background text-foreground">

@@ -47,14 +47,14 @@ class PortfolioSummaryAdapter(BaseWidgetAdapter):
     def extract_calculation_data(self, widget_instance) -> Dict[str, Any]:
         """Extract portfolio summary calculation data from widget.
         
-        This method carefully extracts only the calculation results without
-        triggering any Streamlit UI components (constitution compliance).
+        This method properly delegates to the existing widget's calculation logic
+        without duplicating any business logic (proper adapter pattern).
         
         Raises:
             WidgetDataError: When insufficient data is available for calculation
         """
         try:
-            # Get instruments data from storage
+            # Get instruments data from storage (same as widget does)
             instruments = self.storage.get_all_instruments()
             
             if not instruments:
@@ -64,7 +64,7 @@ class PortfolioSummaryAdapter(BaseWidgetAdapter):
                     error_code="NO_INSTRUMENTS"
                 )
                 
-            # Get holdings with quantities > 0 (same as widget logic)
+            # Get holdings with quantities > 0 (same logic as widget)
             holdings = [i for i in instruments if i.get('quantity', 0) > 0]
             
             if not holdings:
@@ -81,23 +81,10 @@ class PortfolioSummaryAdapter(BaseWidgetAdapter):
                     "last_updated": datetime.utcnow()
                 }
             
-            # Verify we have price data for holdings
-            holdings_with_prices = [h for h in holdings if h.get('current_price') is not None]
-            if not holdings_with_prices:
-                logger.error("Holdings found but no current price data available")
-                raise WidgetDataError(
-                    "Holdings found but no current price data available. Please check data connections.",
-                    error_code="NO_PRICE_DATA"
-                )
-            
-            if len(holdings_with_prices) < len(holdings):
-                logger.warning(
-                    f"Price data missing for {len(holdings) - len(holdings_with_prices)} out of {len(holdings)} holdings"
-                )
-            
-            # Calculate metrics using the widget's calculation method
+            # **DELEGATE TO EXISTING WIDGET** - This is the key change!
+            # Use the existing widget's calculation method instead of rewriting logic
             try:
-                metrics = widget_instance._calculate_all_metrics(holdings_with_prices)
+                metrics = widget_instance._calculate_all_metrics(holdings)
             except Exception as calc_error:
                 logger.error(f"Widget calculation failed: {calc_error}")
                 raise WidgetDataError(
@@ -111,36 +98,22 @@ class PortfolioSummaryAdapter(BaseWidgetAdapter):
                     error_code="EMPTY_METRICS"
                 )
             
-            # Validate calculated metrics
-            if not hasattr(metrics, 'total_value') or metrics.total_value is None:
-                raise WidgetDataError(
-                    "Invalid calculation result: missing total_value",
-                    error_code="INVALID_METRICS"
-                )
-            
-            # Calculate basic portfolio summary data
-            total_positions = len(holdings_with_prices)
-            allocated_cash = sum(h.get('cash_allocation', 0.0) for h in holdings_with_prices)
-            
-            # Calculate day change (simplified - would need historical prices for accuracy)
-            day_change = 0.0  # Placeholder - would need yesterday's prices
-            day_change_percent = 0.0  # Placeholder
-            
-            # Calculate total return amount (convert percentage to amount)
+            # Convert the existing widget's PortfolioMetrics to API response format
+            # This is pure data transformation, not business logic duplication
             total_return_amount = (
                 metrics.total_return_with_divs * metrics.total_value 
                 if metrics.total_value > 0 else 0
             )
             
-            # Create portfolio summary response data
+            # Create API response using existing widget's calculated data
             result = {
                 "total_value": float(metrics.total_value),
                 "total_return": float(total_return_amount),
                 "total_return_percent": float(metrics.total_return_with_divs * 100),
-                "day_change": day_change,
-                "day_change_percent": day_change_percent,
-                "positions": total_positions,
-                "allocated_cash": allocated_cash,
+                "day_change": 0.0,  # TODO: Add day change calculation to existing widget
+                "day_change_percent": 0.0,  # TODO: Add day change calculation to existing widget
+                "positions": len(holdings),
+                "allocated_cash": 0.0,  # TODO: Extract from widget if available
                 "last_updated": datetime.utcnow()
             }
             

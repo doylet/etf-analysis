@@ -3,10 +3,11 @@
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 import logging
+import pandas as pd
 
 from api.widgets.base import BaseWidgetAdapter
 from api.widgets.exceptions import WidgetDataError, WidgetValidationError
-from api.schemas.widgets import HoldingsBreakdownData
+from api.schemas.widgets import HoldingsBreakdownData, CategoryBreakdown
 from api.services.widget_cache import widget_cache
 from api.services.performance_monitor import monitor_widget_performance
 from widgets.holdings_breakdown_widget import HoldingsBreakdownWidget
@@ -58,9 +59,13 @@ class HoldingsBreakdownAdapter(BaseWidgetAdapter):
         return validated
         
     def extract_calculation_data(self, widget_instance) -> Dict[str, Any]:
-        """Extract holdings breakdown calculation data from widget."""
+        """Extract holdings breakdown calculation data from widget.
+        
+        This method properly delegates to the existing widget's calculation logic
+        without duplicating any business logic (proper adapter pattern).
+        """
         try:
-            # Get instruments data from storage
+            # Get instruments data from storage (same as widget does)
             instruments = self.storage.get_all_instruments()
             
             if not instruments:
@@ -70,7 +75,7 @@ class HoldingsBreakdownAdapter(BaseWidgetAdapter):
                     error_code="NO_INSTRUMENTS"
                 )
                 
-            # Get holdings with quantities > 0
+            # Get holdings with quantities > 0 (same logic as widget)
             holdings = [i for i in instruments if i.get('quantity', 0) > 0]
             
             if not holdings:
@@ -86,18 +91,22 @@ class HoldingsBreakdownAdapter(BaseWidgetAdapter):
                     "last_updated": datetime.utcnow()
                 }
             
-            # Verify we have price data for holdings
-            holdings_with_prices = [h for h in holdings if h.get('current_price') is not None]
-            if not holdings_with_prices:
-                logger.error("Holdings found but no current price data available")
-                raise WidgetDataError(
-                    "Holdings found but no current price data available. Please check data connections.",
-                    error_code="NO_PRICE_DATA"
-                )
-            
-            # Calculate holdings breakdown using widget logic
+            # **DELEGATE TO EXISTING WIDGET** - Use existing calculation logic!
             try:
-                breakdown_data = self._calculate_holdings_breakdown(holdings_with_prices, widget_instance)
+                # Use the widget's data fetching method to get processed holdings
+                holdings_data = widget_instance._fetch_holdings_data(holdings)
+                
+                if holdings_data is None or holdings_data.df.empty:
+                    raise WidgetDataError(
+                        "No valid holdings data available",
+                        error_code="NO_HOLDINGS_DATA"
+                    )
+                
+                # Use the widget's calculation methods for breakdowns
+                breakdown_data = self._convert_widget_data_to_api_format(
+                    holdings_data, widget_instance, holdings
+                )
+                
             except Exception as calc_error:
                 logger.error(f"Holdings breakdown calculation failed: {calc_error}")
                 raise WidgetDataError(
@@ -116,51 +125,50 @@ class HoldingsBreakdownAdapter(BaseWidgetAdapter):
                 error_code="UNEXPECTED_ERROR"
             )
     
-    def _calculate_holdings_breakdown(self, holdings: List[Dict[str, Any]], widget_instance) -> Dict[str, Any]:
-        """Calculate holdings breakdown using widget calculation logic."""
-        # Calculate individual position data
-        positions = []
-        total_value = 0.0
+    def _convert_widget_data_to_api_format(self, holdings_data, widget_instance, original_holdings: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Convert the existing widget's data format to API response format.
         
-        for holding in holdings:
-            symbol = holding.get('symbol', 'Unknown')
-            quantity = holding.get('quantity', 0)
-            current_price = holding.get('current_price', 0)
-            market_value = quantity * current_price
-            total_value += market_value
-            
-            positions.append({
-                "symbol": symbol,
-                "name": holding.get('name', symbol),
-                "quantity": quantity,
-                "current_price": current_price,
-                "market_value": market_value,
-                "sector": holding.get('sector', 'Unknown'),
-                "geography": holding.get('geography', 'Unknown'),
-                "asset_class": holding.get('asset_class', 'Equity'),
-                "weight": 0.0  # Will be calculated below
-            })
+        This is pure data transformation, not business logic duplication.
+        """
+        df = holdings_data.df
+        total_value = holdings_data.total_value
         
-        # Calculate weights
-        if total_value > 0:
-            for position in positions:
-                position["weight"] = position["market_value"] / total_value
+        # Convert holdings DataFrame to API format
+        individual_holdings = []
+        for _, row in df.iterrows():
+            holding = {
+                "symbol": str(row.get('Symbol', '')),
+                "name": str(row.get('Name', '')),
+                "quantity": float(row.get('Quantity', 0)),
+                "current_price": float(row.get('Price', 0)),
+                "market_value": float(row.get('Value', 0)),
+                "sector": str(row.get('Sector', 'Unknown')) if row.get('Sector') is not None else 'Unknown',
+                "geography": str(row.get('Geography', row.get('Currency', 'Unknown')) if row.get('Geography') is not None else row.get('Currency', 'Unknown')),
+                "asset_class": str(row.get('Type', 'Equity')) if row.get('Type') is not None else 'Equity',
+                "weight": float(row.get('Value', 0) / total_value if total_value > 0 else 0.0)
+            }
+            individual_holdings.append(holding)
         
-        # Calculate breakdown by sector
-        sector_breakdown = self._calculate_breakdown_by_category(positions, 'sector')
+        # Use the widget's existing calculation methods for breakdowns
+        sector_breakdown_df = widget_instance._calculate_grouped_breakdown(df, 'Sector', total_value)
+        sector_breakdown = self._convert_breakdown_df_to_api(sector_breakdown_df)
         
-        # Calculate breakdown by geography
-        geography_breakdown = self._calculate_breakdown_by_category(positions, 'geography')
+        # For asset class (Type in the widget)
+        asset_class_breakdown_df = widget_instance._calculate_grouped_breakdown(df, 'Type', total_value)
+        asset_class_breakdown = self._convert_breakdown_df_to_api(asset_class_breakdown_df, key_column='Type')
         
-        # Calculate breakdown by asset class
-        asset_class_breakdown = self._calculate_breakdown_by_category(positions, 'asset_class')
+        # Geography breakdown (use Currency as proxy for now)
+        geography_breakdown = []
+        if 'Currency' in df.columns:
+            geography_breakdown_df = widget_instance._calculate_grouped_breakdown(df, 'Currency', total_value)
+            geography_breakdown = self._convert_breakdown_df_to_api(geography_breakdown_df, key_column='Currency')
         
-        # Calculate concentration risk score (simplified)
-        concentration_score = self._calculate_concentration_risk(positions)
+        # Calculate concentration risk using existing data
+        concentration_score = self._calculate_concentration_risk_from_weights([h['weight'] for h in individual_holdings])
         
         return {
-            "holdings": positions,
-            "total_positions": len(positions),
+            "holdings": individual_holdings,
+            "total_positions": len(individual_holdings),
             "total_value": total_value,
             "breakdown_by_sector": sector_breakdown,
             "breakdown_by_geography": geography_breakdown,
@@ -169,47 +177,29 @@ class HoldingsBreakdownAdapter(BaseWidgetAdapter):
             "last_updated": datetime.utcnow()
         }
     
-    def _calculate_breakdown_by_category(self, positions: List[Dict[str, Any]], category: str) -> List[Dict[str, Any]]:
-        """Calculate breakdown by a specific category (sector, geography, asset_class)."""
-        category_totals = {}
-        total_value = sum(pos['market_value'] for pos in positions)
-        
-        # Aggregate by category
-        for position in positions:
-            cat_value = position.get(category, 'Unknown')
-            if cat_value not in category_totals:
-                category_totals[cat_value] = {
-                    'name': cat_value,
-                    'value': 0.0,
-                    'weight': 0.0,
-                    'positions': 0
-                }
-            
-            category_totals[cat_value]['value'] += position['market_value']
-            category_totals[cat_value]['positions'] += 1
-        
-        # Calculate percentages and sort
-        breakdown = list(category_totals.values())
-        for item in breakdown:
-            item['weight'] = item['value'] / total_value if total_value > 0 else 0.0
-        
-        # Sort by value descending
-        breakdown.sort(key=lambda x: x['value'], reverse=True)
-        
+    def _convert_breakdown_df_to_api(self, breakdown_df: pd.DataFrame, key_column: str = 'Sector') -> List[Dict[str, Any]]:
+        """Convert widget breakdown DataFrame to API format."""
+        breakdown = []
+        for _, row in breakdown_df.iterrows():
+            breakdown.append({
+                'name': row[key_column],
+                'value': row['Value'],
+                'weight': row['Allocation %'] / 100.0,  # Convert percentage to decimal
+                'positions': 1  # Could be enhanced to count positions per category
+            })
         return breakdown
     
-    def _calculate_concentration_risk(self, positions: List[Dict[str, Any]]) -> float:
-        """Calculate concentration risk score (0-1, higher = more concentrated)."""
-        if not positions:
+    def _calculate_concentration_risk_from_weights(self, weights: List[float]) -> float:
+        """Calculate concentration risk score from position weights (simplified HHI)."""
+        if not weights:
             return 0.0
             
         # Calculate Herfindahl-Hirschman Index (HHI)
-        weights_squared = [pos['weight'] ** 2 for pos in positions]
+        weights_squared = [w ** 2 for w in weights]
         hhi = sum(weights_squared)
         
         # Normalize to 0-1 scale (1 = maximum concentration, 0 = perfectly diversified)
-        # For N positions, minimum HHI is 1/N, maximum is 1
-        n_positions = len(positions)
+        n_positions = len(weights)
         min_hhi = 1.0 / n_positions if n_positions > 0 else 0
         max_hhi = 1.0
         

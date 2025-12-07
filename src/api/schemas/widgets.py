@@ -53,18 +53,30 @@ class HoldingPosition(BaseModel):
     current_price: float = Field(..., description="Current price per share")
     market_value: float = Field(..., description="Total market value")
     weight: float = Field(..., description="Portfolio weight percentage")
-    day_change: float = Field(..., description="Daily price change")
-    day_change_percent: float = Field(..., description="Daily change percentage")
-    total_return: float = Field(..., description="Total return on position")
-    total_return_percent: float = Field(..., description="Total return percentage")
+    sector: str = Field(..., description="Sector classification")
+    geography: str = Field(..., description="Geographic region")
+    asset_class: str = Field(..., description="Asset class type")
+
+
+class CategoryBreakdown(BaseModel):
+    """Breakdown by category (sector, geography, asset class)."""
+    
+    name: str = Field(..., description="Category name")
+    value: float = Field(..., description="Total value in category")
+    weight: float = Field(..., description="Weight as decimal (0-1)")
+    positions: int = Field(..., description="Number of positions in category")
 
 
 class HoldingsBreakdownData(BaseModel):
     """Holdings breakdown calculation results."""
     
-    positions: List[HoldingPosition] = Field(..., description="List of portfolio positions")
+    holdings: List[HoldingPosition] = Field(..., description="List of individual positions")
+    total_positions: int = Field(..., description="Total number of positions")
     total_value: float = Field(..., description="Total portfolio value")
-    cash_position: float = Field(..., description="Cash position")
+    breakdown_by_sector: List[CategoryBreakdown] = Field(..., description="Breakdown by sector")
+    breakdown_by_geography: List[CategoryBreakdown] = Field(..., description="Breakdown by geography")
+    breakdown_by_asset_class: List[CategoryBreakdown] = Field(..., description="Breakdown by asset class")
+    concentration_risk_score: float = Field(..., description="Concentration risk score (0-1)")
     last_updated: datetime = Field(..., description="Last data update timestamp")
 
 

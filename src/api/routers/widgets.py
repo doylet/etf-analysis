@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 import logging
 
-from ..dependencies import get_database
-from ..schemas.widgets import (
+from api.dependencies import get_database
+from api.schemas.widgets import (
     WidgetResponse, 
     PortfolioSummaryResponse,
     HoldingsBreakdownResponse, 
@@ -14,7 +14,7 @@ from ..schemas.widgets import (
     MonteCarloParameters,
     CorrelationParameters
 )
-from ..widgets.portfolio_summary import PortfolioSummaryAdapter
+from api.widgets.portfolio_summary import PortfolioSummaryAdapter
 
 logger = logging.getLogger(__name__)
 

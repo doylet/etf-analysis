@@ -4,10 +4,10 @@ from typing import Dict, Any
 from datetime import datetime
 import logging
 
-from .base import BaseWidgetAdapter
-from .exceptions import WidgetDataError, WidgetValidationError
-from ..schemas.widgets import PortfolioSummaryData
-from ...widgets.portfolio_summary_widget import PortfolioSummaryWidget
+from api.widgets.base import BaseWidgetAdapter
+from api.widgets.exceptions import WidgetDataError, WidgetValidationError
+from api.schemas.widgets import PortfolioSummaryData
+from widgets.portfolio_summary_widget import PortfolioSummaryWidget
 
 logger = logging.getLogger(__name__)
 

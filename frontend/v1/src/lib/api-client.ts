@@ -52,7 +52,7 @@ apiClient.interceptors.response.use(
       } else if (status === 403) {
         console.error('Forbidden - insufficient permissions');
       } else if (status === 404) {
-        console.error('Resource not found');
+        console.warn('Resource not found - endpoint may not be implemented yet');
       } else if (status === 500) {
         console.error('Server error - please try again later');
       }

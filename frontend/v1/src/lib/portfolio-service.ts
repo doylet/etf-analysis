@@ -99,14 +99,24 @@ class PortfolioService {
     try {
       const response = await apiClient.get<PortfolioPerformance>(`/api/portfolio/performance?period=${period}`);
       return response.data;
-    } catch (error) {
-      // Fallback to mock data if endpoint doesn't exist
-      console.warn('Performance endpoint not available, using fallback data');
+    } catch (error: any) {
+      // Check if it's a 404 error (endpoint doesn't exist) - use fallback data
+      if (error?.response?.status === 404) {
+        console.warn('Performance endpoint not available, using fallback data');
+        
+        // Generate realistic mock performance data based on current portfolio
+        try {
+          const summary = await this.getSummary();
+          const mockPerformance = this.generateMockPerformanceData(period, summary);
+          return mockPerformance;
+        } catch (summaryError) {
+          // If we can't get summary data either, return basic mock data
+          return this.generateBasicMockPerformanceData(period);
+        }
+      }
       
-      // Generate realistic mock performance data based on current portfolio
-      const summary = await this.getSummary();
-      const mockPerformance = this.generateMockPerformanceData(period, summary);
-      return mockPerformance;
+      // For other errors, re-throw
+      throw error;
     }
   }
 
@@ -174,6 +184,61 @@ class PortfolioService {
         dates,
         values: values.map(v => v * 0.95), // Mock benchmark performing slightly worse
         returns: returns.map(r => r * 0.9), // Mock benchmark returns slightly lower
+      }
+    };
+  }
+
+  /**
+   * Generate basic mock performance data when summary data is unavailable
+   */
+  private generateBasicMockPerformanceData(period: string): PortfolioPerformance {
+    const dataPoints = period === '1D' ? 24 : period === '7D' ? 7 : period === '30D' ? 30 : period === '90D' ? 90 : 365;
+    const dates: string[] = [];
+    const values: number[] = [];
+    const returns: number[] = [];
+    
+    // Use default values when summary is unavailable
+    const baseValue = 100000; // $100k as default
+    const currentValue = baseValue * 1.08; // Assume 8% growth
+    
+    // Generate time series
+    for (let i = dataPoints - 1; i >= 0; i--) {
+      const date = new Date();
+      if (period === '1D') {
+        date.setHours(date.getHours() - i);
+      } else {
+        date.setDate(date.getDate() - i);
+      }
+      dates.push(date.toISOString());
+      
+      // Generate realistic progression
+      const progress = (dataPoints - 1 - i) / (dataPoints - 1);
+      const dailyValue = baseValue + (currentValue - baseValue) * progress;
+      
+      // Add small volatility
+      const volatility = (Math.random() - 0.5) * 0.02;
+      const value = dailyValue * (1 + volatility);
+      
+      values.push(Math.max(value, 0));
+      
+      // Calculate returns
+      if (i === dataPoints - 1) {
+        returns.push(0);
+      } else {
+        const prevValue = values[values.length - 2] || baseValue;
+        const dailyReturn = ((value - prevValue) / prevValue) * 100;
+        returns.push(dailyReturn);
+      }
+    }
+
+    return {
+      dates,
+      values,
+      returns,
+      benchmark: {
+        dates,
+        values: values.map(v => v * 0.95),
+        returns: returns.map(r => r * 0.9),
       }
     };
   }

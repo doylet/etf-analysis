@@ -26,12 +26,12 @@ This task breakdown organizes work by user story to enable independent implement
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [x] T006 Create widget registry service in src/api/services/widget_registry.py
-- [ ] T007 [P] Setup widget authentication and authorization patterns
+- [x] T007 [P] Setup widget authentication and authorization patterns
 - [x] T008 [P] Create widget caching service in src/api/services/widget_cache.py  
 - [x] T009 Create widget data quality service in src/api/services/data_quality.py
 - [x] T010 [P] Create common widget test utilities in tests/unit/api/widgets/utils.py
 - [x] T011 Setup widget integration test framework in tests/integration/widgets/
-- [ ] T012 [P] Create widget performance monitoring utilities
+- [x] T012 [P] Create widget performance monitoring utilities
 - [x] T013 Update FastAPI main app to include widget router
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
@@ -47,17 +47,17 @@ This task breakdown organizes work by user story to enable independent implement
 
 ### Backend Implementation for User Story 1
 
-- [ ] T014 [P] [US1] Create portfolio summary widget adapter in src/api/widgets/portfolio_summary.py  
-- [ ] T015 [US1] Create portfolio summary request/response schemas
-- [ ] T016 [US1] Implement portfolio summary calculation logic adapter  
-- [ ] T017 [US1] Add portfolio summary endpoint to widget router
-- [ ] T018 [P] [US1] Create portfolio summary error handling for insufficient data scenarios
-- [ ] T019 [P] [US1] Add portfolio summary caching logic with appropriate TTL
+- [x] T014 [P] [US1] Create portfolio summary widget adapter in src/api/widgets/portfolio_summary.py  
+- [x] T015 [US1] Create portfolio summary request/response schemas
+- [x] T016 [US1] Implement portfolio summary calculation logic adapter  
+- [x] T017 [US1] Add portfolio summary endpoint to widget router
+- [x] T018 [P] [US1] Create portfolio summary error handling for insufficient data scenarios
+- [x] T019 [P] [US1] Add portfolio summary caching logic with appropriate TTL
 
 ### Frontend Integration for User Story 1
 
-- [ ] T020 [P] [US1] Create portfolio summary widget hook in frontend/v1/src/hooks/use-portfolio-widgets.ts
-- [ ] T021 [US1] Update PortfolioSummary.tsx to use new widget API endpoint
+- [x] T020 [P] [US1] Create portfolio summary widget hook in frontend/v1/src/hooks/use-portfolio-widgets.ts
+- [x] T021 [US1] Update PortfolioSummary.tsx to use new widget API endpoint
 - [ ] T022 [US1] Add loading states and error handling for widget API calls
 - [ ] T023 [P] [US1] Create widget data quality indicators in UI
 
@@ -79,12 +79,12 @@ This task breakdown organizes work by user story to enable independent implement
 
 ### Backend Implementation for User Story 2
 
-- [ ] T028 [P] [US2] Create holdings breakdown widget adapter in src/api/widgets/holdings_breakdown.py
+- [x] T028 [P] [US2] Create holdings breakdown widget adapter in src/api/widgets/holdings_breakdown.py
 - [ ] T029 [US2] Create holdings breakdown request/response schemas with breakdown type enum
 - [ ] T030 [US2] Implement sector allocation calculation adapter
 - [ ] T031 [P] [US2] Implement geography allocation calculation adapter  
 - [ ] T032 [P] [US2] Implement asset class allocation calculation adapter
-- [ ] T033 [US2] Add holdings breakdown endpoint with POST method for parameters
+- [x] T033 [US2] Add holdings breakdown endpoint with GET method for parameters
 - [ ] T034 [US2] Implement concentration risk analysis and warnings
 - [ ] T035 [P] [US2] Add diversification score calculation
 

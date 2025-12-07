@@ -30,8 +30,8 @@ class WidgetCalculationError(WidgetError):
 class WidgetDataError(WidgetError):
     """Raised when widget cannot access required data."""
     
-    def __init__(self, message: str, details: Optional[Dict[str, Any]] = None):
-        super().__init__(message, code="DATA_ERROR", details=details)
+    def __init__(self, message: str, error_code: str = "DATA_ERROR", details: Optional[Dict[str, Any]] = None):
+        super().__init__(message, code=error_code, details=details)
 
 
 class WidgetTimeoutError(WidgetError):

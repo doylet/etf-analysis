@@ -15,6 +15,7 @@ from api.schemas.widgets import (
     CorrelationParameters
 )
 from api.widgets.portfolio_summary import PortfolioSummaryAdapter
+from api.widgets.holdings_breakdown import HoldingsBreakdownAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -78,15 +79,15 @@ async def get_portfolio_summary(
         adapter = PortfolioSummaryAdapter(db)
         
         # Execute widget calculation
-        result = await adapter.execute(portfolio_id=portfolio_id)
+        result = adapter.execute(portfolio_id=portfolio_id)
         
         # Return typed response
         return PortfolioSummaryResponse(
-            widget_name=result.widget_name,
-            success=result.success,
-            data=result.data,
-            metadata=result.metadata,
-            error=result.error
+            widget_name=result["widget_name"],
+            success=result["success"],
+            data=result["data"],
+            metadata=result["metadata"],
+            error=result["error"]
         )
         
     except Exception as e:
@@ -104,14 +105,32 @@ async def get_portfolio_summary(
 )
 async def get_holdings_breakdown(
     db = Depends(get_database),
-    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier") 
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    breakdown_type: str = Query("sector", description="Type of breakdown (sector, geography, asset_class, all)")
 ) -> HoldingsBreakdownResponse:
     """Get detailed holdings breakdown."""
-    # This will be implemented in Phase 3 User Story tasks
-    raise HTTPException(
-        status_code=501,
-        detail="Holdings breakdown widget implementation pending"
-    )
+    try:
+        # Create holdings breakdown adapter
+        adapter = HoldingsBreakdownAdapter(db)
+        
+        # Execute widget calculation
+        result = adapter.execute(portfolio_id=portfolio_id, breakdown_type=breakdown_type)
+        
+        # Return typed response
+        return HoldingsBreakdownResponse(
+            widget_name=result["widget_name"],
+            success=result["success"],
+            data=result["data"],
+            metadata=result["metadata"],
+            error=result["error"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in holdings breakdown endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate holdings breakdown: {str(e)}"
+        )
 
 
 @router.get("/portfolio/correlation", 

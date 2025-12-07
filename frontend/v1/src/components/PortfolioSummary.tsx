@@ -5,7 +5,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
-import { usePortfolioSummary } from '@/hooks/use-portfolio-summary';
+import { usePortfolioSummary } from '@/hooks/use-portfolio-widgets';
 
 // Utility functions
 const formatCurrency = (amount: number | undefined | null): string => {
@@ -33,7 +33,7 @@ const determineMetricTrend = (value: number | undefined | null): 'positive' | 'n
 };
 
 export default function PortfolioSummaryComponent() {
-  const { summary, loading, error } = usePortfolioSummary();
+  const { data: summary, loading, error, metadata, cacheHit } = usePortfolioSummary();
 
   if (loading) {
     return (
@@ -98,7 +98,7 @@ export default function PortfolioSummaryComponent() {
     {
       title: 'Positions',
       value: (summary.positions ?? 0).toString(),
-      subtitle: `${formatCurrency(summary.allocated_cash || summary.cash)} cash`,
+      subtitle: `${formatCurrency(summary.allocated_cash)} cash`,
       icon: PieChart,
       variant: 'subtle' as const,
       trend: 'neutral' as const,
@@ -108,8 +108,17 @@ export default function PortfolioSummaryComponent() {
   return (
     <Card>
       <CardHeader>
-        <h2 className="text-xl font-semibold text-foreground">Portfolio Summary</h2>
-        <p className="text-muted-foreground text-sm mt-1">Real-time portfolio overview</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Portfolio Summary</h2>
+            <p className="text-muted-foreground text-sm mt-1">Real-time portfolio overview</p>
+          </div>
+          {cacheHit && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
+              Cached
+            </span>
+          )}
+        </div>
       </CardHeader>
       
       <CardContent>

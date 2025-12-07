@@ -15,8 +15,8 @@ const metricCardVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-border hover:shadow-md hover:border-blue-200 hover:bg-gradient-to-br hover:from-white hover:to-blue-50/30',
-        highlighted: 'border-border-focus bg-background-accent hover:shadow-lg hover:border-blue-300 hover:shadow-blue-100/50',
+        default: 'border-border hover:shadow-md hover:border-primary/30 hover:bg-gradient-to-br hover:from-card hover:to-primary/5',
+        highlighted: 'border-border-focus bg-background-accent hover:shadow-lg hover:border-primary/50 hover:shadow-primary/10',
         subtle: 'border-border bg-muted hover:shadow-sm hover:border-border hover:bg-card',
       },
       size: {

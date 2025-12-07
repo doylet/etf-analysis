@@ -156,7 +156,7 @@ export const FinancialDataLoader = React.forwardRef<HTMLDivElement, { className?
         size="lg"
         variant="primary"
         label="Loading portfolio data..."
-        icon={<TrendingUp className="h-8 w-8 animate-pulse text-blue-600" />}
+        icon={<TrendingUp className="h-8 w-8 animate-pulse text-primary" />}
       />
     </div>
   )

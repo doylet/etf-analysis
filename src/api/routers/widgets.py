@@ -17,6 +17,7 @@ from api.schemas.widgets import (
 from api.widgets.portfolio_summary import PortfolioSummaryAdapter
 from api.widgets.holdings_breakdown import HoldingsBreakdownAdapter
 from api.widgets.correlation_matrix import CorrelationMatrixAdapter
+from api.widgets.monte_carlo import MonteCarloAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -189,16 +190,44 @@ async def get_correlation_matrix(
 async def get_monte_carlo_simulation(
     db = Depends(get_database),
     portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
-    num_simulations: int = Query(1000, description="Number of simulation runs"),
-    time_horizon_days: int = Query(252, description="Time horizon in days"), 
-    confidence_level: float = Query(0.95, description="Confidence level for VaR")
+    num_simulations: int = Query(1000, description="Number of simulation runs (100-10000)"),
+    time_horizon_days: int = Query(252, description="Time horizon in days (default 1 year)"), 
+    confidence_level: float = Query(0.95, description="Confidence level for VaR (0.8-0.99)"),
+    initial_value: Optional[float] = Query(None, description="Initial portfolio value (uses current if not provided)"),
+    include_dividends: bool = Query(True, description="Include dividends in simulation"),
+    estimation_method: str = Query("Historical Mean", description="Parameter estimation method")
 ) -> MonteCarloResponse:
-    """Run Monte Carlo simulation for portfolio."""
-    # This will be implemented in Phase 3 User Story tasks
-    raise HTTPException(
-        status_code=501,
-        detail="Monte Carlo widget implementation pending"
-    )
+    """Run Monte Carlo simulation for portfolio risk analysis."""
+    try:
+        # Create Monte Carlo adapter
+        adapter = MonteCarloAdapter(db)
+        
+        # Execute widget calculation
+        result = adapter.execute(
+            portfolio_id=portfolio_id,
+            num_simulations=num_simulations,
+            time_horizon_days=time_horizon_days,
+            confidence_level=confidence_level,
+            initial_value=initial_value,
+            include_dividends=include_dividends,
+            estimation_method=estimation_method
+        )
+        
+        # Return typed response
+        return MonteCarloResponse(
+            widget_name=result["widget_name"],
+            success=result["success"],
+            data=result["data"],
+            metadata=result["metadata"],
+            error=result["error"]
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in Monte Carlo endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to run Monte Carlo simulation: {str(e)}"
+        )
 
 
 @router.get("/health",

@@ -154,16 +154,49 @@ class MonteCarloScenario(BaseModel):
     max_drawdown: float = Field(..., description="Maximum drawdown during period")
 
 
+class MonteCarloStatistics(BaseModel):
+    """Monte Carlo simulation summary statistics."""
+    
+    mean_final_value: float = Field(..., description="Mean final portfolio value across all simulations")
+    std_final_value: float = Field(..., description="Standard deviation of final values")
+    mean_return_percent: float = Field(..., description="Mean return percentage")
+    probability_of_loss: float = Field(..., description="Probability of portfolio loss (0-1)")
+    cagr_median: float = Field(..., description="Compound Annual Growth Rate (median)")
+    cagr_10th: float = Field(..., description="CAGR at 10th percentile")
+    cagr_90th: float = Field(..., description="CAGR at 90th percentile")
+    historical_sharpe: float = Field(..., description="Historical Sharpe ratio")
+    historical_volatility: float = Field(..., description="Historical annualized volatility")
+    max_drawdown_median: float = Field(..., description="Maximum drawdown in median scenario")
+
+
+class MonteCarloPercentiles(BaseModel):
+    """Portfolio value percentiles."""
+    
+    percentile_10: float = Field(..., alias="10", description="10th percentile value")
+    percentile_50: float = Field(..., alias="50", description="50th percentile value (median)")
+    percentile_90: float = Field(..., alias="90", description="90th percentile value")
+
+
+class MonteCarloSimulationParams(BaseModel):
+    """Monte Carlo simulation parameters."""
+    
+    num_simulations: int = Field(..., description="Number of simulation runs")
+    time_horizon_years: float = Field(..., description="Time horizon in years")
+    initial_value: float = Field(..., description="Initial portfolio value")
+    confidence_level: int = Field(..., description="Confidence level for VaR (e.g., 95)")
+
+
 class MonteCarloData(BaseModel):
     """Monte Carlo simulation results."""
     
-    scenarios: List[MonteCarloScenario] = Field(..., description="Simulation scenarios")
-    statistics: Dict[str, float] = Field(..., description="Summary statistics")
+    scenarios: List[MonteCarloScenario] = Field(..., description="Sample simulation scenarios")
+    statistics: MonteCarloStatistics = Field(..., description="Summary statistics across all simulations")
     percentiles: Dict[str, float] = Field(..., description="Value percentiles")
     var_95: float = Field(..., description="95% Value at Risk")
     var_99: float = Field(..., description="99% Value at Risk")
-    simulation_params: Dict[str, Any] = Field(..., description="Simulation parameters")
+    simulation_params: MonteCarloSimulationParams = Field(..., description="Simulation parameters used")
     execution_time_seconds: float = Field(..., description="Calculation duration")
+    last_updated: str = Field(..., description="Last calculation timestamp")
 
 
 class MonteCarloResponse(WidgetResponse):

@@ -9,7 +9,7 @@ import { StatusIndicator } from '@/components/ui/status-indicator'
 import { PercentageChange } from '@/components/ui/percentage-change'
 import { DataTable } from '@/components/ui/data-table'
 import { MetricGroup, PortfolioMetrics, RiskMetrics, CompactMetrics } from '@/components/ui/metric-group'
-import { ThemeToggle } from '@/components/theme-toggle'
+import { ModeToggle } from '@/components/ui/mode-toggle'
 import { LoadingSpinner, LoadingCard, LoadingTable, FinancialDataLoader, LoadingMetricCard } from '@/components/ui/loading-states'
 import { ErrorState, NetworkError, DataError, EmptyPortfolio, NoSearchResults } from '@/components/ui/error-states'
 import { GridLayout, MetricGrid, ChartGrid } from '@/components/ui/grid-layout'
@@ -42,7 +42,7 @@ export default function DesignSystemPage() {
             <p className="text-gray-600 mt-2">Professional Data-Focused Design System Components</p>
           </div>
           <div className="flex items-center gap-4">
-            <ThemeToggle />
+            <ModeToggle />
           </div>
         </div>
 

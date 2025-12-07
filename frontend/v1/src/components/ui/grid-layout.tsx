@@ -177,12 +177,12 @@ const Section = React.forwardRef<HTMLElement, SectionProps>(
           <div className="flex items-center justify-between">
             <div className="space-y-1">
               {title && (
-                <h2 className="text-2xl font-semibold tracking-tight text-gray-900">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                   {title}
                 </h2>
               )}
               {subtitle && (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {subtitle}
                 </p>
               )}

@@ -9,11 +9,11 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:shadow-blue-500/25",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:shadow-red-500/25",
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-lg hover:shadow-destructive/25",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-blue-300 hover:shadow-md",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:border-primary/50 hover:shadow-md",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-md",
         ghost: "hover:bg-accent hover:text-accent-foreground hover:shadow-sm",
@@ -21,9 +21,9 @@ const buttonVariants = cva(
         professional: 
           "bg-foreground text-background hover:bg-foreground/90 shadow-sm font-medium hover:shadow-xl hover:shadow-foreground/40 hover:bg-gradient-to-r hover:from-foreground/90 hover:to-foreground",
         "data-action": 
-          "bg-blue-600 text-white hover:bg-blue-700 tabular-nums shadow-sm font-medium hover:shadow-lg hover:shadow-blue-600/40 hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-700",
+          "bg-primary text-primary-foreground hover:bg-primary/90 tabular-nums shadow-sm font-medium hover:shadow-lg hover:shadow-primary/40 hover:bg-gradient-to-r hover:from-primary hover:to-primary/90",
         success: 
-          "bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-lg hover:shadow-green-600/40",
+          "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow-lg hover:shadow-emerald-600/40",
         warning: 
           "bg-amber-600 text-white hover:bg-amber-700 shadow-sm hover:shadow-lg hover:shadow-amber-600/40",
       },

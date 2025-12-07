@@ -2,99 +2,422 @@
 
 @layer base {
   :root {
-    --radius: 0.625rem;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.646 0.222 41.116);
-    --chart-2: oklch(0.6 0.118 184.704);
-    --chart-3: oklch(0.398 0.07 227.392);
-    --chart-4: oklch(0.828 0.189 84.429);
-    --chart-5: oklch(0.769 0.188 70.08);
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --radius: 0.5rem;
+    
+    /* Standard shadcn/ui variables */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 262 83% 58%;
+    
+    /* Chart colors */
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    
+    /* Financial colors */
+    --financial-positive: 142 76% 36%;
+    --financial-negative: 0 84% 60%;
+    --financial-warning: 32 95% 44%;
+    --financial-info: 221 83% 53%;
+    --financial-neutral: 215 16% 47%;
   }
 
   .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.269 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.371 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.439 0 0);
+    /* Standard shadcn/ui dark variables */
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 262 83% 58%;
+    
+    /* Chart colors for dark mode */
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    
+    /* Financial colors for dark mode */
+    --financial-positive: 142 76% 36%;
+    --financial-negative: 0 84% 60%;
+    --financial-warning: 32 95% 44%;
+    --financial-info: 221 83% 53%;
+    --financial-neutral: 215 16% 47%;
   }
-}
 
-body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-family: Arial, Helvetica, sans-serif;
-  /* iOS Safari 26+ compatibility for backdrop coverage */
-  position: relative;
-}
+  body {
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    /* iOS Safari 26+ compatibility for backdrop coverage */
+    position: relative;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+    /* Optimize scrolling performance */
+    -webkit-overflow-scrolling: touch;
+    /* Improve text rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-@theme inline {
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Responsive design optimizations */
+  @layer base {
+    /* Responsive container queries for modern browsers */
+    @container (width < 640px) {
+      .metric-card {
+        padding: 1rem;
+      }
 
-/* Portal isolation for popup components */
-.root {
-  isolation: isolate;
-}
+      .metric-value {
+        font-size: 1.25rem;
+      }
+    }
 
-/* Utility classes for improved component styling */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+    /* Mobile-first responsive breakpoints */
+    @media (max-width: 640px) {
+      /* Reduce spacing on mobile */
+      .space-y-6 > * + * {
+        margin-top: 1rem !important;
+      }
+
+      /* Stack grid layouts on mobile */
+      .grid-cols-2,
+      .grid-cols-3,
+      .grid-cols-4 {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+
+      /* Responsive text sizes */
+      .text-financial-2xl {
+        font-size: 1.5rem !important;
+      }
+
+      .text-financial-xl {
+        font-size: 1.25rem !important;
+      }
+
+      /* Touch-friendly button sizes */
+      button {
+        min-height: 44px;
+      }
+
+      /* Improve table scrolling on mobile */
+      .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+
+    @media (max-width: 768px) {
+      /* Medium screen adjustments */
+      .max-w-7xl {
+        padding-left: 1rem;
+        padding-right: 1rem;
+      }
+
+      /* Reduce card padding on tablets */
+      .card-content {
+        padding: 1rem;
+      }
+
+      /* Stack metric groups */
+      .metric-group-horizontal {
+        flex-direction: column !important;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      /* Large screen enhancements */
+      .hover\:scale-105:hover {
+        transform: scale(1.05);
+      }
+
+      /* Enhanced shadows for larger screens */
+      .professional-shadow {
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+    }
+
+    /* Reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+
+      .animate-spin,
+      .animate-pulse {
+        animation: none !important;
+      }
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      :root {
+        --border-primary: 0 0 0;
+        --text-secondary: 0 0 0;
+      }
+
+      .dark {
+        --border-primary: 255 255 255;
+        --text-secondary: 255 255 255;
+      }
+    }
+
+    /* Print styles for professional reports */
+    @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        color-adjust: exact !important;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      /* Optimize metric cards for print */
+      .metric-card {
+        border: 1px solid #000 !important;
+        background: white !important;
+        color: black !important;
+        page-break-inside: avoid;
+      }
+
+      /* Force black text for financial amounts */
+      .financial-amount {
+        color: black !important;
+      }
+
+      /* Hide interactive elements */
+      button,
+      .theme-switcher,
+      .notification-button {
+        display: none !important;
+      }
+    }
+  }
+
+  /* Financial Design System Utilities */
+  @layer utilities {
+    /* Typography utilities for financial data */
+    .font-tabular {
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+    }
+
+    .font-financial {
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.025em;
+    }
+
+    /* Financial color utilities */
+    .text-financial-positive {
+      color: rgb(var(--financial-positive));
+    }
+
+    .text-financial-negative {
+      color: rgb(var(--financial-negative));
+    }
+
+    .text-financial-neutral {
+      color: rgb(var(--financial-neutral));
+    }
+
+    .text-financial-warning {
+      color: rgb(var(--financial-warning));
+    }
+
+    .text-financial-info {
+      color: rgb(var(--financial-info));
+    }
+
+    /* Background color utilities */
+    .bg-financial-positive {
+      background-color: rgb(var(--financial-positive));
+    }
+
+    .bg-financial-negative {
+      background-color: rgb(var(--financial-negative));
+    }
+
+    .bg-financial-neutral {
+      background-color: rgb(var(--financial-neutral));
+    }
+
+    /* Financial data layouts */
+    .grid-financial {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .table-financial {
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+
+    .table-financial td,
+    .table-financial th {
+      padding: 0.75rem;
+      border-bottom: 1px solid rgb(var(--border-primary));
+    }
+
+    .table-financial th {
+      background-color: rgb(var(--background-secondary));
+      font-weight: 600;
+      font-size: 0.875rem;
+      color: rgb(var(--text-secondary));
+      letter-spacing: 0.025em;
+    }
+
+    .table-financial .numeric {
+      text-align: right;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.025em;
+    }
+  }
+
+  @theme inline {
+    --color-background: hsl(var(--background));
+    --color-foreground: hsl(var(--foreground));
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
+  }
+
+  /* Portal isolation for popup components */
+  .root {
+    isolation: isolate;
+  }
+
+  /* Utility classes for improved component styling */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  @layer utilities {
+    /* Financial color utilities */
+    .text-financial-positive {
+      color: var(--color-success);
+    }
+    .text-financial-negative {
+      color: var(--color-danger);
+    }
+    .text-financial-neutral {
+      color: var(--color-neutral);
+    }
+    .text-financial-warning {
+      color: var(--color-warning);
+    }
+    .text-financial-info {
+      color: var(--color-info);
+    }
+
+    .bg-financial-positive {
+      background-color: var(--color-success);
+    }
+    .bg-financial-negative {
+      background-color: var(--color-danger);
+    }
+    .bg-financial-neutral {
+      background-color: var(--color-neutral);
+    }
+    .bg-financial-warning {
+      background-color: var(--color-warning);
+    }
+    .bg-financial-info {
+      background-color: var(--color-info);
+    }
+
+    .border-financial-positive {
+      border-color: var(--color-success);
+    }
+    .border-financial-negative {
+      border-color: var(--color-danger);
+    }
+    .border-financial-neutral {
+      border-color: var(--color-neutral);
+    }
+
+    /* Scheme color utilities */
+    .text-scheme-primary {
+      color: var(--color-scheme-primary);
+    }
+    .text-scheme-accent {
+      color: var(--color-scheme-accent);
+    }
+    .bg-scheme-primary {
+      background-color: var(--color-scheme-primary);
+    }
+    .bg-scheme-accent {
+      background-color: var(--color-scheme-accent);
+    }
+    .border-scheme-primary {
+      border-color: var(--color-scheme-primary);
+    }
+
+    /* Text hierarchy utilities */
+    .text-hierarchy-primary {
+      color: var(--color-text-primary);
+    }
+    .text-hierarchy-secondary {
+      color: var(--color-text-secondary);
+    }
+    .text-hierarchy-muted {
+      color: var(--color-text-muted);
+    }
+
+    /* Border utilities */
+    .border-theme-subtle {
+      border-color: var(--color-border-subtle);
+    }
+    .border-theme-default {
+      border-color: var(--color-border-default);
+    }
+  }
 }

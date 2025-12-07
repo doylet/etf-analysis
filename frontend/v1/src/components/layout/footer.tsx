@@ -12,13 +12,13 @@ export const Footer: React.FC<FooterProps> = ({
   className = ''
 }) => {
   return (
-    <footer className={`bg-white border-t mt-12 ${className}`}>
+    <footer className={`bg-background border-t border-border mt-12 ${className}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             {appName}
           </p>
-          <p className="text-sm text-gray-400 mt-2 sm:mt-0">
+          <p className="text-sm text-muted-foreground mt-2 sm:mt-0">
             {phase}
           </p>
         </div>

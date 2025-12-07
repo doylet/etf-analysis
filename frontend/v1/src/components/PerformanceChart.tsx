@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FinancialAmount } from '@/components/ui/financial-amount';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import portfolioService from '@/lib/portfolio-service';
 
@@ -10,64 +11,18 @@ interface PerformanceChartProps {
   totalValue?: number;
 }
 
-// Generate realistic performance data based on current portfolio
-const generatePerformanceData = (currentValue: number, holdings: any[]) => {
-  const data = [];
-  const days = 30;
-  
-  // Use portfolio composition to create more realistic variance
-  const volatilityMap = {
-    'QQQ': 0.025,    // Higher volatility for tech ETF
-    'JEPQ': 0.015,   // Income focused, lower volatility  
-    'SVOL': 0.020,   // Volatility product, moderate variance
-    'VEU.AX': 0.018, // International, moderate volatility
-  };
-  
-  // Calculate weighted portfolio volatility
-  const totalWeight = holdings.reduce((sum, h) => sum + (h.weight_pct || 0), 0);
-  const portfolioVolatility = holdings.reduce((vol, holding) => {
-    const weight = (holding.weight_pct || 0) / totalWeight;
-    const assetVol = volatilityMap[holding.symbol as keyof typeof volatilityMap] || 0.020;
-    return vol + (weight * assetVol);
-  }, 0);
-
-  // Generate historical data
-  for (let i = 0; i < days; i++) {
-    const progress = i / (days - 1);
-    
-    // Add realistic market movements
-    const trend = Math.sin(progress * Math.PI * 2) * 0.02; // Cyclical movement
-    const randomWalk = (Math.random() - 0.5) * portfolioVolatility;
-    const totalReturn = holdings.reduce((sum, h) => sum + (h.unrealized_gain_loss_pct || 0), 0) / holdings.length;
-    
-    // Scale total return to daily progression
-    const dailyReturn = (totalReturn / 100) * progress + trend + randomWalk;
-    const value = currentValue * (1 + dailyReturn);
-    
-    const date = new Date();
-    date.setDate(date.getDate() - (days - 1 - i));
-    
-    data.push({
-      date: date.toISOString().split('T')[0],
-      value: Math.round(value * 100) / 100,
-      formattedDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    });
-  }
-  
-  // Ensure last data point matches current value
-  if (data.length > 0) {
-    data[data.length - 1].value = currentValue;
-  }
-  
-  return data;
-};
+interface PerformanceDataPoint {
+  date: string;
+  value: number;
+  formattedDate: string;
+}
 
 interface PerformanceChartProps {
   totalValue?: number;
 }
 
 export default function PerformanceChart({ totalValue = 100000 }: PerformanceChartProps) {
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<PerformanceDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,30 +32,57 @@ export default function PerformanceChart({ totalValue = 100000 }: PerformanceCha
         setLoading(true);
         setError(null);
         
-        // Get real portfolio data
-        const summary = await portfolioService.getSummary();
-        const currentValue = summary.total_value || totalValue;
-        const holdings = summary.holdings || [];
+        // Get portfolio performance data from API (with fallback to mock data)
+        const performanceData = await portfolioService.getPerformance('30D'); // 30-day data
         
-        // Generate performance data based on real portfolio composition
-        const performanceData = generatePerformanceData(currentValue, holdings);
-        setData(performanceData);
+        // Transform API data to chart format
+        const chartData = performanceData.dates.map((date, index) => ({
+          date,
+          value: performanceData.values[index],
+          formattedDate: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        }));
+        
+        setData(chartData);
         
       } catch (err) {
         console.error('Failed to fetch performance data:', err);
-        setError('Failed to load performance data');
-        // Fallback to simple mock data
-        const fallbackData = Array.from({ length: 30 }, (_, i) => {
-          const date = new Date();
-          date.setDate(date.getDate() - (29 - i));
-          const variance = (Math.random() - 0.5) * 0.02;
-          return {
-            date: date.toISOString().split('T')[0],
-            value: totalValue * (1 + variance),
-            formattedDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-          };
-        });
-        setData(fallbackData);
+        setError('Unable to load performance data. Please try again later.');
+        
+        // Fallback: Set empty data to prevent crash
+        setData([]);
+        
+        // Fallback to summary data for a single point
+        try {
+          const summary = await portfolioService.getSummary();
+          const currentValue = summary.total_value || totalValue;
+          
+          // Create minimal fallback data with just current value
+          const fallbackData = Array.from({ length: 30 }, (_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (29 - i));
+            const variance = (Math.random() - 0.5) * 0.01; // Smaller variance for fallback
+            return {
+              date: date.toISOString().split('T')[0],
+              value: i === 29 ? currentValue : currentValue * (1 + variance), // Last point is exact
+              formattedDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            };
+          });
+          setData(fallbackData);
+          setError('Using estimated performance data - full historical data unavailable');
+        } catch (summaryErr) {
+          console.error('Failed to fetch summary data:', summaryErr);
+          // Final fallback with static data
+          const staticFallback = Array.from({ length: 30 }, (_, i) => {
+            const date = new Date();
+            date.setDate(date.getDate() - (29 - i));
+            return {
+              date: date.toISOString().split('T')[0],
+              value: totalValue,
+              formattedDate: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+            };
+          });
+          setData(staticFallback);
+        }
       } finally {
         setLoading(false);
       }
@@ -156,14 +138,24 @@ export default function PerformanceChart({ totalValue = 100000 }: PerformanceCha
     }).format(value);
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  interface TooltipProps {
+    active?: boolean;
+    payload?: Array<{ value: number; payload: PerformanceDataPoint }>;
+    label?: string;
+  }
+
+  const CustomTooltip = ({ active, payload }: TooltipProps) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-white p-3 border rounded-lg shadow-lg">
-          <p className="font-semibold">{payload[0].payload.formattedDate}</p>
-          <p className="text-blue-600">
-            Value: {formatCurrency(payload[0].value)}
-          </p>
+        <div className="bg-background-primary border border-border-primary rounded-lg shadow-lg p-3">
+          <p className="font-semibold text-text-primary tabular-nums">{payload[0].payload.formattedDate}</p>
+          <div className="mt-1">
+            <FinancialAmount
+              amount={payload[0].value}
+              size="sm"
+              className="text-scheme-primary"
+            />
+          </div>
         </div>
       );
     }
@@ -175,40 +167,66 @@ export default function PerformanceChart({ totalValue = 100000 }: PerformanceCha
       <CardHeader>
         <h3 className="text-lg font-semibold text-foreground">Performance</h3>
         <div className="flex gap-4 text-sm">
-          <div>
-            <span className="text-muted-foreground">30-Day Return: </span>
-            <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
-              {totalReturn >= 0 ? '+' : ''}{formatCurrency(totalReturn)} 
-              ({totalReturnPercent >= 0 ? '+' : ''}{totalReturnPercent.toFixed(2)}%)
-            </span>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">30-Day Return:</span>
+            <FinancialAmount
+              amount={totalReturn}
+              size="sm"
+              showTrend={true}
+              className="font-medium"
+            />
+            <span className="text-muted-foreground">•</span>
+            <FinancialAmount
+              amount={totalReturnPercent}
+              currency={undefined}
+              suffix="%"
+              precision={2}
+              size="sm"
+              showTrend={true}
+              className="font-medium"
+            />
           </div>
         </div>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+              <CartesianGrid 
+                strokeDasharray="3 3" 
+                stroke="var(--color-border-subtle)" 
+                opacity={0.6}
+              />
               <XAxis 
                 dataKey="formattedDate" 
-                stroke="#666"
+                stroke="var(--color-text-muted)"
                 fontSize={12}
                 tickLine={false}
+                axisLine={false}
+                className="tabular-nums"
               />
               <YAxis 
-                stroke="#666"
+                stroke="var(--color-text-muted)"
                 fontSize={12}
                 tickFormatter={(value) => formatCurrency(value)}
                 tickLine={false}
+                axisLine={false}
+                className="tabular-nums"
+                width={80}
               />
               <Tooltip content={<CustomTooltip />} />
               <Line
                 type="monotone"
                 dataKey="value"
-                stroke="#2563eb"
+                stroke={isPositive ? "var(--color-success)" : "var(--color-danger)"}
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 4, stroke: '#2563eb', strokeWidth: 2 }}
+                activeDot={{ 
+                  r: 4, 
+                  stroke: isPositive ? "var(--color-success)" : "var(--color-danger)", 
+                  strokeWidth: 2,
+                  fill: "white"
+                }}
               />
             </LineChart>
           </ResponsiveContainer>

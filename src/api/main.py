@@ -19,6 +19,7 @@ from api.routers import (
     rebalancing_router,
     tasks_router,
 )
+from api.routers.widgets import router as widgets_router
 from api.auth import router as auth_router
 from api.exceptions import exception_handlers
 
@@ -64,6 +65,7 @@ app.include_router(portfolio_router, prefix="/api")
 app.include_router(instruments_router, prefix="/api")
 app.include_router(rebalancing_router, prefix="/api")
 app.include_router(tasks_router, prefix="/api")
+app.include_router(widgets_router)
 
 
 @app.middleware("http")

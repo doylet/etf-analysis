@@ -26,18 +26,18 @@ const dataTableVariants = cva(
   }
 )
 
-export interface Column<T = any> {
+export interface Column<T = Record<string, unknown>> {
   key: string
   header: string
-  accessor?: string | ((item: T) => any)
-  render?: (value: any, item: T, index: number) => React.ReactNode
+  accessor?: string | ((item: T) => unknown)
+  render?: (value: unknown, item: T, index: number) => React.ReactNode
   sortable?: boolean
   align?: "left" | "center" | "right"
   width?: string | number
   className?: string
 }
 
-export interface DataTableProps<T = any>
+export interface DataTableProps<T = Record<string, unknown>>
   extends React.TableHTMLAttributes<HTMLTableElement>,
     VariantProps<typeof dataTableVariants> {
   data: T[]
@@ -86,17 +86,17 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
           const column = columns.find(col => col.key === sortState.key)
           if (!column) return 0
 
-          let aValue: any, bValue: any
+          let aValue: unknown, bValue: unknown
 
           if (typeof column.accessor === "function") {
             aValue = column.accessor(a)
             bValue = column.accessor(b)
           } else if (typeof column.accessor === "string") {
-            aValue = (a as any)[column.accessor]
-            bValue = (b as any)[column.accessor]
+            aValue = (a as Record<string, unknown>)[column.accessor]
+            bValue = (b as Record<string, unknown>)[column.accessor]
           } else {
-            aValue = (a as any)[column.key]
-            bValue = (b as any)[column.key]
+            aValue = (a as Record<string, unknown>)[column.key]
+            bValue = (b as Record<string, unknown>)[column.key]
           }
 
           // Handle different data types
@@ -160,8 +160,8 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
       }
     }
 
-    const getCellValue = (item: any, column: Column, index: number) => {
-      let value: any
+    const getCellValue = (item: T, column: Column, index: number) => {
+      let value: unknown
 
       if (typeof column.accessor === "function") {
         value = column.accessor(item)

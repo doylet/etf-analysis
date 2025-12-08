@@ -68,7 +68,7 @@ export const generateCSSVariables = (themeConfig: ThemeConfig) => {
   const vars: Record<string, string> = {};
   
   // Convert nested objects to CSS custom properties
-  const flattenObject = (obj: any, prefix: string = '') => {
+  const flattenObject = (obj: Record<string, unknown>, prefix: string = '') => {
     Object.keys(obj).forEach(key => {
       const value = obj[key];
       const cssVar = prefix ? `${prefix}-${key}` : key;

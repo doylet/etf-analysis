@@ -107,7 +107,7 @@ export const responsiveSpacing = {
  */
 export function getSpacing(path: string): string {
   const keys = path.split('.');
-  let value: any = spacing;
+  let value: string | number = spacing;
   
   for (const key of keys) {
     if (value && typeof value === 'object' && key in value) {

@@ -99,7 +99,7 @@ class PortfolioService {
     try {
       const response = await apiClient.get<PortfolioPerformance>(`/api/portfolio/performance?period=${period}`);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if it's a 404 error (endpoint doesn't exist) - use fallback data
       if (error?.response?.status === 404) {
         console.warn('Performance endpoint not available, using fallback data');

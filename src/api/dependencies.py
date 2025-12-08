@@ -9,6 +9,8 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
+from services.storage_adapter import DataStorageAdapter
+
 try:
     from celery import Celery
     CELERY_AVAILABLE = True
@@ -63,6 +65,16 @@ def get_celery_app():
     return _celery_app
 
 
+def get_database() -> DataStorageAdapter:
+    """
+    Get database storage adapter instance.
+    
+    Returns:
+        DataStorageAdapter instance for database operations
+    """
+    return DataStorageAdapter()
+
+
 # Placeholder for service and repository dependencies
 # These will be populated as services and repositories are implemented
 
@@ -106,4 +118,4 @@ async def get_current_user(
 #     pass
 
 
-__all__ = ['get_current_user', 'security', 'get_celery_app']
+__all__ = ['get_current_user', 'security', 'get_celery_app', 'get_database']

@@ -64,7 +64,6 @@ export const NotificationPopover: React.FC<NotificationPopoverProps> = ({
               {unreadCount}
             </span>
           )}
-          🔔
         </button>
       </PopoverTrigger>
       <PopoverContent>

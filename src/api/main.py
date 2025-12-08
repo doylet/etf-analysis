@@ -65,6 +65,10 @@ app.include_router(instruments_router, prefix="/api")
 app.include_router(rebalancing_router, prefix="/api")
 app.include_router(tasks_router, prefix="/api")
 
+# Include basic widget router (without management for now)
+from api.routers.widgets import router as basic_widgets_router
+app.include_router(basic_widgets_router)
+
 
 @app.middleware("http")
 async def log_requests(request, call_next):
@@ -102,7 +106,9 @@ async def root():
             "portfolio": "/api/portfolio",
             "instruments": "/api/instruments",
             "rebalancing": "/api/rebalancing",
-            "tasks": "/api/tasks"
+            "tasks": "/api/tasks",
+            "widgets": "/api/widgets",
+            "widget_management": "/api/widgets/available"
         },
         "timestamp": datetime.now().isoformat()
     }

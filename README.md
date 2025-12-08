@@ -1,6 +1,6 @@
 # ETF Analysis Dashboard 📊
 
-A comprehensive ETF and stock analysis dashboard built with Streamlit, featuring persistent data storage and Google Cloud Platform integration for production deployment.
+A comprehensive ETF and stock analysis dashboard with a modern Next.js interface, featuring persistent data storage and Google Cloud Platform integration for production deployment.
 
 ## Features
 
@@ -41,91 +41,73 @@ A comprehensive ETF and stock analysis dashboard built with Streamlit, featuring
 
 ## Quick Start (Local Development)
 
-### Prerequisites
+### Next.js Dashboard
 
-- Python 3.11 or higher
-- Conda (Anaconda or Miniconda)
+The Next.js dashboard is the primary interface:
 
-### Setup
-
-1. **Activate your conda environment:**
+1. **Navigate to frontend:**
 ```bash
-conda activate etf-analysis
+cd frontend/v1
 ```
 
 2. **Install dependencies:**
 ```bash
-pip install -r requirements.txt
+npm install
 ```
 
 3. **Create environment file:**
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
 
-4. **Run the application:**
+4. **Run the development server:**
 ```bash
-streamlit run app.py
+npm run dev
 ```
 
-The dashboard will open automatically in your browser at `http://localhost:8501`
+The dashboard will be available at `http://localhost:3000`
 
-## Usage
+### API Server (Backend)
 
-### Adding Instruments
+The FastAPI backend provides data services:
 
-1. Navigate to **Manage Instruments**
-2. Enter the ticker symbol (e.g., SPY, AAPL, QQQ)
-3. Select the instrument type (ETF, stock, or index)
-4. Add optional notes and sector information
-5. Click **Add Instrument**
+The Streamlit interface is still available but will be removed soon:
 
-Historical price data (1 year) is automatically fetched and stored.
+### Prerequisites
 
-### Viewing Price History
+- Python 3.11 or higher
+- Conda (Anaconda or Miniconda)
+1. **Start API server:**
+```bash
+python start_api_server.py
+```
 
-1. Go to **Price History**
-2. Select an instrument from the dropdown
-3. Choose a time period (1M, 3M, 6M, 1Y, 2Y, 5Y, All)
-4. View interactive charts and metrics
+Or with docker-compose:
+```bash
+docker-compose up api
+```
 
-### Comparing Instruments
-
-1. Navigate to **Comparative Analysis**
-2. Select 2-5 instruments to compare
-3. Choose a time period
-4. View normalized performance and metrics
-
-### Updating Data
-
-From the **Dashboard** page:
-1. Select an instrument or "All"
-2. Click **Fetch Latest Data**
-3. Data is updated and cached in the database
+The API will be available at `http://localhost:8000`
 
 ## Project Structure
 
 ```
 etf-analysis/
-├── app.py                      # Main Streamlit application
+├── frontend/v1/                # Next.js dashboard
+├── src/                        # Source code
+│   ├── api/                    # FastAPI backend
+│   ├── models/                 # Data models
+│   ├── services/               # Business logic
+│   ├── widgets/                # Widget business logic
+│   └── utils/                  # Utilities
 ├── requirements.txt            # Python dependencies
-├── Dockerfile                  # Container configuration
-├── cloudbuild.yaml            # Cloud Build CI/CD config
-├── trigger.yaml               # Cloud Build trigger config
-├── .env.example               # Environment variables template
-├── .gitignore                 # Git exclusions
-├── .dockerignore              # Docker exclusions
-│
-├── src/                       # Source code
-│   ├── models/                # Data models
-│   │   ├── __init__.py
-│   │   └── database.py        # SQLAlchemy models
-│   ├── services/              # Business logic
-│   │   ├── __init__.py
-│   │   ├── data_fetcher.py    # Price data fetching
-│   │   └── alphavantage_client.py  # Symbol search
-│   └── utils/                 # Utilities
-│       ├── __init__.py
+├── Dockerfile.api              # API container configuration
+├── docker-compose.yml          # Multi-service setup
+├── cloudbuild.yaml             # Cloud Build CI/CD config
+├── .env.example                # Environment variables template
+├── tests/                      # Test suites
+└── docs/                       # Documentation
+```
 │       └── gcp_utils.py       # GCP integration
 │
 ├── config/                    # Configuration
@@ -311,12 +293,23 @@ GCP_PROJECT_ID=your-project-id
 
 ## Technology Stack
 
-- **Frontend**: Streamlit
-- **Charts**: Plotly
+### Frontend
+- **Primary**: Next.js 14 (React) with TypeScript
+- **Charts**: Recharts, Plotly
+- **UI Components**: shadcn/ui with Radix UI
+- **Styling**: Tailwind CSS
+
+### Backend
+- **API**: FastAPI
 - **Data**: pandas, NumPy
-- **Database**: SQLAlchemy (SQLite/PostgreSQL)
-- **Market Data**: yfinance
-- **Cloud**: Google Cloud Run, Cloud SQL, Cloud Storage
+- **Database**: SQLAlchemy (SQLite/PostgreSQL/BigQuery)
+- **Market Data**: yfinance, Alpha Vantage
+
+### Cloud & Infrastructure
+- **Hosting**: Google Cloud Run
+- **Database**: Cloud SQL, BigQuery
+- **Storage**: Cloud Storage
+- **CI/CD**: Cloud Build
 - **Container**: Docker
 
 ## Development
@@ -335,14 +328,14 @@ pytest tests/ --cov=src --cov-report=html
 
 ### Local Docker Build
 ```bash
-# Build image
-docker build -t etf-analysis-dashboard .
+# Build API image
+docker build -f Dockerfile.api -t etf-analysis-api .
 
 # Run container
-docker run -p 8080:8080 etf-analysis-dashboard
+docker run -p 8000:8000 etf-analysis-api
 ```
 
-Access at `http://localhost:8080`
+Access at `http://localhost:8000`
 
 ## Cost Optimization (Cloud Run)
 

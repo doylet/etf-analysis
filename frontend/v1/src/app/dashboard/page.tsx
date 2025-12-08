@@ -8,16 +8,15 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 // Import working widget components  
-import { PortfolioSummary } from '@/components/PortfolioSummary';
-import { Holdings } from '@/components/Holdings';
-import { CorrelationMatrix } from '@/components/CorrelationMatrix';
-import { MonteCarloSimulation } from '@/components/MonteCarloSimulation';
+import PortfolioSummary from '@/components/PortfolioSummary';
+import Holdings from '@/components/Holdings';
+import CorrelationMatrix from '@/components/CorrelationMatrix';
+import MonteCarloSimulation from '@/components/MonteCarloSimulation';
 
 import { useAllWidgets } from '@/hooks/use-portfolio-widgets';
-import { RefreshCw, Grid, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 // Import CSS for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -67,7 +66,7 @@ const AVAILABLE_WIDGETS = [
 ];
 
 export default function DashboardPage() {
-  const [portfolioId, setPortfolioId] = useState<string | undefined>();
+  const [portfolioId] = useState<string | undefined>();
   const [showWidgetPalette, setShowWidgetPalette] = useState(false);
   
   // Initialize with default widgets
@@ -138,17 +137,18 @@ export default function DashboardPage() {
     }));
   }, []);
 
-  const addWidget = (type: string) => {
+  const addWidget = useCallback((type: string) => {
     const widgetDef = AVAILABLE_WIDGETS.find(w => w.type === type);
     if (!widgetDef) return;
 
+    const timestamp = Date.now();
     const newWidget: WidgetInstance = {
-      id: `${type}-${Date.now()}`,
+      id: `${type}-${timestamp}`,
       type,
       name: widgetDef.name,
       component: widgetDef.component,
       position: {
-        i: `${type}-${Date.now()}`,
+        i: `${type}-${timestamp}`,
         x: 0,
         y: 0,
         w: widgetDef.defaultSize.w,
@@ -158,7 +158,7 @@ export default function DashboardPage() {
 
     setWidgets(prev => [...prev, newWidget]);
     setShowWidgetPalette(false);
-  };
+  }, []);
 
   const removeWidget = (widgetId: string) => {
     setWidgets(prev => prev.filter(w => w.id !== widgetId));
@@ -175,7 +175,7 @@ export default function DashboardPage() {
   // Render individual widget with remove button
   const renderWidget = (widget: WidgetInstance) => (
     <Card key={widget.id} className="h-full relative overflow-hidden cursor-move">
-      <CardHeader className="pb-3">
+      <CardHeader className="py-1 border-b">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="truncate">{widget.name}</span>
           <Button
@@ -191,7 +191,7 @@ export default function DashboardPage() {
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-0 h-full overflow-auto">
+      <CardContent className="p-0 h-full overflow-auto border-none">
         <widget.component portfolioId={portfolioId} />
       </CardContent>
     </Card>
@@ -204,11 +204,10 @@ export default function DashboardPage() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-2 px-4 border-b">
         <div className="flex items-center gap-4">
-          <Grid className="h-5 w-5" />
           <div>
-            <h1 className="text-xl font-semibold">Portfolio Dashboard</h1>
+            <h1 className="font-semibold">Portfolio Dashboard</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>{widgets.length} widgets</span>
             </div>
@@ -226,7 +225,6 @@ export default function DashboardPage() {
           </Button>
           
           <Button variant="outline" onClick={handleRefreshAll} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
             Refresh
           </Button>
         </div>
@@ -234,7 +232,7 @@ export default function DashboardPage() {
 
       {/* Widget Palette */}
       {showWidgetPalette && (
-        <div className="p-4 border-b bg-muted/30">
+        <div className="p-0 border-b bg-muted/30">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium">Add Widget:</span>
             {availableToAdd.map(widget => (
@@ -257,7 +255,7 @@ export default function DashboardPage() {
       )}
 
       {/* Main Dashboard Grid */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1 overflow-auto p-0">
         <ResponsiveGridLayout
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
@@ -283,7 +281,7 @@ export default function DashboardPage() {
             <div className="text-center">
               <h3 className="text-lg font-medium mb-2">No widgets added yet</h3>
               <p className="text-muted-foreground mb-4">
-                Click "Add Widget" to start building your dashboard
+                Click &ldquo;Add Widget&rdquo; to start building your dashboard
               </p>
             </div>
           </div>

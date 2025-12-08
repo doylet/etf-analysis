@@ -64,7 +64,7 @@ export interface HoldingsBreakdownData {
 }
 
 export interface CorrelationMatrixData {
-  correlation_matrix: Record<string, Record<string, number>>;
+  correlation_matrix: Record<string, Record<string, number>> | Array<{symbol1: string, symbol2: string, correlation: number}>;
   symbols: string[];
   time_period: {
     start_date: string;
@@ -172,6 +172,93 @@ export interface PerformanceData {
   last_updated: string;
 }
 
+export interface TimeseriesData {
+  price_data: Array<{
+    date: string;
+    value: number;
+    return: number;
+  }>;
+  statistics: {
+    total_return: number;
+    volatility: number;
+    sharpe_ratio: number;
+    max_drawdown: number;
+  };
+  rolling_metrics: Array<{
+    date: string;
+    rolling_return: number;
+    rolling_volatility: number;
+  }>;
+  last_updated: string;
+}
+
+export interface PortfolioTransitionData {
+  current_allocation: Record<string, number>;
+  target_allocation: Record<string, number>;
+  required_trades: Array<{
+    symbol: string;
+    action: 'buy' | 'sell';
+    shares: number;
+    value: number;
+  }>;
+  transition_cost: number;
+  expected_impact: {
+    risk_change: number;
+    return_change: number;
+  };
+  last_updated: string;
+}
+
+export interface NewsEventData {
+  events: Array<{
+    date: string;
+    title: string;
+    sentiment: number;
+    impact_score: number;
+    affected_symbols: string[];
+  }>;
+  sentiment_analysis: {
+    overall_sentiment: number;
+    sentiment_trend: number;
+  };
+  market_impact: {
+    price_correlation: number;
+    volatility_impact: number;
+  };
+  last_updated: string;
+}
+
+export interface PortfolioOptimizerData {
+  current_weights: Record<string, number>;
+  optimized_weights: Record<string, number>;
+  expected_return: number;
+  expected_risk: number;
+  sharpe_ratio: number;
+  improvement_metrics: {
+    return_improvement: number;
+    risk_reduction: number;
+    sharpe_improvement: number;
+  };
+  constraints_satisfied: boolean;
+  last_updated: string;
+}
+
+export interface ConstrainedOptimizationData {
+  constraints: Record<string, string | number | boolean | string[]>;
+  optimized_weights: Record<string, number>;
+  optimization_result: {
+    objective_value: number;
+    risk: number;
+    return: number;
+    sharpe_ratio: number;
+  };
+  constraint_violations: Array<{
+    constraint: string;
+    violation: number;
+  }>;
+  last_updated: string;
+}
+
 export type PortfolioSummaryResponse = WidgetResponse<PortfolioSummaryData>;
 export type HoldingsBreakdownResponse = WidgetResponse<HoldingsBreakdownData>;
 export type CorrelationMatrixResponse = WidgetResponse<CorrelationMatrixData>;
@@ -213,6 +300,7 @@ export interface UseMonteCarloOptions {
   portfolioId?: string;
   numSimulations?: number;
   timeHorizonDays?: number;
+  estimationMethod?: 'Historical Mean' | 'Exponentially Weighted';
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
@@ -239,18 +327,55 @@ export interface UsePerformanceOptions {
   refreshInterval?: number;
 }
 
+export interface UseTimeseriesOptions {
+  portfolioId?: string;
+  timePeriod?: string;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+export interface UsePortfolioTransitionOptions {
+  currentPortfolioId?: string;
+  targetPortfolioId?: string;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+export interface UseNewsEventOptions {
+  portfolioId?: string;
+  timePeriod?: string;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+export interface UsePortfolioOptimizerOptions {
+  portfolioId?: string;
+  optimizationType?: string;
+  riskTolerance?: number;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+export interface UseConstrainedOptimizationOptions {
+  portfolioId?: string;
+  constraints?: Record<string, string | number | boolean | string[]>;
+  optimizationType?: string;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
 const WIDGET_API_BASE = '/api/widgets';
 
 // Generic widget fetcher function
 async function fetchWidget<T>(
   endpoint: string,
-  params: Record<string, string> = {}
+  params?: Record<string, string | number> | undefined
 ): Promise<WidgetResponse<T>> {
   try {
     const response = await axios.get<WidgetResponse<T>>(`${WIDGET_API_BASE}${endpoint}`, { params });
     return response.data;
-  } catch (error: string) {
-    if (error.response?.data) {
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response?.data) {
       return error.response.data;
     }
     throw error;
@@ -275,7 +400,7 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
       setLoading(true);
       setError(null);
       
-      const params = portfolioId ? { portfolio_id: portfolioId } : {};
+      const params = portfolioId ? { portfolio_id: portfolioId } : undefined;
       const widgetResponse = await fetchWidget<PortfolioSummaryData>('/portfolio/summary', params);
       
       if (widgetResponse.success && widgetResponse.data) {
@@ -292,17 +417,21 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
         setData(null);
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch portfolio summary widget:', err);
       
-      if (err.response?.status === 401) {
-        setError('Authentication required to access portfolio data');
-      } else if (err.response?.status === 403) {
-        setError('Insufficient permissions to access portfolio data');
-      } else if (err.response?.status === 422) {
-        setError('Invalid portfolio parameters provided');
-      } else if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
+      if (axios.isAxiosError(err)) {
+        if (err.response?.status === 401) {
+          setError('Authentication required to access portfolio data');
+        } else if (err.response?.status === 403) {
+          setError('Insufficient permissions to access portfolio data');
+        } else if (err.response?.status === 422) {
+          setError('Invalid portfolio parameters provided');
+        } else if (err.response?.data?.detail) {
+          setError(err.response.data.detail);
+        } else {
+          setError('Failed to load portfolio summary data');
+        }
       } else {
         setError('Failed to load portfolio summary data');
       }
@@ -376,9 +505,13 @@ export function useHoldingsBreakdown(options: UseHoldingsBreakdownOptions = {}):
         setMetadata(widgetResponse.metadata || null);
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch holdings breakdown:', err);
-      setError(err.response?.data?.detail || 'Failed to load holdings breakdown');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load holdings breakdown');
+      } else {
+        setError('Failed to load holdings breakdown');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -431,7 +564,7 @@ export function useCorrelationMatrix(options: UseCorrelationMatrixOptions = {}):
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
-        time_window_days: timeWindowDays
+        time_window_days: timeWindowDays.toString()
       };
       
       const widgetResponse = await fetchWidget<CorrelationMatrixData>('/portfolio/correlation', params);
@@ -447,9 +580,13 @@ export function useCorrelationMatrix(options: UseCorrelationMatrixOptions = {}):
         setMetadata(widgetResponse.metadata || null);
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch correlation matrix:', err);
-      setError(err.response?.data?.detail || 'Failed to load correlation matrix');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load correlation matrix');
+      } else {
+        setError('Failed to load correlation matrix');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -491,6 +628,7 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
     portfolioId, 
     numSimulations = 10000, 
     timeHorizonDays = 252, 
+    estimationMethod = 'Historical Mean',
     autoRefresh = false, 
     refreshInterval = 1200000 // 20 min default
   } = options;
@@ -508,8 +646,9 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
-        num_simulations: numSimulations,
-        time_horizon_days: timeHorizonDays
+        num_simulations: numSimulations.toString(),
+        time_horizon_days: timeHorizonDays.toString(),
+        estimation_method: estimationMethod
       };
       
       const widgetResponse = await fetchWidget<MonteCarloData>('/portfolio/monte-carlo', params);
@@ -525,9 +664,13 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
         setMetadata(widgetResponse.metadata || null);
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to run Monte Carlo simulation:', err);
-      setError(err.response?.data?.detail || 'Failed to run simulation');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to run simulation');
+      } else {
+        setError('Failed to run simulation');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -596,9 +739,13 @@ export function useBenchmarkComparison(options: UseBenchmarkComparisonOptions = 
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch benchmark comparison:', err);
-      setError(err.response?.data?.detail || 'Failed to load benchmark comparison');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load benchmark comparison');
+      } else {
+        setError('Failed to load benchmark comparison');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -665,9 +812,13 @@ export function useDividendAnalysis(options: UseDividendAnalysisOptions = {}): U
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch dividend analysis:', err);
-      setError(err.response?.data?.detail || 'Failed to load dividend analysis');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load dividend analysis');
+      } else {
+        setError('Failed to load dividend analysis');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -734,9 +885,13 @@ export function usePerformanceAnalysis(options: UsePerformanceOptions = {}): Use
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch performance analysis:', err);
-      setError(err.response?.data?.detail || 'Failed to load performance analysis');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load performance analysis');
+      } else {
+        setError('Failed to load performance analysis');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -803,9 +958,13 @@ export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWi
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch timeseries analysis:', err);
-      setError(err.response?.data?.detail || 'Failed to load timeseries analysis');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load timeseries analysis');
+      } else {
+        setError('Failed to load timeseries analysis');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -872,9 +1031,13 @@ export function usePortfolioTransition(options: UsePortfolioTransitionOptions = 
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch portfolio transition:', err);
-      setError(err.response?.data?.detail || 'Failed to load portfolio transition');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load portfolio transition');
+      } else {
+        setError('Failed to load portfolio transition');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -941,9 +1104,13 @@ export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidg
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch news event analysis:', err);
-      setError(err.response?.data?.detail || 'Failed to load news event analysis');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load news event analysis');
+      } else {
+        setError('Failed to load news event analysis');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -996,7 +1163,7 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
         optimization_type: optimizationType,
-        risk_tolerance: riskTolerance
+        risk_tolerance: riskTolerance.toString()
       };
       
       const widgetResponse = await fetchWidget<PortfolioOptimizerData>('/portfolio-optimizer', params);
@@ -1011,9 +1178,13 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch portfolio optimizer:', err);
-      setError(err.response?.data?.detail || 'Failed to load portfolio optimizer');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load portfolio optimizer');
+      } else {
+        setError('Failed to load portfolio optimizer');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -1066,7 +1237,7 @@ export function useConstrainedOptimization(options: UseConstrainedOptimizationOp
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
         optimization_type: optimizationType,
-        ...(constraints && { constraints })
+        ...(constraints && { constraints: JSON.stringify(constraints) })
       };
       
       const widgetResponse = await fetchWidget<ConstrainedOptimizationData>('/constrained-optimization', params);
@@ -1081,9 +1252,13 @@ export function useConstrainedOptimization(options: UseConstrainedOptimizationOp
         setData(null);
         setMetadata(widgetResponse.metadata || null);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch constrained optimization:', err);
-      setError(err.response?.data?.detail || 'Failed to load constrained optimization');
+      if (axios.isAxiosError(err)) {
+        setError(err.response?.data?.detail || 'Failed to load constrained optimization');
+      } else {
+        setError('Failed to load constrained optimization');
+      }
       setData(null);
     } finally {
       setLoading(false);
@@ -1176,18 +1351,18 @@ export function useAllWidgets(portfolioId?: string) {
       constrainedOptimization.refetch()
     ]);
   }, [
-    portfolioSummary.refetch, 
-    holdingsBreakdown.refetch, 
-    correlationMatrix.refetch, 
-    monteCarloSimulation.refetch,
-    benchmarkComparison.refetch,
-    dividendAnalysis.refetch,
-    performanceAnalysis.refetch,
-    timeseriesAnalysis.refetch,
-    portfolioTransition.refetch,
-    newsEventAnalysis.refetch,
-    portfolioOptimizer.refetch,
-    constrainedOptimization.refetch
+    portfolioSummary,
+    holdingsBreakdown,
+    correlationMatrix,
+    monteCarloSimulation,
+    benchmarkComparison,
+    dividendAnalysis,
+    performanceAnalysis,
+    timeseriesAnalysis,
+    portfolioTransition,
+    newsEventAnalysis,
+    portfolioOptimizer,
+    constrainedOptimization
   ]);
 
   return {

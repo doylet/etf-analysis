@@ -15,9 +15,9 @@ const cardVariants = cva(
         outlined: "shadow-none border-2 border-border hover:border-muted-foreground",
       },
       size: {
-        sm: "p-4",
+        sm: "p-2",
         default: "",
-        lg: "p-8",
+        lg: "p-4",
       },
     },
     defaultVariants: {
@@ -43,13 +43,13 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(
 Card.displayName = "Card"
 
 const cardHeaderVariants = cva(
-  "flex flex-col space-y-1.5",
+  "flex flex-col space-y-1.5 border-b",
   {
     variants: {
       size: {
-        sm: "p-4 space-y-1",
-        default: "p-6 space-y-1.5", 
-        lg: "p-8 space-y-2",
+        sm: "p-2 space-y-1",
+        default: "p-3 space-y-1.5", 
+        lg: "p-4 space-y-2",
       },
     },
     defaultVariants: {

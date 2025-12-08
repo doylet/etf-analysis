@@ -111,7 +111,23 @@ export default function CorrelationMatrixComponent({
   }
 
   const symbols = matrix?.symbols || [];
-  const correlationData = matrix?.correlation_matrix || {};
+  
+  // Transform correlation matrix from API format to expected format
+  let correlationData: Record<string, Record<string, number>> = {};
+  if (matrix?.correlation_matrix) {
+    if (Array.isArray(matrix.correlation_matrix)) {
+      // Convert array format to nested object format
+      matrix.correlation_matrix.forEach((item: {symbol1: string, symbol2: string, correlation: number}) => {
+        if (!correlationData[item.symbol1]) {
+          correlationData[item.symbol1] = {};
+        }
+        correlationData[item.symbol1][item.symbol2] = item.correlation;
+      });
+    } else {
+      // Already in correct format
+      correlationData = matrix.correlation_matrix as Record<string, Record<string, number>>;
+    }
+  }
 
   return (
     <Card>

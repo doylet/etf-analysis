@@ -14,7 +14,7 @@ export interface WidgetConfig {
     w: number;
     h: number;
   };
-  options?: Record<string, any>;
+  options?: Record<string, string | number | boolean | string[]>;
   isVisible: boolean;
   isMinimized: boolean;
   createdAt: Date;
@@ -83,14 +83,14 @@ export interface WidgetAction {
     widgetId?: string;
     widgetType?: WidgetType;
     position?: WidgetConfig['position'];
-    options?: Record<string, any>;
+    options?: Record<string, string | number | boolean | string[]>;
     config?: Partial<WidgetConfig>;
   };
 }
 
-export interface WidgetRegistry {
-  [key in WidgetType]: WidgetDefinition;
-}
+export type WidgetRegistry = {
+  [K in WidgetType]: WidgetDefinition;
+};
 
 export const WIDGET_REGISTRY: WidgetRegistry = {
   'portfolio-summary': {

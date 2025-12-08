@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { DataTable } from '@/components/ui/data-table';
 import { FinancialAmount } from '@/components/ui/financial-amount';
 import { PercentageChange } from '@/components/ui/percentage-change';
-import { useHoldingsBreakdown } from '@/hooks/use-portfolio-widgets';
+import { useHoldingsBreakdown, type HoldingData, type BreakdownData } from '@/hooks/use-portfolio-widgets';
 
 interface HoldingsBreakdownProps {
   portfolioId?: string;
@@ -250,7 +250,7 @@ export default function HoldingsBreakdownComponent({
                 <PieChart className="h-5 w-5" />
                 {breakdownType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Distribution
               </h3>
-              <DataTable 
+              <DataTable
                 data={breakdown.breakdown}
                 columns={breakdownColumns}
                 variant="striped"
@@ -263,7 +263,7 @@ export default function HoldingsBreakdownComponent({
           {breakdown?.holdings && breakdown.holdings.length > 0 && (
             <div>
               <h3 className="text-lg font-medium mb-3">Individual Holdings</h3>
-              <DataTable 
+              <DataTable
                 data={breakdown.holdings}
                 columns={holdingsColumns}
                 variant="default"

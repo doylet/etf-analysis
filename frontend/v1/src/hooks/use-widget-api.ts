@@ -16,18 +16,18 @@ import axios, { AxiosResponse } from 'axios';
 export interface WidgetError {
   code: string;
   message: string;
-  details?: Record<string, any>;
+  details?: Record<string, string>;
 }
 
 export interface WidgetMetadata {
   execution_time: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, string>;
   widget_description: string;
   cache_hit?: boolean;
   cached_at?: string;
 }
 
-export interface WidgetResponse<T = any> {
+export interface WidgetResponse<T = Record<string, unknown>> {
   widget_name: string;
   success: boolean;
   data: T | null;
@@ -121,7 +121,7 @@ export interface CorrelationMatrixData {
   symbols: string[];
   correlation_matrix: CorrelationPair[];
   correlation_pairs: CorrelationPairs[];
-  benchmark_comparison: Record<string, any>[];
+  benchmark_comparison: Record<string, string | number>[];
   statistics: CorrelationStatistics;
   analysis_period: AnalysisPeriod;
   last_updated: string;
@@ -241,7 +241,7 @@ export function usePortfolioSummary(
         setData(null);
       }
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch portfolio summary widget:', err);
       setError(handleApiError(err));
       setData(null);
@@ -312,8 +312,8 @@ export function useHoldingsBreakdown(
         setData(null);
       }
       
-    } catch (err: any) {
-      console.error('Failed to fetch holdings breakdown:', err);
+    } catch (err: unknown) {
+      console.error('Failed to fetch holdings breakdown widget:', err);
       setError(handleApiError(err));
       setData(null);
     } finally {
@@ -384,8 +384,8 @@ export function useCorrelationMatrix(
         setData(null);
       }
       
-    } catch (err: any) {
-      console.error('Failed to fetch correlation matrix:', err);
+    } catch (err: unknown) {
+      console.error('Failed to fetch correlation matrix widget:', err);
       setError(handleApiError(err));
       setData(null);
     } finally {
@@ -465,8 +465,8 @@ export function useMonteCarloSimulation(
         setData(null);
       }
       
-    } catch (err: any) {
-      console.error('Failed to run Monte Carlo simulation:', err);
+    } catch (err: unknown) {
+      console.error('Failed to run Monte Carlo simulation widget:', err);
       setError(handleApiError(err));
       setData(null);
     } finally {
@@ -490,22 +490,28 @@ export function useMonteCarloSimulation(
 /**
  * Handle API errors with consistent error messages
  */
-function handleApiError(err: any): string {
-  if (err.response?.status === 401) {
-    return 'Authentication required to access portfolio data';
-  } else if (err.response?.status === 403) {
-    return 'Insufficient permissions to access portfolio data';
-  } else if (err.response?.status === 422) {
-    return 'Invalid parameters provided';
-  } else if (err.response?.status === 500) {
-    return 'Server error - please try again later';
-  } else if (err.response?.data?.detail) {
-    return err.response.data.detail;
-  } else if (err.message) {
-    return err.message;
-  } else {
-    return 'An unexpected error occurred';
+function handleApiError(err: unknown): string {
+  // Handle Axios errors with proper type checking
+  if (axios.isAxiosError(err)) {
+    if (err.response?.status === 401) {
+      return 'Authentication required to access portfolio data';
+    } else if (err.response?.status === 403) {
+      return 'Insufficient permissions to access portfolio data';
+    } else if (err.response?.status === 422) {
+      return 'Invalid parameters provided';
+    } else if (err.response?.status === 500) {
+      return 'Server error - please try again later';
+    } else if (err.response?.data?.detail) {
+      return err.response.data.detail;
+    }
   }
+  
+  // Handle generic JavaScript errors
+  if (err instanceof Error) {
+    return err.message;
+  }
+  
+  return 'An unexpected error occurred';
 }
 
 /**

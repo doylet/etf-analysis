@@ -75,23 +75,23 @@ export default function WidgetTestPage() {
                   <div className="bg-gray-50 p-3 rounded text-sm font-mono">
                     {name === 'Portfolio Summary' && (
                       <div>
-                        Total Value: ${hook.data.total_value?.toFixed(2)}<br/>
-                        Positions: {hook.data.positions}<br/>
-                        Return: {hook.data.total_return_percent?.toFixed(2)}%
+                        Total Value: ${(hook.data as any).total_value?.toFixed(2)}<br/>
+                        Positions: {(hook.data as any).positions}<br/>
+                        Return: {(hook.data as any).total_return_percent?.toFixed(2)}%
                       </div>
                     )}
                     {name === 'Holdings Breakdown' && (
                       <div>
-                        Holdings: {hook.data.holdings?.length || 0}<br/>
-                        Total Value: ${hook.data.total_value?.toFixed(2)}<br/>
-                        Type: {hook.data.breakdown_type}
+                        Holdings: {(hook.data as any).holdings?.length || 0}<br/>
+                        Total Value: ${(hook.data as any).total_value?.toFixed(2)}<br/>
+                        Type: {(hook.data as any).breakdown_type}
                       </div>
                     )}
                     {name === 'Correlation Matrix' && (
                       <div>
-                        Symbols: {hook.data.symbols?.length || 0}<br/>
-                        Period: {hook.data.time_period?.days} days<br/>
-                        Avg Correlation: {hook.data.statistics?.avg_correlation?.toFixed(3)}
+                        Symbols: {(hook.data as any).symbols?.length || 0}<br/>
+                        Period: {(hook.data as any).time_period?.days} days<br/>
+                        Avg Correlation: {(hook.data as any).statistics?.avg_correlation?.toFixed(3)}
                       </div>
                     )}
                   </div>

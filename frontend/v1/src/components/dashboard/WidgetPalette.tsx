@@ -52,7 +52,7 @@ export function WidgetPalette({ isOpen, onClose }: WidgetPaletteProps) {
       const matchesSearch = searchQuery === '' || 
         widget.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         widget.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        widget.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        widget.tags?.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
       
       const matchesCategory = selectedCategory === 'all' || widget.category === selectedCategory;
       
@@ -165,7 +165,7 @@ export function WidgetPalette({ isOpen, onClose }: WidgetPaletteProps) {
                           
                           {widget.tags && (
                             <div className="flex gap-1 mt-2 flex-wrap">
-                              {widget.tags.slice(0, 3).map((tag) => (
+                              {widget.tags.slice(0, 3).map((tag: string) => (
                                 <Badge key={tag} variant="outline" className="text-xs">
                                   {tag}
                                 </Badge>

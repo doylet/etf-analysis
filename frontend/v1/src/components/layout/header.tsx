@@ -33,8 +33,7 @@ const generateBreadcrumbs = (pathname: string) => {
 
 export const Header: React.FC<HeaderProps> = ({
   userName = "User",
-  title = "ETF Analysis",
-  status = "live",
+  title = "Application"
 }) => {
   const pathname = usePathname();
   const breadcrumbs = generateBreadcrumbs(pathname);
@@ -47,17 +46,14 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-background border-b border-border shadow-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Left side - Brand and Navigation */}
           <div className="flex items-center space-x-6">
             {/* Brand */}
             <div className="flex items-center space-x-3">
-              <div className="flex items-center justify-center w-8 h-8 bg-scheme-primary rounded-lg">
-                <BarChart3 className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex flex-col">
-                <h1 className="text-lg font-semibold text-foreground tabular-nums">
+              <div className="flex flex-row gap-2">
+                <h1 className="font-semibold text-foreground tabular-nums">
                   {title}
                 </h1>
                 {/* Breadcrumbs */}
@@ -87,22 +83,6 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
           </div>
-          <StatusIndicator
-            variant={
-              status === "live"
-                ? "success"
-                : status === "delayed"
-                ? "warning"
-                : "danger"
-            }
-            size="sm"
-          >
-            {status === "live"
-              ? "Live Data"
-              : status === "delayed"
-              ? "Delayed"
-              : "Data Issues"}
-          </StatusIndicator>
 
           {/* Right side - User info and actions */}
           <div className="flex items-center space-x-4">

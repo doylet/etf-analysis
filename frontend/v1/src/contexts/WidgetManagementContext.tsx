@@ -10,6 +10,7 @@ import {
   WidgetConfig, 
   WidgetType, 
   WidgetAction, 
+  WidgetDefinition,
   DashboardLayout, 
   WIDGET_REGISTRY 
 } from '@/types/widget-config';
@@ -101,10 +102,13 @@ function widgetReducer(state: WidgetManagementState, action: WidgetAction): Widg
     case 'add': {
       if (!action.payload.widgetType) return state;
       
-      const widgetDef = WIDGET_REGISTRY[action.payload.widgetType];
+      const widgetType = action.payload.widgetType;
+      if (!(widgetType in WIDGET_REGISTRY)) return state;
+      
+      const widgetDef = (WIDGET_REGISTRY as Record<string, WidgetDefinition>)[widgetType];
       const newWidget: WidgetConfig = {
-        id: `${action.payload.widgetType}-${Date.now()}`,
-        type: action.payload.widgetType,
+        id: `${widgetType}-${Date.now()}`,
+        type: widgetType,
         title: widgetDef.name,
         position: action.payload.position || {
           x: 0,
@@ -228,10 +232,17 @@ export function WidgetManagementProvider({ children }: { children: React.ReactNo
   });
 
   // Actions
-  const addWidget = useCallback((type: WidgetType, position?: { x: number; y: number }) => {
+  const addWidget = useCallback((type: WidgetType, position?: { x: number; y: number; w?: number; h?: number }) => {
+    const fullPosition = position ? {
+      x: position.x,
+      y: position.y,
+      w: position.w || 6,
+      h: position.h || 4
+    } : undefined;
+    
     dispatch({
       type: 'add',
-      payload: { widgetType: type, position }
+      payload: { widgetType: type, position: fullPosition }
     });
   }, []);
 

@@ -22,18 +22,18 @@ import {
 } from 'lucide-react';
 
 // Import all widget components
-import { PortfolioSummary } from '@/components/widgets/PortfolioSummary';
-import { HoldingsBreakdown } from '@/components/widgets/HoldingsBreakdown';
-import { CorrelationMatrix } from '@/components/widgets/CorrelationMatrix';
-import { MonteCarloSimulation } from '@/components/widgets/MonteCarloSimulation';
-import { BenchmarkComparison } from '@/components/widgets/BenchmarkComparison';
-import { DividendAnalysis } from '@/components/widgets/DividendAnalysis';
-import { PerformanceAnalysis } from '@/components/widgets/PerformanceAnalysis';
-import { TimeseriesAnalysis } from '@/components/widgets/TimeseriesAnalysis';
-import { PortfolioTransition } from '@/components/widgets/PortfolioTransition';
-import { NewsEventAnalysis } from '@/components/widgets/NewsEventAnalysis';
-import { PortfolioOptimizer } from '@/components/widgets/PortfolioOptimizer';
-import { ConstrainedOptimization } from '@/components/widgets/ConstrainedOptimization';
+import PortfolioSummary from '@/components/PortfolioSummary';
+import Holdings from '@/components/Holdings';
+import CorrelationMatrix from '@/components/CorrelationMatrix';
+import MonteCarloSimulation from '@/components/MonteCarloSimulation';
+import BenchmarkComparison from '@/components/BenchmarkComparison';
+import DividendAnalysis from '@/components/DividendAnalysis';
+import PerformanceAnalysis from '@/components/PerformanceAnalysis';
+import TimeseriesAnalysis from '@/components/TimeseriesAnalysis';
+import PortfolioTransition from '@/components/PortfolioTransition';
+import NewsEventAnalysis from '@/components/NewsEventAnalysis';
+import PortfolioOptimizer from '@/components/PortfolioOptimizer';
+import ConstrainedOptimization from '@/components/ConstrainedOptimization';
 
 // Import CSS for react-grid-layout
 import 'react-grid-layout/css/styles.css';
@@ -99,33 +99,31 @@ export function DynamicWidgetGrid({
 
   // Render widget content based on type
   const renderWidgetContent = (widget: WidgetConfig) => {
-    const commonProps = { portfolioId };
-
     switch (widget.type) {
       case 'portfolio-summary':
-        return <PortfolioSummary {...commonProps} />;
+        return <PortfolioSummary />;
       case 'holdings-breakdown':
-        return <HoldingsBreakdown {...commonProps} />;
+        return <Holdings />;
       case 'correlation-matrix':
-        return <CorrelationMatrix {...commonProps} />;
+        return <CorrelationMatrix />;
       case 'monte-carlo':
-        return <MonteCarloSimulation {...commonProps} />;
+        return <MonteCarloSimulation />;
       case 'benchmark-comparison':
-        return <BenchmarkComparison {...commonProps} />;
+        return <BenchmarkComparison />;
       case 'dividend-analysis':
-        return <DividendAnalysis {...commonProps} />;
+        return <DividendAnalysis />;
       case 'performance-analysis':
-        return <PerformanceAnalysis {...commonProps} />;
+        return <PerformanceAnalysis />;
       case 'timeseries-analysis':
-        return <TimeseriesAnalysis {...commonProps} />;
+        return <TimeseriesAnalysis />;
       case 'portfolio-transition':
-        return <PortfolioTransition {...commonProps} />;
+        return <PortfolioTransition />;
       case 'news-event-analysis':
-        return <NewsEventAnalysis {...commonProps} />;
+        return <NewsEventAnalysis />;
       case 'portfolio-optimizer':
-        return <PortfolioOptimizer {...commonProps} />;
+        return <PortfolioOptimizer />;
       case 'constrained-optimization':
-        return <ConstrainedOptimization {...commonProps} />;
+        return <ConstrainedOptimization />;
       default:
         return (
           <div className="p-4 text-center text-muted-foreground">

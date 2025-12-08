@@ -3,7 +3,7 @@
 > **⚠️ DEPRECATION NOTICE**: The Streamlit interface is being phased out in favor of a modern Next.js dashboard. See [Migration Guide](docs/MIGRATION-GUIDE.md) for details.
 > 
 > **Timeline**:
-> - ✅ **Now - Feb 2, 2026**: Both interfaces available (56 days)
+> - ✅ **Dec 8, 2025 - Feb 2, 2026**: Both interfaces available (8 weeks)
 > - ⚠️ **Feb 2, 2026**: Streamlit becomes read-only
 > - 🗓️ **Feb 16, 2026**: Streamlit fully removed
 > 

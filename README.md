@@ -1,6 +1,17 @@
 # ETF Analysis Dashboard 📊
 
-A comprehensive ETF and stock analysis dashboard built with Streamlit, featuring persistent data storage and Google Cloud Platform integration for production deployment.
+> **⚠️ DEPRECATION NOTICE**: The Streamlit interface is being phased out in favor of a modern Next.js dashboard. See [Migration Guide](docs/MIGRATION-GUIDE.md) for details.
+> 
+> **Timeline**:
+> - ✅ **Now - Feb 2, 2025**: Both interfaces available (56 days)
+> - ⚠️ **Feb 2, 2025**: Streamlit becomes read-only
+> - 🗓️ **Feb 16, 2025**: Streamlit fully removed
+> 
+> **Action Required**: Switch to the Next.js dashboard at `/dashboard` (or your configured `DASHBOARD_URL`)
+
+---
+
+A comprehensive ETF and stock analysis dashboard with both legacy Streamlit and modern Next.js interfaces, featuring persistent data storage and Google Cloud Platform integration for production deployment.
 
 ## Features
 
@@ -40,6 +51,36 @@ A comprehensive ETF and stock analysis dashboard built with Streamlit, featuring
 - CI/CD with Cloud Build
 
 ## Quick Start (Local Development)
+
+### Next.js Dashboard (Recommended)
+
+The modern Next.js dashboard is the recommended interface:
+
+1. **Navigate to frontend:**
+```bash
+cd frontend/v1
+```
+
+2. **Install dependencies:**
+```bash
+npm install
+```
+
+3. **Create environment file:**
+```bash
+cp .env.example .env.local
+```
+
+4. **Run the development server:**
+```bash
+npm run dev
+```
+
+The dashboard will be available at `http://localhost:3000`
+
+### Streamlit Interface (Legacy - Being Deprecated)
+
+The Streamlit interface is still available but will be removed soon:
 
 ### Prerequisites
 
@@ -311,12 +352,24 @@ GCP_PROJECT_ID=your-project-id
 
 ## Technology Stack
 
-- **Frontend**: Streamlit
-- **Charts**: Plotly
+### Frontend
+- **Primary**: Next.js 14 (React) with TypeScript
+- **Legacy**: Streamlit (being deprecated)
+- **Charts**: Recharts, Plotly
+- **UI Components**: shadcn/ui with Radix UI
+- **Styling**: Tailwind CSS
+
+### Backend
+- **API**: FastAPI
 - **Data**: pandas, NumPy
-- **Database**: SQLAlchemy (SQLite/PostgreSQL)
-- **Market Data**: yfinance
-- **Cloud**: Google Cloud Run, Cloud SQL, Cloud Storage
+- **Database**: SQLAlchemy (SQLite/PostgreSQL/BigQuery)
+- **Market Data**: yfinance, Alpha Vantage
+
+### Cloud & Infrastructure
+- **Hosting**: Google Cloud Run
+- **Database**: Cloud SQL, BigQuery
+- **Storage**: Cloud Storage
+- **CI/CD**: Cloud Build
 - **Container**: Docker
 
 ## Development

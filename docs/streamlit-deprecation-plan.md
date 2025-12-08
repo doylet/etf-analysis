@@ -568,17 +568,23 @@ import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+import os
 
 # Load environment variables
 load_dotenv()
 
-# DEPRECATION NOTICE - Phase out date
-DEPRECATION_START = datetime(2025, 12, 8)
-STREAMLIT_DISABLE_DATE = datetime(2026, 2, 1)  # 8 weeks from deprecation start
-STREAMLIT_REMOVAL_DATE = datetime(2026, 2, 15)  # 2 weeks after disable
+# DEPRECATION NOTICE - Phase out dates (configure via environment)
+DEPRECATION_START = datetime.fromisoformat(
+    os.getenv('DEPRECATION_START_DATE', '2025-12-08')
+)
+STREAMLIT_DISABLE_DATE = DEPRECATION_START + timedelta(weeks=8)
+STREAMLIT_REMOVAL_DATE = STREAMLIT_DISABLE_DATE + timedelta(weeks=2)
 
 days_until_disable = (STREAMLIT_DISABLE_DATE - datetime.now()).days
 days_until_removal = (STREAMLIT_REMOVAL_DATE - datetime.now()).days
+
+# Get dashboard URL from environment
+DASHBOARD_URL = os.getenv('DASHBOARD_URL', 'http://localhost:3000/dashboard')
 
 # Show deprecation warning
 st.warning(f"""
@@ -586,7 +592,7 @@ st.warning(f"""
 
 The Streamlit interface is being **phased out and will be removed**.
 
-🌐 **New Dashboard**: [https://your-domain.com/dashboard](https://your-domain.com/dashboard)
+🌐 **New Dashboard**: [{DASHBOARD_URL}]({DASHBOARD_URL})
 
 ✨ **Why Switch?**
 - Modern, responsive design
@@ -609,7 +615,7 @@ The Streamlit interface is being **phased out and will be removed**.
 if days_until_disable <= 14:
     st.error(f"""
     🚨 **URGENT**: Only **{days_until_disable} days** until Streamlit becomes read-only!
-    Switch to the new dashboard NOW: [https://your-domain.com/dashboard](https://your-domain.com/dashboard)
+    Switch to the new dashboard NOW: [{DASHBOARD_URL}]({DASHBOARD_URL})
     """, icon="🚨")
 
 # Page configuration
@@ -624,7 +630,7 @@ with st.sidebar:
     st.error("⚠️ This interface is deprecated")
     st.markdown(f"**{days_until_disable} days** until read-only")
     if st.button("Switch to New Dashboard", use_container_width=True):
-        st.markdown("[Open New Dashboard](https://your-domain.com/dashboard)")
+        st.markdown(f"[Open New Dashboard]({DASHBOARD_URL})")
 
 # ... rest of app.py
 ```
@@ -635,7 +641,9 @@ Update each page in `pages/` to show warnings:
 
 ```python
 # pages/Dashboard.py
-st.warning("⚠️ This page is deprecated. Use the new dashboard: https://your-domain.com/dashboard")
+import os
+DASHBOARD_URL = os.getenv('DASHBOARD_URL', 'http://localhost:3000/dashboard')
+st.warning(f"⚠️ This page is deprecated. Use the new dashboard: {DASHBOARD_URL}")
 
 # Similar for all other pages
 ```
@@ -666,11 +674,11 @@ The new Next.js dashboard offers:
 
 ## Migration Steps
 
-1. **Access the new dashboard**: https://your-domain.com/dashboard
+1. **Access the new dashboard**: [See DASHBOARD_URL in your deployment]
 2. **Your data is safe**: All data is shared between interfaces
 3. **Customize layout**: Drag and drop widgets to your preference
 4. **Save layout**: Layout is automatically saved
-5. **Stop using Streamlit**: Before [date]
+5. **Stop using Streamlit**: Before [STREAMLIT_DISABLE_DATE]
 
 ## Getting Help
 
@@ -697,24 +705,26 @@ import os
 STREAMLIT_ENABLED = os.getenv('STREAMLIT_ENABLED', 'true').lower() == 'true'
 STREAMLIT_READ_ONLY = os.getenv('STREAMLIT_READ_ONLY', 'false').lower() == 'true'
 
+DASHBOARD_URL = os.getenv('DASHBOARD_URL', 'http://localhost:3000/dashboard')
+
 if not STREAMLIT_ENABLED:
-    st.error("""
+    st.error(f"""
     🚫 **Streamlit Interface Disabled**
     
     The Streamlit interface has been disabled. Please use the new Next.js dashboard:
     
-    🌐 https://your-domain.com/dashboard
+    🌐 {DASHBOARD_URL}
     """)
     st.stop()
 
 if STREAMLIT_READ_ONLY:
-    st.warning("""
+    st.warning(f"""
     📖 **Read-Only Mode**
     
     The Streamlit interface is now in read-only mode. You can view data but cannot make changes.
     
     To manage your portfolio, use the new dashboard:
-    🌐 https://your-domain.com/dashboard
+    🌐 {DASHBOARD_URL}
     """)
     # Disable all input controls
 ```

@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 import logging
 import pandas as pd
 
-from api.widgets.base import BaseWidgetAdapter
-from api.widgets.exceptions import WidgetDataError, WidgetValidationError
+from src.api.widgets.base import BaseWidgetAdapter
+from src.api.widgets.exceptions import WidgetDataError, WidgetValidationError
 from api.schemas.widgets import CorrelationMatrixData
 from api.services.widget_cache import widget_cache
 from api.services.performance_monitor import monitor_widget_performance

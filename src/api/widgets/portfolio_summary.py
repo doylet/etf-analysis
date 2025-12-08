@@ -4,12 +4,12 @@ from typing import Dict, Any
 from datetime import datetime
 import logging
 
-from api.widgets.base import BaseWidgetAdapter
-from api.widgets.exceptions import WidgetDataError, WidgetValidationError
-from api.schemas.widgets import PortfolioSummaryData
-from api.services.widget_cache import widget_cache
-from api.services.performance_monitor import monitor_widget_performance
-from widgets.portfolio_summary_widget import PortfolioSummaryWidget
+from src.api.widgets.base import BaseWidgetAdapter
+from src.api.widgets.exceptions import WidgetDataError, WidgetValidationError
+from src.api.schemas.widgets import PortfolioSummaryData
+from src.api.services.widget_cache import widget_cache
+from src.api.services.performance_monitor import monitor_widget_performance
+from src.widgets.portfolio_summary_widget import PortfolioSummaryWidget
 
 logger = logging.getLogger(__name__)
 

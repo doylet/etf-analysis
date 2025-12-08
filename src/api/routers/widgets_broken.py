@@ -1,7 +1,7 @@
 """FastAPI router for portfolio widget endpoints."""
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from typing import Optional
+from typing import Optional, List
 import logging
 
 from src.api.dependencies import get_database
@@ -14,6 +14,8 @@ from src.api.schemas.widgets import (
     MonteCarloParameters,
     CorrelationParameters
 )
+
+# Import working widget adapters only
 from src.api.widgets.portfolio_summary import PortfolioSummaryAdapter
 from src.api.widgets.holdings_breakdown import HoldingsBreakdownAdapter
 from src.api.widgets.correlation_matrix import CorrelationMatrixAdapter
@@ -45,29 +47,64 @@ async def list_widgets() -> dict:
                 "name": "portfolio_summary",
                 "endpoint": "/api/widgets/portfolio/summary", 
                 "description": "Portfolio performance metrics and summary",
-                "category": "overview"
+                "category": "overview",
+                "status": "active"
             },
             {
                 "name": "holdings_breakdown", 
                 "endpoint": "/api/widgets/portfolio/holdings",
                 "description": "Detailed breakdown of portfolio positions",
-                "category": "overview"
+                "category": "overview",
+                "status": "active"
             },
             {
                 "name": "correlation_matrix",
                 "endpoint": "/api/widgets/portfolio/correlation",
                 "description": "Asset correlation analysis",
-                "category": "analysis"
+                "category": "analysis",
+                "status": "active"
             },
             {
                 "name": "monte_carlo",
                 "endpoint": "/api/widgets/portfolio/monte-carlo", 
                 "description": "Monte Carlo risk simulation",
-                "category": "analysis"
+                "category": "analysis",
+                "status": "active"
+            },
+            # Additional widgets coming soon
+            {
+                "name": "benchmark_comparison",
+                "endpoint": "/api/widgets/portfolio/benchmark-comparison",
+                "description": "Compare portfolio performance against market benchmarks",
+                "category": "performance",
+                "status": "coming_soon"
+            },
+            {
+                "name": "dividend_analysis",
+                "endpoint": "/api/widgets/portfolio/dividend-analysis",
+                "description": "Analyze dividend payments and income projections",
+                "category": "income",
+                "status": "coming_soon"
+            },
+            {
+                "name": "performance",
+                "endpoint": "/api/widgets/portfolio/performance",
+                "description": "Comprehensive performance metrics and analysis",
+                "category": "performance", 
+                "status": "coming_soon"
+            },
+            {
+                "name": "portfolio_optimizer",
+                "endpoint": "/api/widgets/portfolio/optimizer",
+                "description": "Optimize portfolio allocation using modern portfolio theory",
+                "category": "optimization",
+                "status": "coming_soon"
             }
         ],
-        "total_widgets": 4,
-        "status": "ready"
+        "total_widgets": 8,
+        "active_widgets": 4,
+        "coming_soon": 4,
+        "status": "partial_implementation"
     }
 
 
@@ -82,13 +119,9 @@ async def get_portfolio_summary(
 ) -> PortfolioSummaryResponse:
     """Get portfolio summary metrics."""
     try:
-        # Create portfolio summary adapter
         adapter = PortfolioSummaryAdapter(db)
-        
-        # Execute widget calculation
         result = adapter.execute(portfolio_id=portfolio_id)
         
-        # Return typed response
         return PortfolioSummaryResponse(
             widget_name=result["widget_name"],
             success=result["success"],
@@ -106,9 +139,9 @@ async def get_portfolio_summary(
 
 
 @router.get("/portfolio/holdings",
-    response_model=HoldingsBreakdownResponse,
+    response_model=HoldingsBreakdownResponse, 
     summary="Get holdings breakdown",
-    description="Detailed breakdown of portfolio holdings by sector, geography, or asset class"
+    description="Retrieve detailed breakdown of all portfolio positions with weights and performance"
 )
 async def get_holdings_breakdown(
     db = Depends(get_database),
@@ -117,13 +150,9 @@ async def get_holdings_breakdown(
 ) -> HoldingsBreakdownResponse:
     """Get detailed holdings breakdown."""
     try:
-        # Create holdings breakdown adapter
         adapter = HoldingsBreakdownAdapter(db)
-        
-        # Execute widget calculation
         result = adapter.execute(portfolio_id=portfolio_id, breakdown_type=breakdown_type)
         
-        # Return typed response
         return HoldingsBreakdownResponse(
             widget_name=result["widget_name"],
             success=result["success"],
@@ -157,7 +186,7 @@ async def get_correlation_matrix(
         # Parse additional symbols
         additional_symbols_list = []
         if additional_symbols:
-            additional_symbols_list = [s.strip().upper() for s in additional_symbols.split(',') if s.strip()]
+            additional_symbols_list = [s.strip().upper() for s in additional_symbols.split(",") if s.strip()]
         
         # Create correlation matrix adapter
         adapter = CorrelationMatrixAdapter(db)
@@ -190,34 +219,24 @@ async def get_correlation_matrix(
 @router.get("/portfolio/monte-carlo",
     response_model=MonteCarloResponse,
     summary="Get Monte Carlo simulation",
-    description="Run Monte Carlo simulation for portfolio risk analysis"
+    description="Run Monte Carlo simulation for portfolio risk analysis and scenario modeling"
 )
 async def get_monte_carlo_simulation(
     db = Depends(get_database),
     portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
-    num_simulations: int = Query(10000, description="Number of simulation runs"),
-    time_horizon_days: int = Query(252, description="Investment horizon in days (default 1 year)"),
+    num_simulations: int = Query(1000, description="Number of Monte Carlo simulations to run"),
+    time_horizon_days: int = Query(252, description="Time horizon for simulation (days)"),
     confidence_level: float = Query(0.95, description="Confidence level for VaR calculation"),
     initial_value: Optional[float] = Query(None, description="Initial portfolio value (uses current if not provided)"),
-    include_dividends: bool = Query(True, description="Include dividend payments in simulation"),
-    estimation_method: str = Query("historical", description="Return estimation method (historical, monte_carlo)")
+    include_dividends: bool = Query(True, description="Include dividend reinvestment in simulation"),
+    estimation_method: str = Query("historical", description="Return estimation method (historical, ewma)")
 ) -> MonteCarloResponse:
-    """Get Monte Carlo risk simulation."""
+    """Get Monte Carlo risk simulation analysis."""
     try:
-        # Validate inputs
-        if num_simulations < 100 or num_simulations > 100000:
-            raise HTTPException(status_code=400, detail="Number of simulations must be between 100 and 100,000")
-        
-        if confidence_level <= 0 or confidence_level >= 1:
-            raise HTTPException(status_code=400, detail="Confidence level must be between 0 and 1")
-            
-        if time_horizon_days < 1 or time_horizon_days > 5*252:  # Max 5 years
-            raise HTTPException(status_code=400, detail="Time horizon must be between 1 and 1260 days")
-        
         # Create Monte Carlo adapter
         adapter = MonteCarloAdapter(db)
         
-        # Execute widget calculation
+        # Execute widget calculation with all parameters
         result = adapter.execute(
             portfolio_id=portfolio_id,
             num_simulations=num_simulations,
@@ -255,5 +274,5 @@ async def health_check():
         "status": "healthy",
         "service": "portfolio_widgets", 
         "widgets_available": 4,
-        "message": "Widget service is operational with basic 4 widgets"
+        "message": "Widget service is operational with 4 core widgets"
     }

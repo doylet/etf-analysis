@@ -5,8 +5,8 @@ from typing import Any, Dict, Optional, Type
 import logging
 from datetime import datetime
 
-from api.schemas.widgets import WidgetResponse, WidgetError
-from api.widgets.exceptions import WidgetError as WidgetException
+from src.api.schemas.widgets import WidgetResponse, WidgetError
+from src.api.widgets.exceptions import WidgetError as WidgetException
 
 logger = logging.getLogger(__name__)
 

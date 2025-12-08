@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import Mock, patch
 from datetime import datetime
 
-from api.widgets.portfolio_summary import PortfolioSummaryAdapter
-from api.widgets.exceptions import WidgetDataError, WidgetValidationError
+from src.api.widgets.portfolio_summary import PortfolioSummaryAdapter
+from src.api.widgets.exceptions import WidgetDataError, WidgetValidationError
 
 
 class TestPortfolioSummaryAdapter:

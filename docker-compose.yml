@@ -71,28 +71,6 @@ services:
     networks:
       - etf-network
 
-  # Existing Streamlit app (optional - for compatibility testing)
-  streamlit:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8501:8501"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/etf_analysis
-      - USE_NEW_SERVICE_LAYER=false
-    volumes:
-      - ./src:/app/src
-      - ./pages:/app/pages
-      - ./config:/app/config
-      - ./data:/app/data
-      - ./.env:/app/.env
-    depends_on:
-      - postgres
-    command: streamlit run app.py
-    networks:
-      - etf-network
-
 networks:
   etf-network:
     driver: bridge

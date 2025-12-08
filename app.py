@@ -5,7 +5,7 @@ ETF Analysis Dashboard - Home Page
 import streamlit as st
 import pandas as pd
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import os
 
 # Suppress pandas FutureWarnings
@@ -15,14 +15,16 @@ pd.set_option('future.no_silent_downcasting', True)
 load_dotenv()
 
 # DEPRECATION NOTICE - Phase out dates (configure via environment)
-DEPRECATION_START = datetime.fromisoformat(
-    os.getenv('DEPRECATION_START_DATE', '2025-12-08')
-)
+# Parse date string and make it timezone-aware (UTC)
+deprecation_start_str = os.getenv('DEPRECATION_START_DATE', '2025-12-08')
+DEPRECATION_START = datetime.fromisoformat(deprecation_start_str).replace(tzinfo=timezone.utc)
 STREAMLIT_DISABLE_DATE = DEPRECATION_START + timedelta(weeks=8)
 STREAMLIT_REMOVAL_DATE = STREAMLIT_DISABLE_DATE + timedelta(weeks=2)
 
-days_until_disable = (STREAMLIT_DISABLE_DATE - datetime.now()).days
-days_until_removal = (STREAMLIT_REMOVAL_DATE - datetime.now()).days
+# Use UTC for consistent timezone handling
+now = datetime.now(timezone.utc)
+days_until_disable = (STREAMLIT_DISABLE_DATE - now).days
+days_until_removal = (STREAMLIT_REMOVAL_DATE - now).days
 
 # Get dashboard URL from environment
 DASHBOARD_URL = os.getenv('DASHBOARD_URL', 'http://localhost:3000/dashboard')

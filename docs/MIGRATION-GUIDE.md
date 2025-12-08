@@ -238,7 +238,7 @@ If you encounter issues:
 **A**: Widget-specific settings are preserved. You'll need to arrange your dashboard layout in the new interface (it's easier with drag-and-drop!).
 
 ### Q: Can I use both interfaces during the migration?
-**A**: Yes, until Streamlit becomes read-only on Feb 2, 2025. After that, Streamlit will be view-only.
+**A**: Yes, until Streamlit becomes read-only on Feb 2, 2026. After that, Streamlit will be view-only.
 
 ### Q: What if I find a missing feature?
 **A**: Please report it immediately via GitHub Issues. We want to ensure complete feature parity.

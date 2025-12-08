@@ -1,6 +1,6 @@
 # Streamlit UI Deprecation & Removal Plan
 
-**Date**: December 8, 2025  
+**Date**: December 8, 2024  
 **Status**: Planning Phase  
 **Timeline**: 6-8 weeks  
 **Owner**: Development Team
@@ -575,7 +575,7 @@ load_dotenv()
 
 # DEPRECATION NOTICE - Phase out dates (configure via environment)
 DEPRECATION_START = datetime.fromisoformat(
-    os.getenv('DEPRECATION_START_DATE', '2025-12-08')
+    os.getenv('DEPRECATION_START_DATE', '2024-12-08')
 )
 STREAMLIT_DISABLE_DATE = DEPRECATION_START + timedelta(weeks=8)
 STREAMLIT_REMOVAL_DATE = STREAMLIT_DISABLE_DATE + timedelta(weeks=2)
@@ -994,5 +994,5 @@ After Streamlit is removed:
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: December 8, 2025  
+**Last Updated**: December 8, 2024  
 **Next Review**: After Phase 1 completion

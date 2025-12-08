@@ -1,6 +1,6 @@
 # Migration Guide: Streamlit to Next.js Dashboard
 
-**Last Updated**: December 8, 2024  
+**Last Updated**: December 8, 2025  
 **Status**: Active Migration Period
 
 ---
@@ -43,9 +43,9 @@ The new Next.js dashboard offers:
 
 | Date | Status | Action Required |
 |------|--------|-----------------|
-| **Dec 8, 2024** | Deprecation announced | Start using new dashboard |
-| **Feb 2, 2025** (8 weeks) | Streamlit becomes read-only | Complete migration |
-| **Feb 16, 2025** (10 weeks) | Streamlit fully removed | All users must use Next.js |
+| **Dec 8, 2025** | Deprecation announced | Start using new dashboard |
+| **Feb 2, 2026** (8 weeks) | Streamlit becomes read-only | Complete migration |
+| **Feb 16, 2026** (10 weeks) | Streamlit fully removed | All users must use Next.js |
 
 ---
 
@@ -281,19 +281,19 @@ If you encounter issues:
 
 ## Timeline Details
 
-### Phase 1: Dual Operation (Dec 8, 2024 - Feb 2, 2025)
+### Phase 1: Dual Operation (Dec 8, 2025 - Feb 2, 2026)
 - Both interfaces available
 - Deprecation warnings shown in Streamlit
 - Recommended to switch to Next.js
 - Full functionality in both
 
-### Phase 2: Read-Only Mode (Feb 2, 2025 - Feb 16, 2025)
+### Phase 2: Read-Only Mode (Feb 2, 2026 - Feb 16, 2026)
 - Streamlit becomes read-only
 - Can view data but not make changes
 - Next.js fully functional
 - Final warning period
 
-### Phase 3: Full Removal (After Feb 16, 2025)
+### Phase 3: Full Removal (After Feb 16, 2026)
 - Streamlit completely removed
 - Only Next.js available
 - All users must have migrated

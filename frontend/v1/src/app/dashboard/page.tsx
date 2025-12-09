@@ -639,15 +639,15 @@ export default function DashboardPage() {
     setWidgets(prev => [...prev]);
   };
 
-  // Simple widget renderer
-  function WidgetRenderer({ widget }: { widget: WidgetInstance }) {
+  // Memoized widget renderer component to prevent unnecessary re-renders
+  const WidgetRenderer = React.useCallback(({ widget }: { widget: WidgetInstance }) => {
     const Component = getWidgetComponent(widget.type);
     if (!Component) return <div className="p-4 text-center text-destructive">Unknown widget type</div>;
     return <Component portfolioId={portfolioId} />;
-  }
+  }, [portfolioId]);
 
-  // Render individual widget with remove button
-  const renderWidget = (widget: WidgetInstance) => (
+  // Memoized render function to prevent Card recreation on layout changes
+  const renderWidget = useCallback((widget: WidgetInstance) => (
     <Card key={widget.id} className="h-full relative overflow-hidden cursor-move">
       <CardHeader className="py-2 px-3 border-b">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
@@ -669,7 +669,7 @@ export default function DashboardPage() {
         <WidgetRenderer widget={widget} />
       </CardContent>
     </Card>
-  );
+  ), [WidgetRenderer]);
 
   const availableToAdd = AVAILABLE_WIDGETS.filter(
     available => !widgets.some(widget => widget.type === available.type)

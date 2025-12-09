@@ -101,7 +101,6 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
 
-            <Notifications />
 
             <Button onClick={handleLogout} variant="ghost" size="sm">
               <span className="hidden sm:inline">Sign Out</span>

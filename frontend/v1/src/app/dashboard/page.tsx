@@ -48,8 +48,8 @@ interface WidgetInstance {
   };
 }
 
-// Simple working widget components
-function PortfolioSummaryWidget({ portfolioId }: { portfolioId?: string }) {
+// Simple working widget components - memoized to prevent re-rendering on grid changes
+const PortfolioSummaryWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = usePortfolioSummary({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -80,9 +80,9 @@ function PortfolioSummaryWidget({ portfolioId }: { portfolioId?: string }) {
       </div>
     </div>
   );
-}
+});
 
-function HoldingsWidget({ portfolioId }: { portfolioId?: string }) {
+const HoldingsWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useHoldingsBreakdown({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -117,7 +117,7 @@ function HoldingsWidget({ portfolioId }: { portfolioId?: string }) {
   );
 }
 
-function BenchmarkComparisonWidget({ portfolioId }: { portfolioId?: string }) {
+const BenchmarkComparisonWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useBenchmarkComparison({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -146,9 +146,9 @@ function BenchmarkComparisonWidget({ portfolioId }: { portfolioId?: string }) {
       </div>
     </div>
   );
-}
+});
 
-function DividendAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
+const DividendAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useDividendAnalysis({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -182,9 +182,9 @@ function DividendAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
       )}
     </div>
   );
-}
+});
 
-function PerformanceWidget({ portfolioId }: { portfolioId?: string }) {
+const PerformanceWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = usePerformanceAnalysis({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -213,9 +213,9 @@ function PerformanceWidget({ portfolioId }: { portfolioId?: string }) {
       </div>
     </div>
   );
-}
+});
 
-function TimeseriesAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
+const TimeseriesAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useTimeseriesAnalysis({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -249,9 +249,9 @@ function TimeseriesAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
       )}
     </div>
   );
-}
+});
 
-function PortfolioTransitionWidget({ portfolioId }: { portfolioId?: string }) {
+const PortfolioTransitionWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = usePortfolioTransition({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -297,9 +297,9 @@ function PortfolioTransitionWidget({ portfolioId }: { portfolioId?: string }) {
       </div>
     </div>
   );
-}
+});
 
-function NewsEventAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
+const NewsEventAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useNewsEventAnalysis({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -346,9 +346,9 @@ function NewsEventAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
       )}
     </div>
   );
-}
+});
 
-function PortfolioOptimizerWidget({ portfolioId }: { portfolioId?: string }) {
+const PortfolioOptimizerWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = usePortfolioOptimizer({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -398,9 +398,9 @@ function PortfolioOptimizerWidget({ portfolioId }: { portfolioId?: string }) {
       )}
     </div>
   );
-}
+});
 
-function ConstrainedOptimizationWidget({ portfolioId }: { portfolioId?: string }) {
+const ConstrainedOptimizationWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useConstrainedOptimization({ portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
@@ -449,7 +449,7 @@ function ConstrainedOptimizationWidget({ portfolioId }: { portfolioId?: string }
       )}
     </div>
   );
-}
+});
 
 const AVAILABLE_WIDGETS = [
   {

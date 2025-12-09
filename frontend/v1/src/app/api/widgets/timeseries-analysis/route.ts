@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const portfolioId = searchParams.get('portfolio_id');
     const timePeriod = searchParams.get('time_period') || '1Y';
     
-    // Backend doesn't have timeseries endpoint yet - return mock error
+    // Timeseries widget exists but endpoint not registered in widgets_extended.py router
     return NextResponse.json({
       widget_name: 'timeseries_analysis',
       success: false,
@@ -19,8 +19,8 @@ export async function GET(request: NextRequest) {
         widget_description: 'Timeseries Analysis Widget'
       },
       error: {
-        code: 'NOT_IMPLEMENTED',
-        message: 'Timeseries analysis not yet implemented in backend',
+        code: 'NOT_REGISTERED',
+        message: 'Timeseries endpoint not registered in widgets_extended.py router yet',
       }
     });
     

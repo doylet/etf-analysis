@@ -39,7 +39,6 @@ interface WidgetInstance {
   id: string;
   type: string;
   name: string;
-  component: React.ComponentType<{ portfolioId?: string }>;
   position: {
     i: string;
     x: number;
@@ -527,6 +526,12 @@ const AVAILABLE_WIDGETS = [
   }
 ];
 
+// Map widget type to component
+function getWidgetComponent(type: string): React.ComponentType<{ portfolioId?: string }> | null {
+  const widgetDef = AVAILABLE_WIDGETS.find(w => w.type === type);
+  return widgetDef?.component || null;
+}
+
 export default function DashboardPage() {
   const [portfolioId] = useState<string | undefined>();
   const [showWidgetPalette, setShowWidgetPalette] = useState(false);
@@ -537,28 +542,24 @@ export default function DashboardPage() {
       id: 'portfolio-summary-1',
       type: 'portfolio-summary',
       name: 'Portfolio Summary',
-      component: PortfolioSummaryWidget,
       position: { i: 'portfolio-summary-1', x: 0, y: 0, w: 6, h: 4 }
     },
     {
       id: 'holdings-1',
       type: 'holdings',
       name: 'Holdings',
-      component: HoldingsWidget,
       position: { i: 'holdings-1', x: 6, y: 0, w: 6, h: 5 }
     },
     {
       id: 'correlation-matrix-1',
       type: 'correlation-matrix',
       name: 'Correlation Matrix',
-      component: CorrelationMatrix,
       position: { i: 'correlation-matrix-1', x: 0, y: 5, w: 12, h: 6 }
     },
     {
       id: 'monte-carlo-1',
       type: 'monte-carlo',
       name: 'Monte Carlo Simulation',
-      component: MonteCarloSimulation,
       position: { i: 'monte-carlo-1', x: 0, y: 11, w: 6, h: 6 }
     }
   ]);
@@ -615,9 +616,6 @@ export default function DashboardPage() {
       }
     };
 
-    // Add component
-    newWidget.component = widgetDef.component;
-
     setWidgets(prev => [...prev, newWidget]);
     setShowWidgetPalette(false);
   }, []);
@@ -633,7 +631,8 @@ export default function DashboardPage() {
 
   // Simple widget renderer
   function WidgetRenderer({ widget }: { widget: WidgetInstance }) {
-    const Component = widget.component;
+    const Component = getWidgetComponent(widget.type);
+    if (!Component) return <div className="p-4 text-center text-destructive">Unknown widget type</div>;
     return <Component portfolioId={portfolioId} />;
   }
 

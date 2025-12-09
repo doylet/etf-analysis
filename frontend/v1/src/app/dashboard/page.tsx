@@ -15,7 +15,12 @@ import {
   useHoldingsBreakdown,
   useBenchmarkComparison,
   useDividendAnalysis,
-  usePerformanceAnalysis
+  usePerformanceAnalysis,
+  useTimeseriesAnalysis,
+  usePortfolioTransition,
+  useNewsEventAnalysis,
+  usePortfolioOptimizer,
+  useConstrainedOptimization
 } from '@/hooks/use-portfolio-widgets';
 
 // Import legacy components
@@ -211,6 +216,242 @@ function PerformanceWidget({ portfolioId }: { portfolioId?: string }) {
   );
 }
 
+function TimeseriesAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = useTimeseriesAnalysis({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.statistics.total_return.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Total Return</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.statistics.volatility.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Volatility</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.statistics.sharpe_ratio.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-destructive">{data.statistics.max_drawdown.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Max Drawdown</div>
+        </div>
+      </div>
+      {data.price_data && data.price_data.length > 0 && (
+        <div className="mt-2 text-xs text-muted-foreground text-center">
+          {data.price_data.length} data points
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PortfolioTransitionWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = usePortfolioTransition({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="text-sm font-medium text-foreground mb-2">Required Trades</div>
+      {data.required_trades && data.required_trades.length > 0 ? (
+        <div className="space-y-2 max-h-40 overflow-auto">
+          {data.required_trades.slice(0, 5).map((trade, idx) => (
+            <div key={idx} className="flex items-center justify-between p-2 bg-muted rounded-md">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-medium px-2 py-1 rounded ${
+                  trade.action === 'buy' ? 'bg-green-600/20 text-green-600 dark:text-green-400' : 'bg-red-600/20 text-red-600 dark:text-red-400'
+                }`}>
+                  {trade.action.toUpperCase()}
+                </span>
+                <span className="text-sm text-foreground">{trade.symbol}</span>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-medium text-foreground">{trade.shares} shares</div>
+                <div className="text-xs text-muted-foreground">${trade.value.toLocaleString()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-sm text-muted-foreground text-center py-4">No trades required</div>
+      )}
+      <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-border">
+        <div className="text-center p-2 bg-muted rounded-md">
+          <div className="text-sm font-bold text-foreground">${data.transition_cost?.toLocaleString() || 0}</div>
+          <div className="text-xs text-muted-foreground">Cost</div>
+        </div>
+        <div className="text-center p-2 bg-muted rounded-md">
+          <div className="text-sm font-bold text-foreground">
+            {data.expected_impact?.risk_change?.toFixed(2) || 0}%
+          </div>
+          <div className="text-xs text-muted-foreground">Risk Change</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewsEventAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = useNewsEventAnalysis({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">
+            {data.sentiment_analysis?.overall_sentiment?.toFixed(2) || 0}
+          </div>
+          <div className="text-xs text-muted-foreground">Overall Sentiment</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">
+            {data.market_impact?.price_correlation?.toFixed(2) || 0}
+          </div>
+          <div className="text-xs text-muted-foreground">Price Correlation</div>
+        </div>
+      </div>
+      {data.events && data.events.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Recent Events</div>
+          <div className="space-y-2 max-h-40 overflow-auto">
+            {data.events.slice(0, 3).map((event, idx) => (
+              <div key={idx} className="p-2 bg-muted rounded-md">
+                <div className="text-xs font-medium text-foreground mb-1">{event.title}</div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(event.date).toLocaleDateString()}
+                  </span>
+                  <span className={`text-xs ${
+                    event.sentiment >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                  }`}>
+                    Sentiment: {event.sentiment.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PortfolioOptimizerWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = usePortfolioOptimizer({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-3 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.expected_return.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Expected Return</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.expected_risk.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Expected Risk</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.sharpe_ratio.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
+        </div>
+      </div>
+      {data.improvement_metrics && (
+        <div className="mt-3 p-3 bg-muted rounded-md">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Improvements</div>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                +{data.improvement_metrics.return_improvement.toFixed(2)}%
+              </div>
+              <div className="text-xs text-muted-foreground">Return</div>
+            </div>
+            <div>
+              <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                {data.improvement_metrics.risk_reduction.toFixed(2)}%
+              </div>
+              <div className="text-xs text-muted-foreground">Risk</div>
+            </div>
+            <div>
+              <div className="text-sm font-bold text-green-600 dark:text-green-400">
+                +{data.improvement_metrics.sharpe_improvement.toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground">Sharpe</div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ConstrainedOptimizationWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = useConstrainedOptimization({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">
+            {data.optimization_result.return.toFixed(2)}%
+          </div>
+          <div className="text-xs text-muted-foreground">Return</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">
+            {data.optimization_result.risk.toFixed(2)}%
+          </div>
+          <div className="text-xs text-muted-foreground">Risk</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">
+            {data.optimization_result.sharpe_ratio.toFixed(2)}
+          </div>
+          <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className={`text-lg font-bold ${
+            data.constraints_satisfied ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+          }`}>
+            {data.constraints_satisfied ? 'YES' : 'NO'}
+          </div>
+          <div className="text-xs text-muted-foreground">Constraints Met</div>
+        </div>
+      </div>
+      {data.constraint_violations && data.constraint_violations.length > 0 && (
+        <div className="mt-3 p-2 bg-destructive/10 rounded-md">
+          <div className="text-xs font-medium text-destructive mb-1">Violations</div>
+          {data.constraint_violations.slice(0, 3).map((violation, idx) => (
+            <div key={idx} className="text-xs text-muted-foreground">
+              {violation.constraint}: {violation.violation.toFixed(2)}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const AVAILABLE_WIDGETS = [
   {
     type: 'portfolio-summary',
@@ -241,6 +482,36 @@ const AVAILABLE_WIDGETS = [
     name: 'Performance',
     component: PerformanceWidget,
     defaultSize: { w: 6, h: 4 }
+  },
+  {
+    type: 'timeseries-analysis',
+    name: 'Timeseries Analysis',
+    component: TimeseriesAnalysisWidget,
+    defaultSize: { w: 6, h: 4 }
+  },
+  {
+    type: 'portfolio-transition',
+    name: 'Portfolio Transition',
+    component: PortfolioTransitionWidget,
+    defaultSize: { w: 6, h: 6 }
+  },
+  {
+    type: 'news-events',
+    name: 'News & Events',
+    component: NewsEventAnalysisWidget,
+    defaultSize: { w: 6, h: 6 }
+  },
+  {
+    type: 'portfolio-optimizer',
+    name: 'Portfolio Optimizer',
+    component: PortfolioOptimizerWidget,
+    defaultSize: { w: 6, h: 5 }
+  },
+  {
+    type: 'constrained-optimization',
+    name: 'Constrained Optimization',
+    component: ConstrainedOptimizationWidget,
+    defaultSize: { w: 6, h: 5 }
   },
   {
     type: 'correlation-matrix',

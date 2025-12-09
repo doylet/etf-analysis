@@ -1,18 +1,12 @@
-# Frontend Versions
+# Frontend
 
-This directory contains different frontend implementations for the ETF Analysis Dashboard.
+This directory contains the frontend implementation for the ETF Analysis Dashboard.
 
-## V0 - React + Vite POC
-- **Technology**: React 18 + TypeScript + Vite
-- **Status**: Proof of Concept
-- **Features**: Basic authentication, portfolio summary, dashboard
-- **Development**: `cd v0 && npm install && npm run dev`
-- **Port**: http://localhost:5173
-
-## V1 - NextJS Production
-- **Technology**: Next.js 14 + TypeScript + Tailwind CSS
+## Production Application
+- **Technology**: Next.js 16 + React 19 + TypeScript + Tailwind CSS v4
+- **UI Components**: shadcn/ui with Radix UI primitives
 - **Status**: Production Ready
-- **Features**: Server-side rendering, authentication context, protected routes
+- **Features**: Server-side rendering, authentication context, protected routes, responsive design
 - **Development**: `cd v1 && npm install && npm run dev`
 - **Port**: http://localhost:3000
 
@@ -25,19 +19,13 @@ Both versions connect to the FastAPI backend at:
 
 ## Quick Start
 
-### React POC (V0)
-```bash
-cd frontend/v0
-npm install
-npm run dev
-```
-
-### NextJS Production (V1)  
 ```bash
 cd frontend/v1
 npm install
 npm run dev
 ```
+
+Access the dashboard at http://localhost:3000
 
 ## Architecture Migration Status
 

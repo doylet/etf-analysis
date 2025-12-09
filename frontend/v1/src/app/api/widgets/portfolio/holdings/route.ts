@@ -4,22 +4,16 @@ const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
 interface BackendHolding {
   symbol: string;
+  name: string;
+  type: string;
   quantity: number;
+  average_cost: number;
   current_price: number;
-  market_value: number;
-  weight: number;
+  current_value: number;
+  cost_basis: number;
   unrealized_gain_loss: number;
   unrealized_gain_loss_pct: number;
-  instrument?: {
-    name: string;
-  };
-}
-
-interface BackendHoldingsResponse {
-  holdings: BackendHolding[];
-  breakdown?: unknown[];
-  total_value: number;
-  execution_time?: string;
+  weight_pct: number;
 }
 
 export async function GET(request: NextRequest) {
@@ -28,9 +22,8 @@ export async function GET(request: NextRequest) {
     const portfolioId = searchParams.get('portfolio_id');
     const breakdownType = searchParams.get('breakdown_type') || 'sector';
     
-    const backendUrl = portfolioId 
-      ? `${API_BASE_URL}/api/portfolio/holdings?portfolio_id=${portfolioId}&breakdown_type=${breakdownType}`
-      : `${API_BASE_URL}/api/portfolio/holdings?breakdown_type=${breakdownType}`;
+    // Backend returns array directly, not an object
+    const backendUrl = `${API_BASE_URL}/api/portfolio/holdings`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',
@@ -61,32 +54,36 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await response.json() as BackendHoldingsResponse;
+    // Backend returns array of holdings directly
+    const holdings = await response.json() as BackendHolding[];
+    
+    // Calculate total value
+    const totalValue = holdings.reduce((sum, h) => sum + h.current_value, 0);
     
     // Transform backend response to widget response format
     return NextResponse.json({
       widget_name: 'holdings_breakdown',
       success: true,
       data: {
-        holdings: (data.holdings || []).map((holding) => ({
+        holdings: holdings.map((holding) => ({
           symbol: holding.symbol,
-          name: holding.instrument?.name || holding.symbol,
+          name: holding.name || holding.symbol,
           shares: holding.quantity || 0,
           current_price: holding.current_price || 0,
-          current_value: holding.market_value || 0,
-          weight_percent: holding.weight || 0,
+          current_value: holding.current_value || 0,
+          weight_percent: holding.weight_pct || 0,
           day_change: 0, // Backend doesn't provide yet
           day_change_percent: 0, // Backend doesn't provide yet
           total_return: holding.unrealized_gain_loss || 0,
           total_return_percent: holding.unrealized_gain_loss_pct || 0
         })),
-        breakdown: data.breakdown || [],
+        breakdown: [], // Backend doesn't provide breakdown yet
         breakdown_type: breakdownType,
-        total_value: data.total_value || 0,
+        total_value: totalValue,
         last_updated: new Date().toISOString()
       },
       metadata: {
-        execution_time: data.execution_time || '0ms',
+        execution_time: '0ms',
         parameters: { portfolio_id: portfolioId || 'default', breakdown_type: breakdownType },
         widget_description: 'Holdings Breakdown Widget',
         cache_hit: false

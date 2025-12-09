@@ -1,108 +1,140 @@
-"""
-Time Series Analysis Widget API Adapter
+"""Timeseries Analysis Widget API Adapter."""
 
-Exposes the TimeSeriesAnalysisWidget functionality via REST API
-by delegating to the existing Streamlit widget.
-"""
+from typing import Dict, Any
+import logging
 
-import io
-from typing import Dict, List, Optional, Any
-from widgets.timeseries_analysis_widget import TimeSeriesAnalysisWidget
-from storage.base import BaseStorage
+from src.api.widgets.base import BaseWidgetAdapter
+from src.api.widgets.exceptions import WidgetValidationError
+from src.widgets.timeseries_analysis_widget import TimeSeriesAnalysisWidget
+
+logger = logging.getLogger(__name__)
 
 
-class TimeSeriesAnalysisAdapter:
-    """API adapter for time series analysis widget"""
+class TimeseriesAnalysisAdapter(BaseWidgetAdapter):
+    """Adapter to expose timeseries analysis widget through API."""
     
-    def __init__(self, storage: BaseStorage):
-        self.storage = storage
-        self.widget = TimeSeriesAnalysisWidget(storage, 'timeseries_analysis_api')
-    
-    def get_data(self, instruments: List[Dict] = None, selected_symbols: List[str] = None) -> Dict[str, Any]:
-        """
-        Get time series analysis data
+    def __init__(self, storage):
+        super().__init__(storage, TimeSeriesAnalysisWidget)
         
-        Args:
-            instruments: List of instrument dictionaries
-            selected_symbols: List of symbols to include in analysis
-            
-        Returns:
-            Dict containing time series analysis data and metadata
-        """
+    def get_widget_name(self) -> str:
+        return "timeseries_analysis"
+        
+    def get_widget_description(self) -> str:
+        return "Analyze portfolio value over time with trends"
+        
+    def validate_input_parameters(self, **kwargs) -> Dict[str, Any]:
+        validated = {}
+        portfolio_id = kwargs.get('portfolio_id')
+        if portfolio_id is not None:
+            if not isinstance(portfolio_id, str) or not portfolio_id.strip():
+                raise WidgetValidationError("portfolio_id must be a non-empty string")
+            validated['portfolio_id'] = portfolio_id.strip()
+        else:
+            validated['portfolio_id'] = None
+        
+        # Validate time_period
+        time_period = kwargs.get('time_period', '1Y')
+        valid_periods = ['1W', '1M', '3M', '6M', '1Y', '2Y', '5Y', 'All']
+        if time_period not in valid_periods:
+            raise WidgetValidationError(f"time_period must be one of {valid_periods}")
+        validated['time_period'] = time_period
+        
+        # Validate analysis_type
+        analysis_type = kwargs.get('analysis_type', 'Portfolio Overview')
+        valid_types = ['Portfolio Overview', 'Stationarity', 'Seasonality', 'Trend Analysis', 'Volatility']
+        if analysis_type not in valid_types:
+            raise WidgetValidationError(f"analysis_type must be one of {valid_types}")
+        validated['analysis_type'] = analysis_type
+        
+        # Validate symbol filter
+        symbol = kwargs.get('symbol')
+        if symbol is not None:
+            if isinstance(symbol, str):
+                validated['symbol'] = symbol.strip().upper()
+            elif isinstance(symbol, list):
+                validated['symbol'] = [s.strip().upper() for s in symbol if isinstance(s, str)]
+            else:
+                raise WidgetValidationError("symbol must be a string or list of strings")
+        else:
+            validated['symbol'] = None
+        
+        return validated
+        
+    def extract_calculation_data(self, widget_instance, validated_params: Dict[str, Any] = None) -> Dict[str, Any]:
+        from datetime import datetime, timedelta
+        import pandas as pd
+        import numpy as np
+        from src.utils.performance_metrics import calculate_returns
+        
+        if validated_params is None:
+            validated_params = {}
+        
+        time_period = validated_params.get('time_period', '1Y')
+        analysis_type = validated_params.get('analysis_type', 'Portfolio Overview')
+        symbol_filter = validated_params.get('symbol')
+        
+        # Map time_period to lookback_days
+        period_map = {'1W': 7, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730, '5Y': 1825, 'All': 3650}
+        lookback_days = period_map.get(time_period, 365)
+        
         try:
-            result = {
-                'success': True,
-                'widget_name': self.widget.get_name(),
-                'widget_description': self.widget.get_description(),
-                'timeseries_data': {},
-                'metadata': {
-                    'instruments_count': len(instruments) if instruments else 0,
-                    'selected_symbols': selected_symbols or [],
-                    'timestamp': self.storage.get_current_timestamp()
-                }
-            }
-            
-            # If no instruments, return empty structure
+            instruments = self.storage.get_all_instruments()
             if not instruments:
-                result['timeseries_data'] = {
-                    'trend_analysis': {},
-                    'seasonality': {},
-                    'forecasts': {},
-                    'error': 'No instruments available for time series analysis'
-                }
-                return result
+                return {"message": "No instruments available"}
             
-            # Extract time series analysis features
-            result['timeseries_data'] = {
-                'description': 'Advanced time series analysis of price and return patterns',
-                'features': [
-                    'Trend decomposition',
-                    'Seasonality detection',
-                    'Forecasting models',
-                    'Statistical tests',
-                    'Pattern recognition'
-                ],
-                'analysis_methods': [
-                    'ARIMA modeling',
-                    'Seasonal decomposition',
-                    'Trend analysis',
-                    'Volatility clustering',
-                    'Regime detection',
-                    'Technical indicators'
-                ],
-                'trend_analysis': {
-                    'description': 'Long-term trend identification',
-                    'trend_strength': 'Statistical significance of trends',
-                    'trend_changes': 'Structural break detection',
-                    'momentum_indicators': 'Short and long-term momentum'
-                },
-                'seasonality': {
-                    'description': 'Seasonal pattern detection',
-                    'monthly_effects': 'Month-of-year effects',
-                    'day_effects': 'Day-of-week patterns',
-                    'holiday_effects': 'Holiday and event impacts'
-                },
-                'forecasts': {
-                    'description': 'Price and return forecasting',
-                    'forecast_horizon': 'Multiple forecast periods',
-                    'confidence_intervals': 'Forecast uncertainty bands',
-                    'model_accuracy': 'Historical forecast performance'
-                },
-                'statistical_tests': [
-                    'Stationarity tests',
-                    'Autocorrelation analysis',
-                    'Volatility tests',
-                    'Normality tests'
-                ]
-            }
+            holdings = [i for i in instruments if i.get('quantity', 0) > 0]
+            if not holdings:
+                return {"message": "No active holdings"}
             
-            return result
+            # Apply symbol filter if specified
+            if symbol_filter:
+                if isinstance(symbol_filter, str):
+                    holdings = [h for h in holdings if h['symbol'] == symbol_filter]
+                else:
+                    holdings = [h for h in holdings if h['symbol'] in symbol_filter]
             
-        except Exception as e:
+            # Calculate portfolio returns
+            portfolio_returns, holding_details = widget_instance._calculate_portfolio_returns(
+                holdings, lookback_days
+            )
+            
+            if portfolio_returns is None or portfolio_returns.empty:
+                return {"message": "No price data available for timeseries analysis"}
+            
+            # Calculate statistics
+            total_return = ((1 + portfolio_returns).prod() - 1) * 100
+            volatility = portfolio_returns.std() * np.sqrt(252) * 100
+            
+            from src.utils.performance_metrics import calculate_sharpe_ratio
+            sharpe = calculate_sharpe_ratio(portfolio_returns)
+            
+            # Calculate max drawdown
+            cumulative = (1 + portfolio_returns).cumprod()
+            running_max = cumulative.expanding().max()
+            drawdown = (cumulative - running_max) / running_max
+            max_drawdown = drawdown.min() * 100
+            
+            # Prepare price data for frontend (last 100 points)
+            price_data = []
+            if len(cumulative) > 0:
+                step = max(1, len(cumulative) // 100)
+                for i in range(0, len(cumulative), step):
+                    price_data.append({
+                        "date": cumulative.index[i].isoformat(),
+                        "value": float(cumulative.iloc[i])
+                    })
+            
             return {
-                'success': False,
-                'error': f'Failed to get time series analysis data: {str(e)}',
-                'widget_name': 'Time Series Analysis',
-                'timeseries_data': {},
-                'metadata': {'error_timestamp': self.storage.get_current_timestamp()}
+                "statistics": {
+                    "total_return": float(total_return),
+                    "volatility": float(volatility),
+                    "sharpe_ratio": float(sharpe),
+                    "max_drawdown": float(max_drawdown)
+                },
+                "price_data": price_data,
+                "holdings_analyzed": len(holdings),
+                "period_days": lookback_days
             }
+        except Exception as e:
+            logger.error(f"Timeseries analysis extraction failed: {e}")
+            return {"error": str(e)}

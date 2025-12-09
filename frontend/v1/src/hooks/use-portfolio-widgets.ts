@@ -66,10 +66,10 @@ export interface HoldingsBreakdownData {
 export interface CorrelationMatrixData {
   correlation_matrix: Record<string, Record<string, number>> | Array<{symbol1: string, symbol2: string, correlation: number}>;
   symbols: string[];
-  time_period: {
+  analysis_period: {
     start_date: string;
     end_date: string;
-    days: number;
+    days_analyzed: number;
   };
   statistics: {
     avg_correlation: number;
@@ -123,6 +123,11 @@ export interface BenchmarkComparisonData {
   benchmark_symbol: string;
   time_period: string;
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
+  benchmarks?: Record<string, string>;
 }
 
 export interface DividendAnalysisData {
@@ -147,6 +152,10 @@ export interface DividendAnalysisData {
     estimated_amount: number;
   }>;
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export interface PerformanceData {
@@ -170,6 +179,10 @@ export interface PerformanceData {
     calmar_ratio: number;
   };
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export interface TimeseriesData {
@@ -190,6 +203,10 @@ export interface TimeseriesData {
     rolling_volatility: number;
   }>;
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export interface PortfolioTransitionData {
@@ -207,6 +224,10 @@ export interface PortfolioTransitionData {
     return_change: number;
   };
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export interface NewsEventData {
@@ -226,6 +247,10 @@ export interface NewsEventData {
     volatility_impact: number;
   };
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export interface PortfolioOptimizerData {
@@ -241,6 +266,10 @@ export interface PortfolioOptimizerData {
   };
   constraints_satisfied: boolean;
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export interface ConstrainedOptimizationData {
@@ -257,6 +286,10 @@ export interface ConstrainedOptimizationData {
     violation: number;
   }>;
   last_updated: string;
+  // Optional fallback properties for minimal responses
+  status?: string;
+  message?: string;
+  holdings_count?: number;
 }
 
 export type PortfolioSummaryResponse = WidgetResponse<PortfolioSummaryData>;
@@ -316,6 +349,7 @@ export interface UseBenchmarkComparisonOptions {
 export interface UseDividendAnalysisOptions {
   portfolioId?: string;
   timePeriod?: string;
+  symbol?: string;
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
@@ -330,6 +364,8 @@ export interface UsePerformanceOptions {
 export interface UseTimeseriesOptions {
   portfolioId?: string;
   timePeriod?: string;
+  analysisType?: string;
+  symbol?: string;
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
@@ -337,6 +373,9 @@ export interface UseTimeseriesOptions {
 export interface UsePortfolioTransitionOptions {
   currentPortfolioId?: string;
   targetPortfolioId?: string;
+  transitionMethod?: string;
+  optimizationPriority?: string;
+  targetWeights?: Record<string, number>;
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
@@ -344,12 +383,18 @@ export interface UsePortfolioTransitionOptions {
 export interface UseNewsEventOptions {
   portfolioId?: string;
   timePeriod?: string;
+  lookbackDays?: number;
+  surpriseThreshold?: number;
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
 
 export interface UsePortfolioOptimizerOptions {
   portfolioId?: string;
+  mode?: string;
+  timePeriod?: string;
+  targetReturn?: number;
+  includeDividends?: boolean;
   optimizationType?: string;
   riskTolerance?: number;
   autoRefresh?: boolean;
@@ -358,6 +403,10 @@ export interface UsePortfolioOptimizerOptions {
 
 export interface UseConstrainedOptimizationOptions {
   portfolioId?: string;
+  objective?: string;
+  maxWeight?: number;
+  minWeight?: number;
+  targetReturn?: number;
   constraints?: Record<string, string | number | boolean | string[]>;
   optimizationType?: string;
   autoRefresh?: boolean;
@@ -369,7 +418,7 @@ const WIDGET_API_BASE = '/api/widgets';
 // Generic widget fetcher function
 async function fetchWidget<T>(
   endpoint: string,
-  params?: Record<string, string | number> | undefined
+  params?: Record<string, string | number | boolean> | undefined
 ): Promise<WidgetResponse<T>> {
   try {
     const response = await axios.get<WidgetResponse<T>>(`${WIDGET_API_BASE}${endpoint}`, { params });
@@ -685,7 +734,7 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
     } finally {
       setLoading(false);
     }
-  }, [portfolioId, numSimulations, timeHorizonDays]);
+  }, [portfolioId, numSimulations, timeHorizonDays, estimationMethod]);
 
   useEffect(() => {
     runSimulation();
@@ -792,7 +841,7 @@ export function useBenchmarkComparison(options: UseBenchmarkComparisonOptions = 
  * Custom hook for dividend analysis
  */
 export function useDividendAnalysis(options: UseDividendAnalysisOptions = {}): UseWidgetReturn<DividendAnalysisData> {
-  const { portfolioId, timePeriod = '1Y', autoRefresh = false, refreshInterval = 900000 } = options;
+  const { portfolioId, timePeriod = '1Y', symbol, autoRefresh = false, refreshInterval = 900000 } = options;
   
   const [data, setData] = useState<DividendAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -805,9 +854,10 @@ export function useDividendAnalysis(options: UseDividendAnalysisOptions = {}): U
       setLoading(true);
       setError(null);
       
-      const params = {
+      const params: Record<string, string> = {
         ...(portfolioId && { portfolio_id: portfolioId }),
-        time_period: timePeriod
+        time_period: timePeriod,
+        ...(symbol && { symbol })
       };
       
       const widgetResponse = await fetchWidget<DividendAnalysisData>('/dividend-analysis', params);
@@ -833,7 +883,7 @@ export function useDividendAnalysis(options: UseDividendAnalysisOptions = {}): U
     } finally {
       setLoading(false);
     }
-  }, [portfolioId, timePeriod]);
+  }, [portfolioId, timePeriod, symbol]);
 
   useEffect(() => {
     fetchDividendAnalysis();
@@ -938,7 +988,7 @@ export function usePerformanceAnalysis(options: UsePerformanceOptions = {}): Use
  * Custom hook for timeseries analysis
  */
 export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWidgetReturn<TimeseriesData> {
-  const { portfolioId, timePeriod = '1Y', autoRefresh = false, refreshInterval = 900000 } = options;
+  const { portfolioId, timePeriod = '1Y', analysisType, symbol, autoRefresh = false, refreshInterval = 900000 } = options;
   
   const [data, setData] = useState<TimeseriesData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -953,7 +1003,9 @@ export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWi
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
-        time_period: timePeriod
+        time_period: timePeriod,
+        ...(analysisType && { analysis_type: analysisType }),
+        ...(symbol && { symbol })
       };
       
       const widgetResponse = await fetchWidget<TimeseriesData>('/timeseries-analysis', params);
@@ -979,7 +1031,7 @@ export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWi
     } finally {
       setLoading(false);
     }
-  }, [portfolioId, timePeriod]);
+  }, [portfolioId, timePeriod, analysisType, symbol]);
 
   useEffect(() => {
     fetchTimeseriesAnalysis();
@@ -1011,7 +1063,7 @@ export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWi
  * Custom hook for portfolio transition analysis
  */
 export function usePortfolioTransition(options: UsePortfolioTransitionOptions = {}): UseWidgetReturn<PortfolioTransitionData> {
-  const { currentPortfolioId, targetPortfolioId, autoRefresh = false, refreshInterval = 900000 } = options;
+  const { currentPortfolioId, targetPortfolioId, transitionMethod, optimizationPriority, targetWeights, autoRefresh = false, refreshInterval = 900000 } = options;
   
   const [data, setData] = useState<PortfolioTransitionData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1026,7 +1078,10 @@ export function usePortfolioTransition(options: UsePortfolioTransitionOptions = 
       
       const params = {
         ...(currentPortfolioId && { current_portfolio_id: currentPortfolioId }),
-        ...(targetPortfolioId && { target_portfolio_id: targetPortfolioId })
+        ...(targetPortfolioId && { target_portfolio_id: targetPortfolioId }),
+        ...(transitionMethod && { transition_method: transitionMethod }),
+        ...(optimizationPriority && { optimization_priority: optimizationPriority }),
+        ...(targetWeights && { target_weights: JSON.stringify(targetWeights) })
       };
       
       const widgetResponse = await fetchWidget<PortfolioTransitionData>('/portfolio-transition', params);
@@ -1052,7 +1107,7 @@ export function usePortfolioTransition(options: UsePortfolioTransitionOptions = 
     } finally {
       setLoading(false);
     }
-  }, [currentPortfolioId, targetPortfolioId]);
+  }, [currentPortfolioId, targetPortfolioId, transitionMethod, optimizationPriority, targetWeights]);
 
   useEffect(() => {
     fetchPortfolioTransition();
@@ -1084,7 +1139,7 @@ export function usePortfolioTransition(options: UsePortfolioTransitionOptions = 
  * Custom hook for news event analysis
  */
 export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidgetReturn<NewsEventData> {
-  const { portfolioId, timePeriod = '7D', autoRefresh = false, refreshInterval = 300000 } = options;
+  const { portfolioId, timePeriod = '7D', lookbackDays, surpriseThreshold, autoRefresh = false, refreshInterval = 300000 } = options;
   
   const [data, setData] = useState<NewsEventData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1099,7 +1154,9 @@ export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidg
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
-        time_period: timePeriod
+        time_period: timePeriod,
+        ...(lookbackDays !== undefined && { lookback_days: lookbackDays }),
+        ...(surpriseThreshold !== undefined && { surprise_threshold: surpriseThreshold })
       };
       
       const widgetResponse = await fetchWidget<NewsEventData>('/news-event-analysis', params);
@@ -1125,7 +1182,7 @@ export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidg
     } finally {
       setLoading(false);
     }
-  }, [portfolioId, timePeriod]);
+  }, [portfolioId, timePeriod, lookbackDays, surpriseThreshold]);
 
   useEffect(() => {
     fetchNewsEventAnalysis();
@@ -1157,7 +1214,7 @@ export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidg
  * Custom hook for portfolio optimization
  */
 export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}): UseWidgetReturn<PortfolioOptimizerData> {
-  const { portfolioId, optimizationType = 'MAX_SHARPE', riskTolerance = 0.5, autoRefresh = false, refreshInterval = 1800000 } = options;
+  const { portfolioId, mode, timePeriod, targetReturn, includeDividends, optimizationType = 'MAX_SHARPE', riskTolerance = 0.5, autoRefresh = false, refreshInterval = 1800000 } = options;
   
   const [data, setData] = useState<PortfolioOptimizerData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1172,6 +1229,10 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
+        ...(mode && { mode }),
+        ...(timePeriod && { time_period: timePeriod }),
+        ...(targetReturn !== undefined && { target_return: targetReturn }),
+        ...(includeDividends !== undefined && { include_dividends: includeDividends }),
         optimization_type: optimizationType,
         risk_tolerance: riskTolerance.toString()
       };
@@ -1199,7 +1260,7 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
     } finally {
       setLoading(false);
     }
-  }, [portfolioId, optimizationType, riskTolerance]);
+  }, [portfolioId, mode, timePeriod, targetReturn, includeDividends, optimizationType, riskTolerance]);
 
   useEffect(() => {
     fetchPortfolioOptimizer();
@@ -1231,7 +1292,7 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
  * Custom hook for constrained optimization
  */
 export function useConstrainedOptimization(options: UseConstrainedOptimizationOptions = {}): UseWidgetReturn<ConstrainedOptimizationData> {
-  const { portfolioId, constraints, optimizationType = 'MAX_SHARPE', autoRefresh = false, refreshInterval = 1800000 } = options;
+  const { portfolioId, objective, maxWeight, minWeight, targetReturn, constraints, optimizationType = 'MAX_SHARPE', autoRefresh = false, refreshInterval = 1800000 } = options;
   
   const [data, setData] = useState<ConstrainedOptimizationData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1246,6 +1307,10 @@ export function useConstrainedOptimization(options: UseConstrainedOptimizationOp
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
+        ...(objective && { objective }),
+        ...(maxWeight !== undefined && { max_weight: maxWeight }),
+        ...(minWeight !== undefined && { min_weight: minWeight }),
+        ...(targetReturn !== undefined && { target_return: targetReturn }),
         optimization_type: optimizationType,
         ...(constraints && { constraints: JSON.stringify(constraints) })
       };
@@ -1273,7 +1338,7 @@ export function useConstrainedOptimization(options: UseConstrainedOptimizationOp
     } finally {
       setLoading(false);
     }
-  }, [portfolioId, constraints, optimizationType]);
+  }, [portfolioId, objective, maxWeight, minWeight, targetReturn, constraints, optimizationType]);
 
   useEffect(() => {
     fetchConstrainedOptimization();

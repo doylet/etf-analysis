@@ -40,7 +40,7 @@ class BaseWidgetAdapter(ABC):
         pass
         
     @abstractmethod 
-    def extract_calculation_data(self, widget_instance) -> Dict[str, Any]:
+    def extract_calculation_data(self, widget_instance, validated_params: Dict[str, Any] = None) -> Dict[str, Any]:
         """Extract pure calculation data from widget instance.
         
         This method should extract only the mathematical/analytical results
@@ -48,6 +48,7 @@ class BaseWidgetAdapter(ABC):
         
         Args:
             widget_instance: Instance of the Streamlit widget
+            validated_params: Validated parameters from validate_input_parameters
             
         Returns:
             Dict containing JSON-serializable calculation results
@@ -83,7 +84,7 @@ class BaseWidgetAdapter(ABC):
             widget_instance = self._create_widget_instance(validated_params)
             
             # Extract calculation data (avoiding UI components)
-            calculation_data = self.extract_calculation_data(widget_instance)
+            calculation_data = self.extract_calculation_data(widget_instance, validated_params)
             
             # Build response
             return WidgetResponse(

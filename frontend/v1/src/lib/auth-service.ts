@@ -5,7 +5,14 @@
  * Adapted from React POC for NextJS client/server considerations.
  */
 
-import apiClient from './api-client';
+import axios from 'axios';
+
+const apiClient = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 interface LoginCredentials {
   username: string;

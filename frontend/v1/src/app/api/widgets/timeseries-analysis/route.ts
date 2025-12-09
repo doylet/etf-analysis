@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     //   }
     // });
 
-    const backendUrl = `${API_BASE_URL}/api/widgets/timeseries?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
+    const backendUrl = `${API_BASE_URL}/api/widgets/timeseries-analysis?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

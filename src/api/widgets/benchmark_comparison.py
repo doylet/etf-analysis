@@ -1,102 +1,110 @@
-"""
-Benchmark Comparison Widget API Adapter
+"""Benchmark Comparison Widget API Adapter."""
 
-Exposes the BenchmarkComparisonWidget functionality via REST API
-by delegating to the existing Streamlit widget.
-"""
+from typing import Dict, Any
+import logging
 
-import io
-import sys
-from contextlib import redirect_stdout
-from typing import Dict, List, Optional, Any
-from widgets.benchmark_comparison_widget import BenchmarkComparisonWidget
-from storage.base import BaseStorage
+from src.api.widgets.base import BaseWidgetAdapter
+from src.api.widgets.exceptions import WidgetValidationError
+from src.widgets.benchmark_comparison_widget import BenchmarkComparisonWidget
+
+logger = logging.getLogger(__name__)
 
 
-class BenchmarkComparisonAdapter:
-    """API adapter for benchmark comparison widget"""
+class BenchmarkComparisonAdapter(BaseWidgetAdapter):
+    """Adapter to expose benchmark comparison widget through API."""
     
-    def __init__(self, storage: BaseStorage):
-        self.storage = storage
-        self.widget = BenchmarkComparisonWidget(storage, 'benchmark_comparison_api')
-    
-    def get_data(self, instruments: List[Dict] = None, selected_symbols: List[str] = None) -> Dict[str, Any]:
-        """
-        Get benchmark comparison data by capturing the widget's output
+    def __init__(self, storage):
+        super().__init__(storage, BenchmarkComparisonWidget)
         
-        Args:
-            instruments: List of instrument dictionaries
-            selected_symbols: List of symbols to include in analysis
-            
-        Returns:
-            Dict containing benchmark comparison data and metadata
-        """
+    def get_widget_name(self) -> str:
+        return "benchmark_comparison"
+        
+    def get_widget_description(self) -> str:
+        return "Compare portfolio performance against market benchmarks"
+        
+    def validate_input_parameters(self, **kwargs) -> Dict[str, Any]:
+        """Validate parameters for benchmark comparison."""
+        validated = {}
+        portfolio_id = kwargs.get('portfolio_id')
+        if portfolio_id is not None:
+            if not isinstance(portfolio_id, str) or not portfolio_id.strip():
+                raise WidgetValidationError("portfolio_id must be a non-empty string")
+            validated['portfolio_id'] = portfolio_id.strip()
+        else:
+            validated['portfolio_id'] = None
+        
+        # Time period mapping
+        period_map = {
+            '1W': 7, '1M': 30, '3M': 90, '6M': 180, 
+            '1Y': 365, '2Y': 730, '5Y': 1825
+        }
+        time_period = kwargs.get('time_period', '1Y')
+        validated['days'] = period_map.get(time_period, 365)
+        
+        # Benchmark selection
+        valid_benchmarks = ['SPY', 'QQQ', 'DIA', 'IWM', 'VTI', 'EFA', 'AGG', 'GLD']
+        benchmark = kwargs.get('benchmark', 'SPY')
+        validated['benchmark_symbol'] = benchmark if benchmark in valid_benchmarks else 'SPY'
+        
+        return validated
+        
+    def extract_calculation_data(self, widget_instance, validated_params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Extract benchmark comparison calculation data from widget."""
+        from datetime import datetime, timedelta
+        from src.utils.performance_metrics import calculate_returns
+        
         try:
-            # Capture any output/errors from widget rendering
-            stdout_buffer = io.StringIO()
-            stderr_buffer = io.StringIO()
+            # Get parameters from validated_params or use defaults
+            days = validated_params.get('days', 365) if validated_params else 365
+            benchmark_symbol = validated_params.get('benchmark_symbol', 'SPY') if validated_params else 'SPY'
             
-            result = {
-                'success': True,
-                'widget_name': self.widget.get_name(),
-                'widget_description': self.widget.get_description(),
-                'comparison_data': {},
-                'benchmarks': getattr(self.widget, 'BENCHMARKS', {}),
-                'metadata': {
-                    'instruments_count': len(instruments) if instruments else 0,
-                    'selected_symbols': selected_symbols or [],
-                    'available_periods': ['1Y', '3Y', '5Y', 'ALL'],
-                    'timestamp': self.storage.get_current_timestamp()
-                }
-            }
-            
-            # If no instruments, return empty structure
+            instruments = self.storage.get_all_instruments()
             if not instruments:
-                result['comparison_data'] = {
-                    'metrics': {},
-                    'performance_chart': None,
-                    'summary_stats': {},
-                    'error': 'No instruments available for analysis'
-                }
-                return result
+                return {"message": "No instruments available for benchmark comparison"}
             
-            # Try to extract data from the widget's internal methods
-            try:
-                # Get metrics if available
-                if hasattr(self.widget, '_calculate_benchmark_metrics'):
-                    # This would need portfolio and benchmark data
-                    result['comparison_data'] = {
-                        'metrics': 'Benchmark metrics calculation available',
-                        'performance_chart': 'Performance comparison chart available',
-                        'summary_stats': {
-                            'supported_benchmarks': list(getattr(self.widget, 'BENCHMARKS', {}).keys()),
-                            'calculation_methods': ['Beta', 'Alpha', 'Sharpe Ratio', 'Information Ratio']
-                        }
-                    }
-                else:
-                    result['comparison_data'] = {
-                        'description': 'Compares portfolio performance against market benchmarks',
-                        'features': [
-                            'Portfolio vs benchmark returns',
-                            'Risk-adjusted metrics (Beta, Alpha)',
-                            'Performance attribution',
-                            'Rolling correlation analysis'
-                        ]
-                    }
+            holdings = [i for i in instruments if i.get('quantity', 0) > 0]
+            if not holdings:
+                return {"message": "No active holdings for benchmark comparison"}
             
-            except Exception as calc_error:
-                result['comparison_data'] = {
-                    'error': f'Calculation error: {str(calc_error)}',
-                    'fallback_description': 'Benchmark comparison widget for portfolio analysis'
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=days)
+            
+            # Calculate portfolio returns
+            portfolio_values = widget_instance._fetch_portfolio_values(holdings, start_date, end_date)
+            if portfolio_values.empty:
+                return {"message": "No price data available for selected period"}
+            
+            portfolio_returns = calculate_returns(portfolio_values)
+            
+            # Get benchmark data
+            benchmark_df = self.storage.get_price_data(benchmark_symbol, start_date, end_date)
+            if benchmark_df is None or benchmark_df.empty:
+                return {
+                    "message": "Benchmark data not available",
+                    "benchmarks": widget_instance.BENCHMARKS
                 }
             
-            return result
+            benchmark_returns = calculate_returns(benchmark_df['close'])
             
-        except Exception as e:
+            # Calculate metrics using widget's method
+            metrics = widget_instance._calculate_benchmark_metrics(
+                portfolio_returns, benchmark_returns,
+                portfolio_values, benchmark_df['close']
+            )
+            
             return {
-                'success': False,
-                'error': f'Failed to get benchmark comparison data: {str(e)}',
-                'widget_name': 'Benchmark Comparison',
-                'comparison_data': {},
-                'metadata': {'error_timestamp': self.storage.get_current_timestamp()}
+                "portfolio_return": float(metrics.portfolio_total_return),
+                "benchmark_return": float(metrics.benchmark_total_return),
+                "alpha": float(metrics.alpha),
+                "beta": float(metrics.beta),
+                "sharpe_ratio": float(metrics.portfolio_sharpe),
+                "benchmark_sharpe": float(metrics.benchmark_sharpe),
+                "information_ratio": float(metrics.info_ratio),
+                "portfolio_volatility": float(metrics.portfolio_vol),
+                "benchmark_volatility": float(metrics.benchmark_vol),
+                "benchmark_symbol": benchmark_symbol,
+                "period_days": days
             }
+        except Exception as e:
+            logger.error(f"Benchmark comparison extraction failed: {e}")
+            return {"error": str(e)}

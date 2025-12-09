@@ -9,8 +9,11 @@ import sys
 import os
 from pathlib import Path
 
-# Add the src directory to Python path
-src_dir = Path(__file__).parent / "src"
+# Add both project root AND src directory to Python path
+# This allows both 'from src.widgets' and 'from api.main' to work
+project_root = Path(__file__).parent
+src_dir = project_root / "src"
+sys.path.insert(0, str(project_root))
 sys.path.insert(0, str(src_dir))
 
 # Now we can import with absolute paths

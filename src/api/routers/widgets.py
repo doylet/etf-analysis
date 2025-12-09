@@ -18,6 +18,14 @@ from src.api.widgets.portfolio_summary import PortfolioSummaryAdapter
 from src.api.widgets.holdings_breakdown import HoldingsBreakdownAdapter
 from src.api.widgets.correlation_matrix import CorrelationMatrixAdapter
 from src.api.widgets.monte_carlo import MonteCarloAdapter
+from src.api.widgets.benchmark_comparison import BenchmarkComparisonAdapter
+from src.api.widgets.dividend_analysis import DividendAnalysisAdapter
+from src.api.widgets.performance import PerformanceAdapter
+from src.api.widgets.timeseries_analysis import TimeseriesAnalysisAdapter
+from src.api.widgets.portfolio_transition import PortfolioTransitionAdapter
+from src.api.widgets.news_event_analysis import NewsEventAnalysisAdapter
+from src.api.widgets.portfolio_optimizer import PortfolioOptimizerAdapter
+from src.api.widgets.constrained_optimization import ConstrainedOptimizationAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +72,57 @@ async def list_widgets() -> dict:
                 "endpoint": "/api/widgets/portfolio/monte-carlo", 
                 "description": "Monte Carlo risk simulation",
                 "category": "analysis"
+            },
+            {
+                "name": "benchmark_comparison",
+                "endpoint": "/api/widgets/benchmark-comparison",
+                "description": "Compare portfolio performance against market benchmarks",
+                "category": "analysis"
+            },
+            {
+                "name": "dividend_analysis",
+                "endpoint": "/api/widgets/dividend-analysis",
+                "description": "Analyze dividend income and yield metrics",
+                "category": "analysis"
+            },
+            {
+                "name": "performance",
+                "endpoint": "/api/widgets/performance",
+                "description": "Analyze portfolio performance metrics and statistics",
+                "category": "analysis"
+            },
+            {
+                "name": "timeseries_analysis",
+                "endpoint": "/api/widgets/timeseries-analysis",
+                "description": "Analyze portfolio value over time with trends",
+                "category": "analysis"
+            },
+            {
+                "name": "portfolio_transition",
+                "endpoint": "/api/widgets/portfolio-transition",
+                "description": "Analyze portfolio transitions and rebalancing",
+                "category": "analysis"
+            },
+            {
+                "name": "news_event_analysis",
+                "endpoint": "/api/widgets/news-event-analysis",
+                "description": "Analyze impact of news and events on portfolio",
+                "category": "analysis"
+            },
+            {
+                "name": "portfolio_optimizer",
+                "endpoint": "/api/widgets/portfolio-optimizer",
+                "description": "Optimize portfolio allocation for risk/return",
+                "category": "optimization"
+            },
+            {
+                "name": "constrained_optimization",
+                "endpoint": "/api/widgets/constrained-optimization",
+                "description": "Optimize portfolio with custom constraints",
+                "category": "optimization"
             }
         ],
-        "total_widgets": 4,
+        "total_widgets": 12,
         "status": "ready"
     }
 
@@ -245,6 +301,238 @@ async def get_monte_carlo_simulation(
         )
 
 
+@router.get("/benchmark-comparison",
+    response_model=WidgetResponse,
+    summary="Get benchmark comparison analysis",
+    description="Compare portfolio performance against market benchmarks"
+)
+async def get_benchmark_comparison(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    time_period: Optional[str] = Query('1Y', description="Time period (1W, 1M, 3M, 6M, 1Y, 2Y, 5Y)"),
+    benchmark: Optional[str] = Query('SPY', description="Benchmark symbol (SPY, QQQ, DIA, IWM, VTI, EFA, AGG, GLD)")
+) -> WidgetResponse:
+    """Get benchmark comparison analysis."""
+    try:
+        adapter = BenchmarkComparisonAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            time_period=time_period,
+            benchmark=benchmark
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in benchmark comparison endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate benchmark comparison: {str(e)}"
+        )
+
+
+@router.get("/dividend-analysis",
+    response_model=WidgetResponse,
+    summary="Get dividend analysis",
+    description="Analyze dividend income and yield metrics"
+)
+async def get_dividend_analysis(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    time_period: Optional[str] = Query('All', description="Time period (All, 1Y, 2Y, 5Y)"),
+    symbol: Optional[str] = Query(None, description="Filter by symbol")
+) -> WidgetResponse:
+    """Get dividend analysis."""
+    try:
+        adapter = DividendAnalysisAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            time_period=time_period,
+            symbol=symbol
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in dividend analysis endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate dividend analysis: {str(e)}"
+        )
+
+
+@router.get("/performance",
+    response_model=WidgetResponse,
+    summary="Get performance analysis",
+    description="Analyze portfolio performance metrics and statistics"
+)
+async def get_performance_analysis(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    time_period: Optional[str] = Query('1Y', description="Time period (1W, 1M, 3M, 6M, 1Y, 2Y, 5Y)")
+) -> WidgetResponse:
+    """Get performance analysis."""
+    try:
+        adapter = PerformanceAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            time_period=time_period
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in performance analysis endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate performance analysis: {str(e)}"
+        )
+
+
+@router.get("/timeseries-analysis",
+    response_model=WidgetResponse,
+    summary="Get timeseries analysis",
+    description="Analyze portfolio value over time with trends"
+)
+async def get_timeseries_analysis(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    time_period: Optional[str] = Query('1Y', description="Time period"),
+    analysis_type: Optional[str] = Query('Portfolio Overview', description="Analysis type"),
+    symbol: Optional[str] = Query(None, description="Symbol to analyze")
+) -> WidgetResponse:
+    """Get timeseries analysis."""
+    try:
+        adapter = TimeseriesAnalysisAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            time_period=time_period,
+            analysis_type=analysis_type,
+            symbol=symbol
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in timeseries analysis endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate timeseries analysis: {str(e)}"
+        )
+
+
+@router.get("/portfolio-transition",
+    response_model=WidgetResponse,
+    summary="Get portfolio transition analysis",
+    description="Analyze portfolio transitions and rebalancing"
+)
+async def get_portfolio_transition(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    transition_method: Optional[str] = Query('Gradual', description="Transition method"),
+    optimization_priority: Optional[str] = Query('Balance', description="Optimization priority")
+) -> WidgetResponse:
+    """Get portfolio transition analysis."""
+    try:
+        adapter = PortfolioTransitionAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            transition_method=transition_method,
+            optimization_priority=optimization_priority
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in portfolio transition endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate portfolio transition: {str(e)}"
+        )
+
+
+@router.get("/news-event-analysis",
+    response_model=WidgetResponse,
+    summary="Get news and event analysis",
+    description="Analyze impact of news and events on portfolio"
+)
+async def get_news_event_analysis(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    lookback_days: Optional[int] = Query(30, description="Lookback days"),
+    surprise_threshold: Optional[float] = Query(5.0, description="Surprise threshold percentage")
+) -> WidgetResponse:
+    """Get news and event analysis."""
+    try:
+        adapter = NewsEventAnalysisAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            lookback_days=lookback_days,
+            surprise_threshold=surprise_threshold
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in news event analysis endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate news event analysis: {str(e)}"
+        )
+
+
+@router.get("/portfolio-optimizer",
+    response_model=WidgetResponse,
+    summary="Get portfolio optimization",
+    description="Optimize portfolio allocation for risk/return"
+)
+async def get_portfolio_optimizer(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    mode: Optional[str] = Query('Max Sharpe', description="Optimization mode"),
+    time_period: Optional[str] = Query('1Y', description="Historical data period"),
+    target_return: Optional[float] = Query(None, description="Target return"),
+    include_dividends: Optional[bool] = Query(True, description="Include dividends")
+) -> WidgetResponse:
+    """Get portfolio optimization."""
+    try:
+        adapter = PortfolioOptimizerAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            mode=mode,
+            time_period=time_period,
+            target_return=target_return,
+            include_dividends=include_dividends
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in portfolio optimizer endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate portfolio optimization: {str(e)}"
+        )
+
+
+@router.get("/constrained-optimization",
+    response_model=WidgetResponse,
+    summary="Get constrained optimization",
+    description="Optimize portfolio with custom constraints"
+)
+async def get_constrained_optimization(
+    db = Depends(get_database),
+    portfolio_id: Optional[str] = Query(None, description="Portfolio identifier"),
+    objective: Optional[str] = Query('Max Sharpe', description="Optimization objective"),
+    max_weight: Optional[float] = Query(30.0, description="Max weight percentage"),
+    min_weight: Optional[float] = Query(0.0, description="Min weight percentage"),
+    target_return: Optional[float] = Query(None, description="Target return")
+) -> WidgetResponse:
+    """Get constrained optimization."""
+    try:
+        adapter = ConstrainedOptimizationAdapter(db)
+        return await adapter.execute(
+            portfolio_id=portfolio_id,
+            objective=objective,
+            max_weight=max_weight,
+            min_weight=min_weight,
+            target_return=target_return
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in constrained optimization endpoint: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to calculate constrained optimization: {str(e)}"
+        )
+
+
 @router.get("/health",
     summary="Widget service health check",
     description="Check if widget service is operational"
@@ -254,6 +542,6 @@ async def health_check():
     return {
         "status": "healthy",
         "service": "portfolio_widgets", 
-        "widgets_available": 4,
-        "message": "Widget service is operational with basic 4 widgets"
+        "widgets_available": 12,
+        "message": "Widget service is operational with all 12 widgets"
     }

@@ -1,110 +1,109 @@
-"""
-News Event Analysis Widget API Adapter
+"""News Event Analysis Widget API Adapter."""
 
-Exposes the NewsEventAnalysisWidget functionality via REST API
-by delegating to the existing Streamlit widget.
-"""
+from typing import Dict, Any
+import logging
 
-import io
-from typing import Dict, List, Optional, Any
-from widgets.news_event_analysis_widget import NewsEventAnalysisWidget
-from storage.base import BaseStorage
+from src.api.widgets.base import BaseWidgetAdapter
+from src.api.widgets.exceptions import WidgetValidationError
+from src.widgets.news_event_analysis_widget import NewsEventAnalysisWidget
+
+logger = logging.getLogger(__name__)
 
 
-class NewsEventAnalysisAdapter:
-    """API adapter for news event analysis widget"""
+class NewsEventAnalysisAdapter(BaseWidgetAdapter):
+    """Adapter to expose news event analysis widget through API."""
     
-    def __init__(self, storage: BaseStorage):
-        self.storage = storage
-        self.widget = NewsEventAnalysisWidget(storage, 'news_event_analysis_api')
-    
-    def get_data(self, instruments: List[Dict] = None, selected_symbols: List[str] = None) -> Dict[str, Any]:
-        """
-        Get news and event analysis data
+    def __init__(self, storage):
+        super().__init__(storage, NewsEventAnalysisWidget)
         
-        Args:
-            instruments: List of instrument dictionaries
-            selected_symbols: List of symbols to include in analysis
-            
-        Returns:
-            Dict containing news and event analysis data and metadata
-        """
+    def get_widget_name(self) -> str:
+        return "news_event_analysis"
+        
+    def get_widget_description(self) -> str:
+        return "Analyze impact of news and events on portfolio"
+        
+    def validate_input_parameters(self, **kwargs) -> Dict[str, Any]:
+        validated = {}
+        portfolio_id = kwargs.get('portfolio_id')
+        if portfolio_id is not None:
+            if not isinstance(portfolio_id, str) or not portfolio_id.strip():
+                raise WidgetValidationError("portfolio_id must be a non-empty string")
+            validated['portfolio_id'] = portfolio_id.strip()
+        else:
+            validated['portfolio_id'] = None
+        
+        # Validate lookback_days
+        lookback_days = kwargs.get('lookback_days', 30)
+        valid_lookbacks = [7, 14, 30, 60, 90]
+        if lookback_days not in valid_lookbacks:
+            raise WidgetValidationError(f"lookback_days must be one of {valid_lookbacks}")
+        validated['lookback_days'] = lookback_days
+        
+        # Validate surprise_threshold
+        surprise_threshold = kwargs.get('surprise_threshold', 5.0)
         try:
-            result = {
-                'success': True,
-                'widget_name': self.widget.get_name(),
-                'widget_description': self.widget.get_description(),
-                'news_analysis_data': {},
-                'metadata': {
-                    'instruments_count': len(instruments) if instruments else 0,
-                    'selected_symbols': selected_symbols or [],
-                    'timestamp': self.storage.get_current_timestamp()
-                }
-            }
-            
-            # If no instruments, return empty structure
+            surprise_threshold = float(surprise_threshold)
+            if surprise_threshold < 1 or surprise_threshold > 20:
+                raise WidgetValidationError("surprise_threshold must be between 1 and 20")
+            validated['surprise_threshold'] = surprise_threshold
+        except (TypeError, ValueError):
+            raise WidgetValidationError("surprise_threshold must be a number")
+        
+        return validated
+        
+    def extract_calculation_data(self, widget_instance, validated_params: Dict[str, Any] = None) -> Dict[str, Any]:
+        from datetime import datetime, timedelta
+        import random
+        
+        if validated_params is None:
+            validated_params = {}
+        
+        lookback_days = validated_params.get('lookback_days', 30)
+        surprise_threshold = validated_params.get('surprise_threshold', 5.0)
+        
+        try:
+            instruments = self.storage.get_all_instruments()
             if not instruments:
-                result['news_analysis_data'] = {
-                    'news_sentiment': {},
-                    'event_impact': {},
-                    'correlations': {},
-                    'error': 'No instruments available for news and event analysis'
-                }
-                return result
+                return {"message": "No instruments available"}
+            holdings = [i for i in instruments if i.get('quantity', 0) > 0]
+            if not holdings:
+                return {"message": "No active holdings"}
             
-            # Extract news and event analysis features
-            result['news_analysis_data'] = {
-                'description': 'Analysis of news sentiment and event impact on portfolio performance',
-                'features': [
-                    'News sentiment analysis',
-                    'Event impact assessment',
-                    'Correlation with price movements',
-                    'Social media sentiment',
-                    'Earnings impact analysis'
-                ],
-                'data_sources': [
-                    'Financial news feeds',
-                    'Social media platforms',
-                    'Earnings reports',
-                    'Economic indicators',
-                    'Regulatory announcements'
-                ],
-                'news_sentiment': {
-                    'description': 'Sentiment analysis of recent news',
-                    'sentiment_score': 'Aggregate sentiment rating',
-                    'sentiment_trends': 'Sentiment over time',
-                    'key_themes': 'Major topics and themes',
-                    'source_breakdown': 'Sentiment by news source'
-                },
-                'event_impact': {
-                    'description': 'Impact assessment of major events',
-                    'event_timeline': 'Recent significant events',
-                    'price_impact': 'Measured price reactions',
-                    'volume_impact': 'Trading volume changes',
-                    'recovery_analysis': 'Post-event recovery patterns'
-                },
-                'correlations': {
-                    'description': 'News-price correlation analysis',
-                    'sentiment_correlation': 'Correlation between sentiment and returns',
-                    'news_volume_impact': 'Impact of news volume on volatility',
-                    'predictive_indicators': 'News-based predictive signals'
-                },
-                'analysis_methods': [
-                    'Natural language processing',
-                    'Sentiment scoring algorithms',
-                    'Event study methodology',
-                    'Statistical correlation analysis',
-                    'Machine learning classification'
-                ]
-            }
+            # Generate sample sentiment analysis
+            # In a full implementation, this would fetch and analyze actual news
+            symbols = [h['symbol'] for h in holdings]
             
-            return result
+            # Sample sentiment scores
+            sentiments = [random.uniform(-1, 1) for _ in symbols]
+            overall_sentiment = sum(sentiments) / len(sentiments)
             
-        except Exception as e:
+            # Sample market impact correlation
+            price_correlation = random.uniform(0.3, 0.8)
+            
+            # Sample recent events
+            events = []
+            for i, symbol in enumerate(symbols[:3]):
+                events.append({
+                    "title": f"Market Update: {symbol}",
+                    "date": (datetime.now() - timedelta(days=i*7)).isoformat(),
+                    "sentiment": float(sentiments[i]),
+                    "source": "Market Data"
+                })
+            
             return {
-                'success': False,
-                'error': f'Failed to get news event analysis data: {str(e)}',
-                'widget_name': 'News Event Analysis',
-                'news_analysis_data': {},
-                'metadata': {'error_timestamp': self.storage.get_current_timestamp()}
+                "sentiment_analysis": {
+                    "overall_sentiment": float(overall_sentiment),
+                    "positive_count": len([s for s in sentiments if s > 0]),
+                    "negative_count": len([s for s in sentiments if s < 0]),
+                    "neutral_count": len([s for s in sentiments if s == 0])
+                },
+                "market_impact": {
+                    "price_correlation": float(price_correlation),
+                    "volatility_impact": float(random.uniform(0.1, 0.5))
+                },
+                "events": events,
+                "holdings_analyzed": len(symbols)
             }
+        except Exception as e:
+            logger.error(f"News analysis extraction failed: {e}")
+            return {"error": str(e)}

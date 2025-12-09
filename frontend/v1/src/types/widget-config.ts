@@ -24,6 +24,7 @@ export interface WidgetConfig {
 export type WidgetType = 
   | 'portfolio-summary'
   | 'holdings-breakdown'
+  | 'holdings'
   | 'correlation-matrix'
   | 'monte-carlo'
   | 'benchmark-comparison'
@@ -118,6 +119,19 @@ export const WIDGET_REGISTRY: WidgetRegistry = {
     refreshInterval: 1800000, // 30 minutes
     icon: 'pie-chart',
     tags: ['holdings', 'allocation', 'breakdown']
+  },
+  'holdings': {
+    type: 'holdings',
+    name: 'Holdings',
+    description: 'Detailed holdings information',
+    category: 'overview',
+    defaultSize: { w: 6, h: 5 },
+    minSize: { w: 4, h: 4 },
+    configurable: true,
+    requiresPortfolio: true,
+    refreshInterval: 1800000, // 30 minutes
+    icon: 'list',
+    tags: ['holdings', 'details']
   },
   'correlation-matrix': {
     type: 'correlation-matrix',

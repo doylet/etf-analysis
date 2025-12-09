@@ -1,104 +1,143 @@
-"""
-Portfolio Optimizer Widget API Adapter
+"""Portfolio Optimizer Widget API Adapter."""
 
-Exposes the PortfolioOptimizerWidget functionality via REST API
-by delegating to the existing Streamlit widget.
-"""
+from typing import Dict, Any, List
+import logging
 
-import io
-from typing import Dict, List, Optional, Any
-from widgets.portfolio_optimizer_widget import PortfolioOptimizerWidget
-from storage.base import BaseStorage
+from src.api.widgets.base import BaseWidgetAdapter
+from src.api.widgets.exceptions import WidgetValidationError
+from src.widgets.portfolio_optimizer_widget import PortfolioOptimizerWidget
+
+logger = logging.getLogger(__name__)
 
 
-class PortfolioOptimizerAdapter:
-    """API adapter for portfolio optimizer widget"""
+class PortfolioOptimizerAdapter(BaseWidgetAdapter):
+    """Adapter to expose portfolio optimizer widget through API."""
     
-    def __init__(self, storage: BaseStorage):
-        self.storage = storage
-        self.widget = PortfolioOptimizerWidget(storage, 'portfolio_optimizer_api')
-    
-    def get_data(self, instruments: List[Dict] = None, selected_symbols: List[str] = None) -> Dict[str, Any]:
-        """
-        Get portfolio optimization data
+    def __init__(self, storage):
+        super().__init__(storage, PortfolioOptimizerWidget)
         
-        Args:
-            instruments: List of instrument dictionaries
-            selected_symbols: List of symbols to include in optimization
-            
-        Returns:
-            Dict containing portfolio optimization data and metadata
-        """
+    def get_widget_name(self) -> str:
+        return "portfolio_optimizer"
+        
+    def get_widget_description(self) -> str:
+        return "Optimize portfolio allocation for risk/return"
+        
+    def validate_input_parameters(self, **kwargs) -> Dict[str, Any]:
+        validated = {}
+        portfolio_id = kwargs.get('portfolio_id')
+        if portfolio_id is not None:
+            if not isinstance(portfolio_id, str) or not portfolio_id.strip():
+                raise WidgetValidationError("portfolio_id must be a non-empty string")
+            validated['portfolio_id'] = portfolio_id.strip()
+        else:
+            validated['portfolio_id'] = None
+        
+        # Validate mode
+        mode = kwargs.get('mode', 'Max Sharpe')
+        valid_modes = ['Efficient Frontier', 'Max Sharpe', 'Min Volatility', 'Max Return', 'Target Return']
+        if mode not in valid_modes:
+            raise WidgetValidationError(f"mode must be one of {valid_modes}")
+        validated['mode'] = mode
+        
+        # Validate time_period
+        time_period = kwargs.get('time_period', '1Y')
+        valid_periods = ['1M', '3M', '6M', '1Y', '2Y', '5Y']
+        if time_period not in valid_periods:
+            raise WidgetValidationError(f"time_period must be one of {valid_periods}")
+        validated['time_period'] = time_period
+        
+        # Validate target_return
+        target_return = kwargs.get('target_return')
+        if target_return is not None:
+            try:
+                target_return = float(target_return)
+                if target_return < -100 or target_return > 1000:
+                    raise WidgetValidationError("target_return must be between -100 and 1000")
+                validated['target_return'] = target_return
+            except (TypeError, ValueError):
+                raise WidgetValidationError("target_return must be a number")
+        else:
+            validated['target_return'] = None
+        
+        # Validate include_dividends
+        include_dividends = kwargs.get('include_dividends', True)
+        if not isinstance(include_dividends, bool):
+            raise WidgetValidationError("include_dividends must be a boolean")
+        validated['include_dividends'] = include_dividends
+        
+        return validated
+        
+    def extract_calculation_data(self, widget_instance, validated_params: Dict[str, Any] = None) -> Dict[str, Any]:
+        import numpy as np
+        
+        if validated_params is None:
+            validated_params = {}
+        
+        mode = validated_params.get('mode', 'Max Sharpe')
+        time_period = validated_params.get('time_period', '1Y')
+        target_return = validated_params.get('target_return')
+        include_dividends = validated_params.get('include_dividends', True)
+        
+        # Map time_period to days
+        period_map = {'1M': 30, '3M': 90, '6M': 180, '1Y': 365, '2Y': 730, '5Y': 1825}
+        days = period_map.get(time_period, 365)
+        
         try:
-            result = {
-                'success': True,
-                'widget_name': self.widget.get_name(),
-                'widget_description': self.widget.get_description(),
-                'optimization_data': {},
-                'metadata': {
-                    'instruments_count': len(instruments) if instruments else 0,
-                    'selected_symbols': selected_symbols or [],
-                    'timestamp': self.storage.get_current_timestamp()
-                }
-            }
-            
-            # If no instruments, return empty structure
+            instruments = self.storage.get_all_instruments()
             if not instruments:
-                result['optimization_data'] = {
-                    'optimal_weights': {},
-                    'efficient_frontier': {},
-                    'metrics': {},
-                    'error': 'No instruments available for optimization'
+                return {"message": "No instruments available"}
+            
+            holdings = [i for i in instruments if i.get('quantity', 0) > 0]
+            if not holdings:
+                return {"message": "No active holdings"}
+            
+            symbols = [h['symbol'] for h in holdings]
+            
+            # Fetch returns data
+            returns_df = widget_instance._fetch_returns_data(symbols, days, include_dividends=include_dividends)
+            
+            if returns_df is None or returns_df.empty:
+                return {"message": "No price data available for optimization"}
+            
+            # Calculate current portfolio metrics
+            current_metrics = widget_instance._calculate_current_portfolio_metrics(
+                symbols, returns_df
+            )
+            
+            if current_metrics is None:
+                return {"message": "Cannot calculate current portfolio metrics"}
+            
+            # Optimize for maximum Sharpe ratio
+            optimized = widget_instance._optimize_for_max_sharpe(returns_df)
+            
+            if optimized is None:
+                return {
+                    "expected_return": float(current_metrics.expected_return * 100),
+                    "expected_risk": float(current_metrics.volatility * 100),
+                    "sharpe_ratio": float(current_metrics.sharpe_ratio),
+                    "message": "Current portfolio metrics only"
                 }
-                return result
             
-            # Extract portfolio optimization features
-            result['optimization_data'] = {
-                'description': 'Modern portfolio theory based optimization',
-                'features': [
-                    'Mean-variance optimization',
-                    'Efficient frontier calculation',
-                    'Risk-return optimization',
-                    'Weight constraints',
-                    'Rebalancing recommendations'
-                ],
-                'optimization_methods': [
-                    'Maximum Sharpe ratio',
-                    'Minimum volatility',
-                    'Maximum return',
-                    'Equal risk contribution',
-                    'Black-Litterman'
-                ],
-                'optimal_weights': {
-                    'description': 'Optimized portfolio weights for each asset',
-                    'constraints': 'Subject to weight and risk constraints',
-                    'rebalancing': 'Recommended changes from current allocation'
-                },
-                'efficient_frontier': {
-                    'description': 'Risk-return trade-off curve',
-                    'points': 'Multiple portfolio combinations',
-                    'current_position': 'Current portfolio position on frontier'
-                },
-                'metrics': {
-                    'expected_return': 'Optimized portfolio expected return',
-                    'expected_risk': 'Optimized portfolio volatility',
-                    'sharpe_ratio': 'Risk-adjusted return metric',
-                    'improvement': 'Improvement over current allocation'
-                },
-                'constraints': {
-                    'weight_bounds': 'Min/max weight per asset',
-                    'sector_limits': 'Sector concentration limits',
-                    'risk_budget': 'Maximum portfolio risk tolerance'
-                }
-            }
+            # Calculate improvements
+            return_improvement = (optimized.expected_return - current_metrics.expected_return) * 100
+            risk_reduction = (current_metrics.volatility - optimized.volatility) * 100
+            sharpe_improvement = optimized.sharpe_ratio - current_metrics.sharpe_ratio
             
-            return result
-            
-        except Exception as e:
             return {
-                'success': False,
-                'error': f'Failed to get portfolio optimization data: {str(e)}',
-                'widget_name': 'Portfolio Optimizer',
-                'optimization_data': {},
-                'metadata': {'error_timestamp': self.storage.get_current_timestamp()}
+                "expected_return": float(optimized.expected_return * 100),
+                "expected_risk": float(optimized.volatility * 100),
+                "sharpe_ratio": float(optimized.sharpe_ratio),
+                "improvement_metrics": {
+                    "return_improvement": float(return_improvement),
+                    "risk_reduction": float(risk_reduction),
+                    "sharpe_improvement": float(sharpe_improvement)
+                },
+                "current_return": float(current_metrics.expected_return * 100),
+                "current_risk": float(current_metrics.volatility * 100),
+                "current_sharpe": float(current_metrics.sharpe_ratio),
+                "holdings_analyzed": len(symbols)
             }
+        except Exception as e:
+            logger.error(f"Portfolio optimizer extraction failed: {e}")
+            return {"error": str(e)}
+    

@@ -101,7 +101,9 @@ class PortfolioService {
       return response.data;
     } catch (error: unknown) {
       // Check if it's a 404 error (endpoint doesn't exist) - use fallback data
-      if (error?.response?.status === 404) {
+      if (error && typeof error === 'object' && 'response' in error && 
+          error.response && typeof error.response === 'object' && 'status' in error.response && 
+          error.response.status === 404) {
         console.warn('Performance endpoint not available, using fallback data');
         
         // Generate realistic mock performance data based on current portfolio

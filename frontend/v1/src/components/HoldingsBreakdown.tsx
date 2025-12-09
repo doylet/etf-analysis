@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable, Column } from '@/components/ui/data-table';
 import { FinancialAmount } from '@/components/ui/financial-amount';
 import { PercentageChange } from '@/components/ui/percentage-change';
 import { useHoldingsBreakdown, type HoldingData, type BreakdownData } from '@/hooks/use-portfolio-widgets';
@@ -15,7 +15,7 @@ interface HoldingsBreakdownProps {
   defaultBreakdownType?: 'sector' | 'geography' | 'asset_class';
 }
 
-interface HoldingRow {
+interface HoldingRow extends Record<string, unknown> {
   symbol: string;
   name: string;
   shares: number;
@@ -63,94 +63,105 @@ export default function HoldingsBreakdownComponent({
   ];
 
   // Define table columns for holdings
-  const holdingsColumns = [
+  const holdingsColumns: Column<Record<string, unknown>>[] = [
     {
       key: 'symbol',
       header: 'Symbol',
-      render: (value: string, row: HoldingRow) => (
-        <div className="font-medium">
-          <div>{value}</div>
-          <div className="text-sm text-muted-foreground truncate max-w-[120px]">
-            {row.name}
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return (
+          <div className="font-medium">
+            <div>{row.symbol}</div>
+            <div className="text-sm text-muted-foreground truncate max-w-[120px]">
+              {row.name}
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'shares',
       header: 'Shares',
-      render: (value: number) => (
-        <span className="font-mono">
-          {new Intl.NumberFormat('en-US', { 
-            maximumFractionDigits: 2 
-          }).format(value)}
-        </span>
-      ),
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return (
+          <span className="font-mono">
+            {new Intl.NumberFormat('en-US', { 
+              maximumFractionDigits: 2 
+            }).format(row.shares)}
+          </span>
+        );
+      },
     },
     {
       key: 'current_price',
       header: 'Price',
-      render: (value: HoldingRow) => <FinancialAmount amount={value.current_price} />,
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return <FinancialAmount amount={row.current_price} />;
+      },
     },
     {
       key: 'current_value',
       header: 'Value',
-      render: (value: number) => <FinancialAmount amount={value} />,
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return <FinancialAmount amount={row.current_value} />;
+      },
     },
     {
       key: 'weight_percent',
       header: 'Weight',
-      render: (value: number) => (
-        <span className="font-mono">{formatPercent(value)}</span>
-      ),
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return <span className="font-mono">{formatPercent(row.weight_percent)}</span>;
+      },
     },
     {
       key: 'day_change',
       header: 'Day Change',
-      render: (value: number, row: HoldingRow) => (
-        <PercentageChange 
-          value={value} 
-        />
-      ),
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return <PercentageChange value={row.day_change} />;
+      },
     },
     {
       key: 'total_return',
       header: 'Total Return',
-      render: (value: number,row: HoldingRow) => (
-        <PercentageChange 
-          value={value} 
-        />
-      ),
+      render: (value: unknown, item: Record<string, unknown>) => {
+        const row = item as HoldingRow;
+        return <PercentageChange value={row.total_return} />;
+      },
     },
   ];
 
   // Define columns for breakdown summary
-  const breakdownColumns = [
+  const breakdownColumns: Column<Record<string, unknown>>[] = [
     {
       key: 'category',
       header: 'Category',
-      render: (value: string) => (
-        <span className="font-medium">{value}</span>
+      render: (value: unknown, item: Record<string, unknown>) => (
+        <span className="font-medium">{(item as BreakdownData).category}</span>
       ),
     },
     {
       key: 'value',
       header: 'Value',
-      render: (value: number) => <FinancialAmount amount={value} />,
+      render: (value: unknown, item: Record<string, unknown>) => <FinancialAmount amount={(item as BreakdownData).value} />,
     },
     {
       key: 'weight_percent',
       header: 'Weight',
-      render: (value: number) => (
-        <span className="font-mono text-lg">{formatPercent(value)}</span>
+      render: (value: unknown, item: Record<string, unknown>) => (
+        <span className="font-mono text-lg">{formatPercent((item as BreakdownData).weight_percent)}</span>
       ),
     },
     {
       key: 'holdings',
       header: 'Holdings',
-      render: (value: HoldingRow[]) => (
+      render: (value: unknown, item: Record<string, unknown>) => (
         <span className="text-muted-foreground">
-          {value.length} position{value.length !== 1 ? 's' : ''}
+          {(item as BreakdownData).holdings.length} position{(item as BreakdownData).holdings.length !== 1 ? 's' : ''}
         </span>
       ),
     },

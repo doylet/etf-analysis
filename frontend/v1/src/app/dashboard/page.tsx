@@ -9,9 +9,12 @@ import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Import working widget components  
-import PortfolioSummary from '@/components/PortfolioSummary';
-import Holdings from '@/components/Holdings';
+// Import SOLID widget architecture
+import { WidgetServicesProvider } from '@/lib/providers/WidgetServicesProvider';
+import { useWidgetFactory } from '@/hooks/use-widget-factory';
+import { WidgetConfig } from '@/lib/interfaces/IWidgetConfig';
+
+// Import legacy components (temporary for non-SOLID widgets)
 import CorrelationMatrix from '@/components/CorrelationMatrix';
 import MonteCarloSimulation from '@/components/MonteCarloSimulation';
 
@@ -28,7 +31,8 @@ interface WidgetInstance {
   id: string;
   type: string;
   name: string;
-  component: React.ComponentType<{ portfolioId?: string }>;
+  component?: React.ComponentType<{ portfolioId?: string }>; // For legacy widgets
+  widgetConfig?: WidgetConfig; // For SOLID widgets
   position: {
     i: string;
     x: number;
@@ -42,14 +46,45 @@ const AVAILABLE_WIDGETS = [
   {
     type: 'portfolio-summary',
     name: 'Portfolio Summary',
-    component: PortfolioSummary,
+    widgetConfig: {
+      type: 'portfolio-summary',
+      variant: 'standard',
+      title: 'Portfolio Summary',
+      refreshInterval: 30000,
+      cache: true,
+      errorRetryAttempts: 3,
+      showPercentages: true,
+      showCashAllocation: true,
+      showMarketStatus: true,
+      currencyFormat: 'USD'
+    } as WidgetConfig,
     defaultSize: { w: 6, h: 4 }
   },
   {
     type: 'holdings-breakdown', 
     name: 'Holdings Breakdown',
-    component: Holdings,
+    widgetConfig: {
+      type: 'holdings',
+      variant: 'table',
+      title: 'Holdings Breakdown',
+      refreshInterval: 30000,
+      cache: true,
+      errorRetryAttempts: 3
+    } as WidgetConfig,
     defaultSize: { w: 6, h: 5 }
+  },
+  {
+    type: 'holdings-percentage',
+    name: 'Holdings Percentage',
+    widgetConfig: {
+      type: 'holdings',
+      variant: 'percentage',
+      title: 'Holdings Percentage',
+      refreshInterval: 30000,
+      cache: true,
+      errorRetryAttempts: 3
+    } as WidgetConfig,
+    defaultSize: { w: 6, h: 4 }
   },
   {
     type: 'correlation-matrix',
@@ -75,14 +110,33 @@ export default function DashboardPage() {
       id: 'portfolio-summary-1',
       type: 'portfolio-summary',
       name: 'Portfolio Summary',
-      component: PortfolioSummary,
+      widgetConfig: {
+        type: 'portfolio-summary',
+        variant: 'standard',
+        title: 'Portfolio Summary',
+        refreshInterval: 30000,
+        cache: true,
+        errorRetryAttempts: 3,
+        showPercentages: true,
+        showCashAllocation: true,
+        showMarketStatus: true,
+        currencyFormat: 'USD'
+      },
       position: { i: 'portfolio-summary-1', x: 0, y: 0, w: 6, h: 4 }
     },
     {
       id: 'holdings-breakdown-1', 
       type: 'holdings-breakdown',
       name: 'Holdings Breakdown',
-      component: Holdings,
+      widgetConfig: {
+        type: 'holdings',
+        variant: 'table',
+        title: 'Holdings Breakdown',
+        portfolioId: 'default', // Add required portfolioId
+        refreshInterval: 30000,
+        cache: true,
+        errorRetryAttempts: 3
+      },
       position: { i: 'holdings-breakdown-1', x: 6, y: 0, w: 6, h: 5 }
     },
     {
@@ -146,7 +200,6 @@ export default function DashboardPage() {
       id: `${type}-${timestamp}`,
       type,
       name: widgetDef.name,
-      component: widgetDef.component,
       position: {
         i: `${type}-${timestamp}`,
         x: 0,
@@ -155,6 +208,13 @@ export default function DashboardPage() {
         h: widgetDef.defaultSize.h
       }
     };
+
+    // Add either legacy component or SOLID widget config
+    if ('component' in widgetDef) {
+      newWidget.component = widgetDef.component;
+    } else if ('widgetConfig' in widgetDef) {
+      newWidget.widgetConfig = widgetDef.widgetConfig;
+    }
 
     setWidgets(prev => [...prev, newWidget]);
     setShowWidgetPalette(false);
@@ -171,6 +231,23 @@ export default function DashboardPage() {
       console.error('Failed to refresh widgets:', error);
     }
   };
+
+  // Widget Renderer Component for both SOLID and legacy widgets
+  function WidgetRenderer({ widget }: { widget: WidgetInstance }) {
+    const { createWidget } = useWidgetFactory();
+
+    if (widget.component) {
+      // Legacy widget
+      const LegacyComponent = widget.component;
+      return <LegacyComponent portfolioId={portfolioId} />;
+    } else if (widget.widgetConfig) {
+      // SOLID widget
+      const SolidWidget = createWidget(widget.widgetConfig);
+      return <SolidWidget />;
+    }
+    
+    return <div className="p-4 text-center text-muted-foreground">Widget configuration error</div>;
+  }
 
   // Render individual widget with remove button
   const renderWidget = (widget: WidgetInstance) => (
@@ -192,7 +269,7 @@ export default function DashboardPage() {
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0 h-full overflow-auto border-none" size="sm">
-        <widget.component portfolioId={portfolioId} />
+        <WidgetRenderer widget={widget} />
       </CardContent>
     </Card>
   );
@@ -202,91 +279,93 @@ export default function DashboardPage() {
   );
 
   return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between p-3 border-b bg-background">
-        <div className="flex items-center gap-4">
-          <div>
-            <h1 className="font-semibold text-lg">Portfolio Dashboard</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>{widgets.length} widgets</span>
+    <WidgetServicesProvider>
+      <div className="h-screen flex flex-col bg-background">
+        {/* Toolbar */}
+        <div className="flex items-center justify-between p-3 border-b bg-background">
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="font-semibold text-lg">Portfolio Dashboard</h1>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{widgets.length} widgets</span>
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setShowWidgetPalette(!showWidgetPalette)}
-            className="gap-2"
-            disabled={availableToAdd.length === 0}
-          >
-            <Plus className="h-4 w-4" />
-            Add Widget
-          </Button>
           
-          <Button variant="outline" onClick={handleRefreshAll} className="gap-2">
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {/* Widget Palette */}
-      {showWidgetPalette && (
-        <div className="p-3 border-b bg-muted/30">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm font-medium">Add Widget:</span>
-            {availableToAdd.map(widget => (
-              <Button
-                key={widget.type}
-                variant="outline"
-                size="sm"
-                onClick={() => addWidget(widget.type)}
-                className="gap-2"
-              >
-                <Plus className="h-3 w-3" />
-                {widget.name}
-              </Button>
-            ))}
-            {availableToAdd.length === 0 && (
-              <span className="text-sm text-muted-foreground">All widgets already added</span>
-            )}
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowWidgetPalette(!showWidgetPalette)}
+              className="gap-2"
+              disabled={availableToAdd.length === 0}
+            >
+              <Plus className="h-4 w-4" />
+              Add Widget
+            </Button>
+            
+            <Button variant="outline" onClick={handleRefreshAll} className="gap-2">
+              Refresh
+            </Button>
           </div>
         </div>
-      )}
 
-      {/* Main Dashboard Grid */}
-      <div className="flex-1 overflow-auto">
-        <ResponsiveGridLayout
-          layouts={layouts}
-          onLayoutChange={handleLayoutChange}
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-          rowHeight={60}
-          margin={[12, 12]}
-          isDraggable={true}
-          isResizable={true}
-          compactType="vertical"
-          preventCollision={false}
-          useCSSTransforms={true}
-        >
-          {widgets.map(widget => (
-            <div key={widget.id} className="group">
-              {renderWidget(widget)}
-            </div>
-          ))}
-        </ResponsiveGridLayout>
-        
-        {widgets.length === 0 && (
-          <div className="flex items-center justify-center h-96 border-2 border-dashed border-border rounded-lg">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">No widgets added yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Click &ldquo;Add Widget&rdquo; to start building your dashboard
-              </p>
+        {/* Widget Palette */}
+        {showWidgetPalette && (
+          <div className="p-3 border-b bg-muted/30">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-sm font-medium">Add Widget:</span>
+              {availableToAdd.map(widget => (
+                <Button
+                  key={widget.type}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => addWidget(widget.type)}
+                  className="gap-2"
+                >
+                  <Plus className="h-3 w-3" />
+                  {widget.name}
+                </Button>
+              ))}
+              {availableToAdd.length === 0 && (
+                <span className="text-sm text-muted-foreground">All widgets already added</span>
+              )}
             </div>
           </div>
         )}
+
+        {/* Main Dashboard Grid */}
+        <div className="flex-1 overflow-auto">
+          <ResponsiveGridLayout
+            layouts={layouts}
+            onLayoutChange={handleLayoutChange}
+            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+            rowHeight={60}
+            margin={[12, 12]}
+            isDraggable={true}
+            isResizable={true}
+            compactType="vertical"
+            preventCollision={false}
+            useCSSTransforms={true}
+          >
+            {widgets.map(widget => (
+              <div key={widget.id} className="group">
+                {renderWidget(widget)}
+              </div>
+            ))}
+          </ResponsiveGridLayout>
+          
+          {widgets.length === 0 && (
+            <div className="flex items-center justify-center h-96 border-2 border-dashed border-border rounded-lg">
+              <div className="text-center">
+                <h3 className="text-lg font-medium mb-2">No widgets added yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Click &ldquo;Add Widget&rdquo; to start building your dashboard
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </WidgetServicesProvider>
   );
 }

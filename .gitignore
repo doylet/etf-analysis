@@ -19,6 +19,7 @@ data/
 
 # Environment variables
 .env
+.env*
 
 # IDE
 .vscode/
@@ -35,3 +36,26 @@ Thumbs.db
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Node.js / Next.js (for widget architecture)
+node_modules/
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# TypeScript
+*.js.map
+*.d.ts.map
+
+# Testing
+coverage/
+.nyc_output/
+test-results/
+
+# Package manager lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

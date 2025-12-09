@@ -1,38 +1,18 @@
 'use client';
 
+import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign, PieChart, XCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-widgets';
 
-// Utility functions
-const formatCurrency = (amount: number | undefined | null): string => {
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    return '$0.00';
-  }
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-};
-
-const formatPercent = (value: number | undefined | null): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '0.00%';
-  }
-  return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
-};
-
-const determineMetricTrend = (value: number | undefined | null): 'positive' | 'negative' | 'neutral' => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return 'neutral';
-  }
-  return value > 0 ? 'positive' : value < 0 ? 'negative' : 'neutral';
-};
-
 export default function PortfolioSummaryComponent() {
-  const { data: summary, loading, error, metadata, cacheHit } = usePortfolioSummary();
+  // Use portfolio summary hook
+  const { data, loading, error } = usePortfolioSummary({
+    autoRefresh: true,
+    refreshInterval: 30000
+  });
 
   if (loading) {
     return (
@@ -58,7 +38,7 @@ export default function PortfolioSummaryComponent() {
     );
   }
 
-  if (error || !summary) {
+  if (error) {
     return (
       <div className="p-3">
         <Alert variant="destructive">
@@ -72,34 +52,55 @@ export default function PortfolioSummaryComponent() {
     );
   }
 
+  if (!data) {
+    return null;
+  }
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const formatPercent = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'percent',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value / 100);
+  };
+
   const metrics = [
     {
       title: 'Total Value',
-      value: formatCurrency(summary.total_value),
+      value: formatCurrency(data.total_value),
       icon: DollarSign,
       variant: 'highlighted' as const,
       trend: 'neutral' as const,
     },
     {
       title: 'Total Return',
-      value: formatCurrency(summary.total_return),
-      subtitle: formatPercent(summary.total_return_percent),
-      icon: summary.total_return >= 0 ? TrendingUp : TrendingDown,
+      value: formatCurrency(data.total_return),
+      subtitle: formatPercent(data.total_return_percent),
+      icon: data.total_return >= 0 ? TrendingUp : TrendingDown,
       variant: 'default' as const,
-      trend: determineMetricTrend(summary.total_return),
+      trend: data.total_return >= 0 ? ('positive' as const) : ('negative' as const),
     },
     {
       title: 'Day Change',
-      value: formatCurrency(summary.day_change),
-      subtitle: formatPercent(summary.day_change_percent),
-      icon: summary.day_change >= 0 ? TrendingUp : TrendingDown,
+      value: formatCurrency(data.day_change),
+      subtitle: formatPercent(data.day_change_percent),
+      icon: data.day_change >= 0 ? TrendingUp : TrendingDown,
       variant: 'default' as const,
-      trend: determineMetricTrend(summary.day_change),
+      trend: data.day_change >= 0 ? ('positive' as const) : ('negative' as const),
     },
     {
       title: 'Positions',
-      value: (summary.positions ?? 0).toString(),
-      subtitle: `${formatCurrency(summary.allocated_cash)} cash`,
+      value: data.positions.toString(),
+      subtitle: formatCurrency(data.allocated_cash),
       icon: PieChart,
       variant: 'subtle' as const,
       trend: 'neutral' as const,
@@ -114,11 +115,13 @@ export default function PortfolioSummaryComponent() {
             <h3 className="text-sm font-semibold text-foreground">Portfolio Summary</h3>
             <p className="text-xs text-muted-foreground mt-1">Real-time portfolio overview</p>
           </div>
-          {cacheHit && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
-              Cached
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {(data as any).market_status && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-md capitalize">
+                {(data as any).market_status.replace('_', ' ')}
+              </span>
+            )}
+          </div>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -133,6 +136,10 @@ export default function PortfolioSummaryComponent() {
               trend={metric.trend}
             />
           ))}
+        </div>
+        
+        <div className="text-xs text-muted-foreground text-center">
+          Last updated: {new Date(data.last_updated).toLocaleString()}
         </div>
       </div>
     </div>

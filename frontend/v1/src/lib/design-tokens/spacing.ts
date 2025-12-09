@@ -107,11 +107,11 @@ export const responsiveSpacing = {
  */
 export function getSpacing(path: string): string {
   const keys = path.split('.');
-  let value: string | number = spacing;
+  let value: unknown = spacing;
   
   for (const key of keys) {
     if (value && typeof value === 'object' && key in value) {
-      value = value[key];
+      value = (value as Record<string, unknown>)[key];
     } else {
       return spacing.component.base; // Fallback
     }

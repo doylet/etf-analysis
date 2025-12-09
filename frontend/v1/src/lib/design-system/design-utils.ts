@@ -74,7 +74,7 @@ export const generateCSSVariables = (themeConfig: ThemeConfig) => {
       const cssVar = prefix ? `${prefix}-${key}` : key;
       
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        flattenObject(value, cssVar);
+        flattenObject(value as Record<string, unknown>, cssVar);
       } else {
         vars[`--${cssVar}`] = Array.isArray(value) ? value[0] : value;
       }

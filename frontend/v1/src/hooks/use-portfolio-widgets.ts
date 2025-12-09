@@ -35,7 +35,7 @@ export interface PortfolioSummaryData {
   last_updated: string;
 }
 
-export interface HoldingData {
+export interface HoldingData extends Record<string, unknown> {
   symbol: string;
   name: string;
   shares: number;
@@ -48,7 +48,7 @@ export interface HoldingData {
   total_return_percent: number;
 }
 
-export interface BreakdownData {
+export interface BreakdownData extends Record<string, unknown> {
   category: string;
   value: number;
   weight_percent: number;

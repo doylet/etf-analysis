@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Widget architecture specific ignores:
+    "coverage/**",
+    "*.test.ts",
+    "*.test.tsx",
+    "**/__mocks__/**",
+    "**/node_modules/**",
+    "**/*.d.ts"
   ]),
 ]);
 

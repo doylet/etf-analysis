@@ -56,8 +56,8 @@ type SortState = {
   direction: "asc" | "desc"
 }
 
-const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
-  ({
+const DataTable = <T = Record<string, unknown>>(props: DataTableProps<T> & { ref?: React.ForwardedRef<HTMLTableElement> }) => {
+  const {
     className,
     variant,
     size,
@@ -70,8 +70,9 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
     onSort,
     striped = false,
     hoverable = true,
-    ...props
-  }, ref) => {
+    ref,
+    ...otherProps
+  } = props;
     const [sortState, setSortState] = React.useState<SortState>({
       key: defaultSort?.key || null,
       direction: defaultSort?.direction || "asc",
@@ -160,28 +161,33 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
       }
     }
 
-    const getCellValue = (item: T, column: Column, index: number) => {
+    const getCellValue = (item: T, column: Column<T>, index: number): React.ReactNode => {
       let value: unknown
 
       if (typeof column.accessor === "function") {
         value = column.accessor(item)
       } else if (typeof column.accessor === "string") {
-        value = item[column.accessor]
+        value = (item as any)[column.accessor]
       } else {
-        value = item[column.key]
+        value = (item as any)[column.key]
       }
 
       if (column.render) {
         return column.render(value, item, index)
       }
 
-      return value
+      // Convert basic types to React nodes
+      if (value === null || value === undefined) return '';
+      if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+      }
+      return String(value);
     }
 
     if (loading) {
       return (
         <div className="w-full">
-          <table className={cn(dataTableVariants({ variant, size }), className)} {...props}>
+          <table className={cn(dataTableVariants({ variant, size }), className)} {...otherProps}>
             <thead>
               <tr className="border-b border-border bg-muted/50">
                 {columns.map((column) => (
@@ -225,7 +231,7 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
             dataTableVariants({ variant: striped ? "striped" : variant, size }), 
             className
           )} 
-          {...props}
+          {...otherProps}
         >
           <thead>
             <tr className="border-b border-border bg-muted/50">
@@ -291,8 +297,11 @@ const DataTable = React.forwardRef<HTMLTableElement, DataTableProps>(
         </table>
       </div>
     )
-  }
-)
-DataTable.displayName = "DataTable"
+  };
+  
+const DataTableWithRef = React.forwardRef<HTMLTableElement, DataTableProps>((props, ref) => (
+  <DataTable {...props} ref={ref} />
+));
+DataTableWithRef.displayName = "DataTable";
 
-export { DataTable, dataTableVariants }
+export { DataTableWithRef as DataTable, dataTableVariants }

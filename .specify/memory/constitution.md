@@ -1,28 +1,30 @@
 <!--
 Sync Impact Report:
-Version: 1.0.0 → 1.1.0
+Version: 1.2.0 → 1.3.0
+Action: Added Frontend Architecture Principles and removed Streamlit-specific rules
+Changes:
+  - MINOR version bump: Added new Core Principle VI (Frontend Architecture)
+  - Removed all Streamlit-specific UI standards from Principle IV
+  - Updated Principle IV to be framework-agnostic (Professional UI Standards)
+  - Removed Forbidden Practice #4 (Streamlit-specific divider rules)
+  - Added Frontend-specific forbidden and required practices
+  - Rationale: Project now uses dual architecture (Python backend + React frontend)
+Templates Status:
+  - spec-template.md: ⚠️ Review UI component patterns for framework-agnostic approach
+  - plan-template.md: ⚠️ Update to reflect frontend/backend architecture patterns
+  - All other templates: ✅ No updates required
+Affected Code:
+  - frontend/v1/src/**/*.tsx: ✅ Already follows new frontend principles
+  - frontend/v1/src/app/dashboard/page.tsx: ✅ Properly uses React.memo and useCallback
+  - frontend/v1/src/hooks/use-portfolio-widgets.ts: ✅ Structured error handling in place
+Previous Report:
+Version: 1.1.0 → 1.2.0
 Action: Amendment to forbid st.divider()
 Changes:
   - MINOR version bump: Added new forbidden practice (st.divider())
   - Updated Principle IV: Professional UI Standards to remove st.divider() requirement
   - Added Forbidden Practice #4: st.divider() usage
   - Rationale: st.divider() creates excessive visual noise and inconsistent spacing
-Templates Status:
-  - spec-template.md: ⚠️ Review references to st.divider() in UI standards
-  - plan-template.md: ⚠️ Review UI component patterns
-  - All other templates: ✅ No updates required
-Affected Code:
-  - src/widgets/correlation_matrix_widget.py: ⚠️ Contains 3 st.divider() calls (T024-T026)
-  - Action required: Replace st.divider() with blank st.write() or proper spacing
-Previous Report:
-Version: (none) → 1.0.0
-Action: Initial constitution establishment
-Changes:
-  - Established core principles for ETF Analysis Dashboard
-  - Added Code Quality Standards section with HEREDOC prohibition
-  - Defined governance structure
-Templates Status:
-  - All templates: ✅ No updates required (constitution created from scratch)
 -->
 
 # ETF Analysis Dashboard Constitution
@@ -45,14 +47,19 @@ Dashboard widgets MUST follow the BaseWidget interface and remain independent. E
 **Rationale**: Modular widgets enable flexible dashboard composition, easier testing, and independent feature development.
 
 ### IV. Professional UI Standards
-User interfaces MUST use Streamlit's container components properly. All widget content MUST be indented within `st.container(border=True)` blocks. Section spacing MUST use `st.space("small")`, `st.space("medium")`, or `st.space("large")` as appropriate, NOT `st.divider()` or `st.write("")`. Metrics MUST include helpful tooltips via the `help` parameter.
+User interfaces MUST maintain consistent, professional presentation. Components MUST use appropriate containers with clear visual hierarchy. Section spacing MUST be consistent and intentional. Interactive elements MUST include helpful tooltips and accessible labels. Visual design MUST prioritize data legibility and user comprehension.
 
-**Rationale**: Consistent, professional UI presentation enhances user experience and maintainability. Visual dividers create excessive noise, and `st.write("")` is a hack - `st.space()` is the proper Streamlit API for whitespace control.
+**Rationale**: Consistent, professional UI presentation enhances user experience and maintainability across all interface layers.
 
 ### V. Code Readability
 Code MUST prioritize readability over cleverness. Variable names MUST be descriptive. Complex logic MUST be broken into well-named functions. Magic numbers MUST be replaced with named constants.
 
 **Rationale**: This is a financial application where correctness is paramount. Clear code enables verification and reduces bugs.
+
+### VI. Frontend Architecture (React/Next.js)
+Frontend components MUST be optimized for performance and type safety. Components receiving frequently changing props MUST use `React.memo()` with proper `displayName`. Event handlers and callbacks MUST be wrapped in `useCallback()` with correct dependencies. Expensive computations MUST use `useMemo()`. All data-fetching hooks MUST return structured states: `{ data, loading, error }`. HTTP errors MUST be categorized and provide user-friendly messages. All component props and API responses MUST have TypeScript interfaces.
+
+**Rationale**: Financial dashboards render complex widgets that update frequently. Performance optimization prevents unnecessary re-renders and resource waste. Type safety prevents runtime errors with financial data. Clear error states enable users to understand and resolve issues.
 
 ## Code Quality Standards
 
@@ -78,13 +85,12 @@ The following practices are **EXPRESSLY FORBIDDEN** in this codebase:
    - MUST provide clear error messages to users when operations fail
    - **Rationale**: Financial applications require transparency about data quality and operation status
 
-4. **st.divider() and st.write("") for Visual Separation**
-   - MUST NOT use `st.divider()` to separate sections or create visual breaks
-   - MUST NOT use `st.write("")` or `st.write()` with empty/whitespace-only strings for spacing
-   - MUST use `st.space("small")`, `st.space("medium")`, or `st.space("large")` for vertical spacing
-   - MUST rely on Streamlit's expander components and container borders for visual hierarchy
-   - **Exception**: None - these practices are prohibited in all contexts
-   - **Rationale**: `st.divider()` creates excessive visual noise and inconsistent spacing patterns. `st.write("")` is a hack that bypasses Streamlit's proper spacing API. Professional dashboards use `st.space()` for controlled whitespace and rely on component organization rather than explicit divider lines or empty write calls.
+4. **The `any` Type in TypeScript**
+   - MUST NOT use `any` type except for documented edge cases with clear justification
+   - MUST use proper TypeScript types and interfaces for all props and state
+   - MUST type API responses to match backend schemas
+   - **Exception**: Third-party library compatibility where types are unavailable
+   - **Rationale**: Type safety prevents runtime errors with financial data and catches bugs at compile time
 
 ### Required Practices
 
@@ -100,6 +106,25 @@ The following practices are **EXPRESSLY FORBIDDEN** in this codebase:
    - Database operations MUST handle connection failures gracefully
    - API calls MUST handle network errors and rate limits
    - User-facing errors MUST be clear and actionable
+
+4. **Frontend Performance Optimization**
+   - Components MUST use `React.memo()` when receiving props that change frequently
+   - All memoized components MUST have `displayName` set for debugging
+   - Event handlers MUST be wrapped in `useCallback()` with correct dependencies
+   - Expensive computations MUST be wrapped in `useMemo()` with correct dependencies
+   - Component state MUST be local unless explicitly shared
+
+5. **Frontend Error States**
+   - Data-fetching hooks MUST return `{ data, loading, error }` structure
+   - HTTP status codes MUST be categorized: 401 (auth), 403 (permission), 422 (validation), 500 (server)
+   - Error messages MUST be user-friendly and actionable
+   - Network failures MUST display fallback UI, not crash the application
+
+6. **Frontend Accessibility**
+   - All interactive elements MUST be keyboard navigable
+   - Financial metrics MUST include `aria-label` or screen reader text
+   - Color MUST NOT be the only indicator of positive/negative values (use +/- symbols)
+   - WCAG AA compliance MUST be maintained for contrast ratios
 
 ## Storage Architecture
 
@@ -142,4 +167,4 @@ This constitution supersedes all other development practices and preferences. Wh
 - Complexity that violates simplicity principles MUST be justified in writing
 - When constitution conflicts with external library patterns, constitution wins unless explicitly documented otherwise
 
-**Version**: 1.2.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-01
+**Version**: 1.3.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-09

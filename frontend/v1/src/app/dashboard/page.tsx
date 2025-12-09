@@ -1,5 +1,5 @@
 /**
- * Dashboard Page with Drag-and-Drop Widget Management
+ * Dashboard Page with Working Widgets
  */
 
 'use client';
@@ -9,16 +9,13 @@ import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// Import SOLID widget architecture
-import { WidgetServicesProvider } from '@/lib/providers/WidgetServicesProvider';
-import { useWidgetFactory } from '@/hooks/use-widget-factory';
-import { WidgetConfig } from '@/lib/interfaces/IWidgetConfig';
+// Import working hooks
+import { usePortfolioSummary, useHoldingsBreakdown } from '@/hooks/use-portfolio-widgets';
 
-// Import legacy components (temporary for non-SOLID widgets)
+// Import legacy components
 import CorrelationMatrix from '@/components/CorrelationMatrix';
 import MonteCarloSimulation from '@/components/MonteCarloSimulation';
 
-import { useAllWidgets } from '@/hooks/use-portfolio-widgets';
 import { Plus, X } from 'lucide-react';
 
 // Import CSS for react-grid-layout
@@ -31,8 +28,7 @@ interface WidgetInstance {
   id: string;
   type: string;
   name: string;
-  component?: React.ComponentType<{ portfolioId?: string }>; // For legacy widgets
-  widgetConfig?: WidgetConfig; // For SOLID widgets
+  component: React.ComponentType<{ portfolioId?: string }>;
   position: {
     i: string;
     x: number;
@@ -42,49 +38,87 @@ interface WidgetInstance {
   };
 }
 
+// Simple working widget components
+function PortfolioSummaryWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = usePortfolioSummary({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-red-600">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-gray-500">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-gray-50 rounded">
+          <div className="text-xl font-bold">${data.total_value.toLocaleString()}</div>
+          <div className="text-xs text-gray-600">Total Value</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 rounded">
+          <div className={`text-xl font-bold ${data.total_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            ${data.total_return.toLocaleString()}
+          </div>
+          <div className="text-xs text-gray-600">Total Return</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 rounded">
+          <div className="text-xl font-bold">{data.positions}</div>
+          <div className="text-xs text-gray-600">Positions</div>
+        </div>
+        <div className="text-center p-3 bg-gray-50 rounded">
+          <div className="text-xl font-bold">${data.allocated_cash.toLocaleString()}</div>
+          <div className="text-xs text-gray-600">Cash</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HoldingsWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = useHoldingsBreakdown({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-red-600">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-gray-500">No data</div>;
+
+  return (
+    <div className="p-2 overflow-auto">
+      <table className="w-full text-xs">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left p-2">Symbol</th>
+            <th className="text-right p-2">Value</th>
+            <th className="text-right p-2">Weight</th>
+            <th className="text-right p-2">Return</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.holdings.map((holding) => (
+            <tr key={holding.symbol} className="border-b hover:bg-gray-50">
+              <td className="p-2 font-medium">{holding.symbol}</td>
+              <td className="text-right p-2">${holding.current_value.toLocaleString()}</td>
+              <td className="text-right p-2">{(holding.weight_percent * 100).toFixed(1)}%</td>
+              <td className={`text-right p-2 ${holding.total_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {holding.total_return >= 0 ? '+' : ''}{holding.total_return_percent.toFixed(2)}%
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 const AVAILABLE_WIDGETS = [
   {
     type: 'portfolio-summary',
     name: 'Portfolio Summary',
-    widgetConfig: {
-      type: 'portfolio-summary',
-      variant: 'standard',
-      title: 'Portfolio Summary',
-      refreshInterval: 30000,
-      cache: true,
-      errorRetryAttempts: 3,
-      showPercentages: true,
-      showCashAllocation: true,
-      showMarketStatus: true,
-      currencyFormat: 'USD'
-    } as WidgetConfig,
+    component: PortfolioSummaryWidget,
     defaultSize: { w: 6, h: 4 }
   },
   {
-    type: 'holdings-breakdown', 
-    name: 'Holdings Breakdown',
-    widgetConfig: {
-      type: 'holdings',
-      variant: 'table',
-      title: 'Holdings Breakdown',
-      refreshInterval: 30000,
-      cache: true,
-      errorRetryAttempts: 3
-    } as WidgetConfig,
+    type: 'holdings',
+    name: 'Holdings',
+    component: HoldingsWidget,
     defaultSize: { w: 6, h: 5 }
-  },
-  {
-    type: 'holdings-percentage',
-    name: 'Holdings Percentage',
-    widgetConfig: {
-      type: 'holdings',
-      variant: 'percentage',
-      title: 'Holdings Percentage',
-      refreshInterval: 30000,
-      cache: true,
-      errorRetryAttempts: 3
-    } as WidgetConfig,
-    defaultSize: { w: 6, h: 4 }
   },
   {
     type: 'correlation-matrix',
@@ -110,34 +144,15 @@ export default function DashboardPage() {
       id: 'portfolio-summary-1',
       type: 'portfolio-summary',
       name: 'Portfolio Summary',
-      widgetConfig: {
-        type: 'portfolio-summary',
-        variant: 'standard',
-        title: 'Portfolio Summary',
-        refreshInterval: 30000,
-        cache: true,
-        errorRetryAttempts: 3,
-        showPercentages: true,
-        showCashAllocation: true,
-        showMarketStatus: true,
-        currencyFormat: 'USD'
-      },
+      component: PortfolioSummaryWidget,
       position: { i: 'portfolio-summary-1', x: 0, y: 0, w: 6, h: 4 }
     },
     {
-      id: 'holdings-breakdown-1', 
-      type: 'holdings-breakdown',
-      name: 'Holdings Breakdown',
-      widgetConfig: {
-        type: 'holdings',
-        variant: 'table',
-        title: 'Holdings Breakdown',
-        portfolioId: 'default', // Add required portfolioId
-        refreshInterval: 30000,
-        cache: true,
-        errorRetryAttempts: 3
-      },
-      position: { i: 'holdings-breakdown-1', x: 6, y: 0, w: 6, h: 5 }
+      id: 'holdings-1',
+      type: 'holdings',
+      name: 'Holdings',
+      component: HoldingsWidget,
+      position: { i: 'holdings-1', x: 6, y: 0, w: 6, h: 5 }
     },
     {
       id: 'correlation-matrix-1',
@@ -149,13 +164,11 @@ export default function DashboardPage() {
     {
       id: 'monte-carlo-1',
       type: 'monte-carlo',
-      name: 'Monte Carlo Simulation', 
+      name: 'Monte Carlo Simulation',
       component: MonteCarloSimulation,
       position: { i: 'monte-carlo-1', x: 0, y: 11, w: 6, h: 6 }
     }
   ]);
-
-  const { refetchAll } = useAllWidgets(portfolioId);
 
   // Convert widgets to grid layout format
   const layouts = useMemo((): Layouts => {
@@ -209,12 +222,8 @@ export default function DashboardPage() {
       }
     };
 
-    // Add either legacy component or SOLID widget config
-    if ('component' in widgetDef) {
-      newWidget.component = widgetDef.component;
-    } else if ('widgetConfig' in widgetDef) {
-      newWidget.widgetConfig = widgetDef.widgetConfig;
-    }
+    // Add component
+    newWidget.component = widgetDef.component;
 
     setWidgets(prev => [...prev, newWidget]);
     setShowWidgetPalette(false);
@@ -224,29 +233,15 @@ export default function DashboardPage() {
     setWidgets(prev => prev.filter(w => w.id !== widgetId));
   };
 
-  const handleRefreshAll = async () => {
-    try {
-      await refetchAll();
-    } catch (error) {
-      console.error('Failed to refresh widgets:', error);
-    }
+  const handleRefreshAll = () => {
+    // Trigger re-renders by updating widget keys
+    setWidgets(prev => [...prev]);
   };
 
-  // Widget Renderer Component for both SOLID and legacy widgets
+  // Simple widget renderer
   function WidgetRenderer({ widget }: { widget: WidgetInstance }) {
-    const { createWidget } = useWidgetFactory();
-
-    if (widget.component) {
-      // Legacy widget
-      const LegacyComponent = widget.component;
-      return <LegacyComponent portfolioId={portfolioId} />;
-    } else if (widget.widgetConfig) {
-      // SOLID widget
-      const SolidWidget = createWidget(widget.widgetConfig);
-      return <SolidWidget />;
-    }
-    
-    return <div className="p-4 text-center text-muted-foreground">Widget configuration error</div>;
+    const Component = widget.component;
+    return <Component portfolioId={portfolioId} />;
   }
 
   // Render individual widget with remove button
@@ -279,8 +274,7 @@ export default function DashboardPage() {
   );
 
   return (
-    <WidgetServicesProvider>
-      <div className="h-screen flex flex-col bg-background">
+    <div className="h-screen flex flex-col bg-background">
         {/* Toolbar */}
         <div className="flex items-center justify-between p-3 border-b bg-background">
           <div className="flex items-center gap-4">
@@ -366,6 +360,6 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
-    </WidgetServicesProvider>
+    </div>
   );
 }

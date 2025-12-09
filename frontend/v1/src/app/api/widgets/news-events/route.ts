@@ -9,13 +9,15 @@ export async function GET(request: NextRequest) {
     const timePeriod = searchParams.get('time_period') || '1M';
     
     // Backend doesn't have this endpoint yet
-    return NextResponse.json({
-      widget_name: 'news_event_analysis',
-      success: false,
-      data: null,
-      metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default', time_period: timePeriod }, widget_description: 'News & Events Analysis Widget' },
-      error: { code: 'NOT_IMPLEMENTED', message: 'News event analysis not yet implemented in backend' }
-    });
+    // return NextResponse.json({
+    //   widget_name: 'news_event_analysis',
+    //   success: false,
+    //   data: null,
+    //   metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default', time_period: timePeriod }, widget_description: 'News & Events Analysis Widget' },
+    //   error: { code: 'NOT_IMPLEMENTED', message: 'News event analysis not yet implemented in backend' }
+    // });
+
+    const backendUrl = `${API_BASE_URL}/api/widgets/news-events?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

@@ -81,6 +81,7 @@ const PortfolioSummaryWidget = React.memo(({ portfolioId }: { portfolioId?: stri
     </div>
   );
 });
+PortfolioSummaryWidget.displayName = 'PortfolioSummaryWidget';
 
 const HoldingsWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useHoldingsBreakdown({ portfolioId });
@@ -116,6 +117,7 @@ const HoldingsWidget = React.memo(({ portfolioId }: { portfolioId?: string }) =>
     </div>
   );
 });
+HoldingsWidget.displayName = 'HoldingsWidget';
 
 const BenchmarkComparisonWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useBenchmarkComparison({ portfolioId });
@@ -147,6 +149,7 @@ const BenchmarkComparisonWidget = React.memo(({ portfolioId }: { portfolioId?: s
     </div>
   );
 });
+BenchmarkComparisonWidget.displayName = 'BenchmarkComparisonWidget';
 
 const DividendAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useDividendAnalysis({ portfolioId });
@@ -183,6 +186,7 @@ const DividendAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: stri
     </div>
   );
 });
+DividendAnalysisWidget.displayName = 'DividendAnalysisWidget';
 
 const PerformanceWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = usePerformanceAnalysis({ portfolioId });
@@ -214,6 +218,7 @@ const PerformanceWidget = React.memo(({ portfolioId }: { portfolioId?: string })
     </div>
   );
 });
+PerformanceWidget.displayName = 'PerformanceWidget';
 
 const TimeseriesAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useTimeseriesAnalysis({ portfolioId });
@@ -250,9 +255,10 @@ const TimeseriesAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: st
     </div>
   );
 });
+TimeseriesAnalysisWidget.displayName = 'TimeseriesAnalysisWidget';
 
 const PortfolioTransitionWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
-  const { data, loading, error } = usePortfolioTransition({ portfolioId });
+  const { data, loading, error } = usePortfolioTransition({ currentPortfolioId: portfolioId });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
   if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
@@ -298,6 +304,7 @@ const PortfolioTransitionWidget = React.memo(({ portfolioId }: { portfolioId?: s
     </div>
   );
 });
+PortfolioTransitionWidget.displayName = 'PortfolioTransitionWidget';
 
 const NewsEventAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useNewsEventAnalysis({ portfolioId });
@@ -347,6 +354,7 @@ const NewsEventAnalysisWidget = React.memo(({ portfolioId }: { portfolioId?: str
     </div>
   );
 });
+NewsEventAnalysisWidget.displayName = 'NewsEventAnalysisWidget';
 
 const PortfolioOptimizerWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = usePortfolioOptimizer({ portfolioId });
@@ -399,6 +407,7 @@ const PortfolioOptimizerWidget = React.memo(({ portfolioId }: { portfolioId?: st
     </div>
   );
 });
+PortfolioOptimizerWidget.displayName = 'PortfolioOptimizerWidget';
 
 const ConstrainedOptimizationWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useConstrainedOptimization({ portfolioId });
@@ -430,9 +439,9 @@ const ConstrainedOptimizationWidget = React.memo(({ portfolioId }: { portfolioId
         </div>
         <div className="text-center p-3 bg-muted rounded-md">
           <div className={`text-lg font-bold ${
-            data.constraints_satisfied ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+            (!data.constraint_violations || data.constraint_violations.length === 0) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
           }`}>
-            {data.constraints_satisfied ? 'YES' : 'NO'}
+            {(!data.constraint_violations || data.constraint_violations.length === 0) ? 'YES' : 'NO'}
           </div>
           <div className="text-xs text-muted-foreground">Constraints Met</div>
         </div>
@@ -450,6 +459,7 @@ const ConstrainedOptimizationWidget = React.memo(({ portfolioId }: { portfolioId
     </div>
   );
 });
+ConstrainedOptimizationWidget.displayName = 'ConstrainedOptimizationWidget';
 
 const AVAILABLE_WIDGETS = [
   {

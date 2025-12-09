@@ -7,15 +7,18 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const portfolioId = searchParams.get('portfolio_id');
     const constraints = searchParams.get('constraints');
+    const timePeriod = searchParams.get('time_period') || '1Y';
     
     // Backend doesn't have this endpoint yet
-    return NextResponse.json({
-      widget_name: 'constrained_optimization',
-      success: false,
-      data: null,
-      metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default' }, widget_description: 'Constrained Optimization Widget' },
-      error: { code: 'NOT_IMPLEMENTED', message: 'Constrained optimization not yet implemented in backend' }
-    });
+    // return NextResponse.json({
+    //   widget_name: 'constrained_optimization',
+    //   success: false,
+    //   data: null,
+    //   metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default' }, widget_description: 'Constrained Optimization Widget' },
+    //   error: { code: 'NOT_IMPLEMENTED', message: 'Constrained optimization not yet implemented in backend' }
+    // });
+
+    const backendUrl = `${API_BASE_URL}/api/widgets/news-events?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

@@ -9,13 +9,15 @@ export async function GET(request: NextRequest) {
     const objective = searchParams.get('objective') || 'sharpe';
     
     // Backend doesn't have this endpoint yet
-    return NextResponse.json({
-      widget_name: 'portfolio_optimizer',
-      success: false,
-      data: null,
-      metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default', objective }, widget_description: 'Portfolio Optimizer Widget' },
-      error: { code: 'NOT_IMPLEMENTED', message: 'Portfolio optimizer not yet implemented in backend' }
-    });
+    // return NextResponse.json({
+    //   widget_name: 'portfolio_optimizer',
+    //   success: false,
+    //   data: null,
+    //   metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default', objective }, widget_description: 'Portfolio Optimizer Widget' },
+    //   error: { code: 'NOT_IMPLEMENTED', message: 'Portfolio optimizer not yet implemented in backend' }
+    // });
+
+    const backendUrl = `${API_BASE_URL}/api/widgets/portfolio-optimizer?portfolio_id=${portfolioId || 'default'}&objective=${objective}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

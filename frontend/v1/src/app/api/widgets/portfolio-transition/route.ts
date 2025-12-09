@@ -9,13 +9,15 @@ export async function GET(request: NextRequest) {
     const targetAllocation = searchParams.get('target_allocation');
     
     // Backend doesn't have this endpoint yet
-    return NextResponse.json({
-      widget_name: 'portfolio_transition',
-      success: false,
-      data: null,
-      metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default' }, widget_description: 'Portfolio Transition Widget' },
-      error: { code: 'NOT_IMPLEMENTED', message: 'Portfolio transition not yet implemented in backend' }
-    });
+    // return NextResponse.json({
+    //   widget_name: 'portfolio_transition',
+    //   success: false,
+    //   data: null,
+    //   metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default' }, widget_description: 'Portfolio Transition Widget' },
+    //   error: { code: 'NOT_IMPLEMENTED', message: 'Portfolio transition not yet implemented in backend' }
+    // });
+
+    const backendUrl = `${API_BASE_URL}/api/widgets/portfolio-transition?portfolio_id=${portfolioId || 'default'}&target_allocation=${encodeURIComponent(targetAllocation || '')}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

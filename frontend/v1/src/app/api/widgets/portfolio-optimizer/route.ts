@@ -8,7 +8,14 @@ export async function GET(request: NextRequest) {
     const portfolioId = searchParams.get('portfolio_id');
     const objective = searchParams.get('objective') || 'sharpe';
     
-    const backendUrl = `${API_BASE_URL}/api/v1/widgets/portfolio-optimizer?portfolio_id=${portfolioId || 'default'}&objective=${objective}`;
+    // Backend doesn't have this endpoint yet
+    return NextResponse.json({
+      widget_name: 'portfolio_optimizer',
+      success: false,
+      data: null,
+      metadata: { execution_time: '0ms', parameters: { portfolio_id: portfolioId || 'default', objective }, widget_description: 'Portfolio Optimizer Widget' },
+      error: { code: 'NOT_IMPLEMENTED', message: 'Portfolio optimizer not yet implemented in backend' }
+    });
 
     const response = await fetch(backendUrl, {
       method: 'GET',

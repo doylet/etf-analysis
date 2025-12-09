@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const benchmarkSymbol = searchParams.get('benchmark_symbol') || 'SPY';
     const timePeriod = searchParams.get('time_period') || '1Y';
     
-    const backendUrl = `${API_BASE_URL}/api/v1/widgets/benchmark-comparison?portfolio_id=${portfolioId || 'default'}&benchmark_symbol=${benchmarkSymbol}&time_period=${timePeriod}`;
+    const backendUrl = `${API_BASE_URL}/api/widgets/benchmark-comparison?portfolio_id=${portfolioId || 'default'}&benchmark=${benchmarkSymbol}&time_period=${timePeriod}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const portfolioId = searchParams.get('portfolio_id');
     const timePeriod = searchParams.get('time_period') || '1Y';
     
-    const backendUrl = `${API_BASE_URL}/api/v1/widgets/performance?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
+    const backendUrl = `${API_BASE_URL}/api/widgets/performance?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
 
     const response = await fetch(backendUrl, {
       method: 'GET',

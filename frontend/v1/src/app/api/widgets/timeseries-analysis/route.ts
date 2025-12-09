@@ -8,6 +8,23 @@ export async function GET(request: NextRequest) {
     const portfolioId = searchParams.get('portfolio_id');
     const timePeriod = searchParams.get('time_period') || '1Y';
     
+    // Backend doesn't have timeseries endpoint yet - return mock error
+    return NextResponse.json({
+      widget_name: 'timeseries_analysis',
+      success: false,
+      data: null,
+      metadata: {
+        execution_time: '0ms',
+        parameters: { portfolio_id: portfolioId || 'default', time_period: timePeriod },
+        widget_description: 'Timeseries Analysis Widget'
+      },
+      error: {
+        code: 'NOT_IMPLEMENTED',
+        message: 'Timeseries analysis not yet implemented in backend',
+      }
+    });
+    
+    /* Commented out until backend implements
     const backendUrl = `${API_BASE_URL}/api/widgets/timeseries?portfolio_id=${portfolioId || 'default'}&time_period=${timePeriod}`;
 
     const response = await fetch(backendUrl, {
@@ -51,6 +68,7 @@ export async function GET(request: NextRequest) {
       },
       error: null
     });
+    */
   } catch (error) {
     console.error('Error fetching timeseries analysis:', error);
     return NextResponse.json({

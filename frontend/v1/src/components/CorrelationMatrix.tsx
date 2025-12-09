@@ -2,7 +2,6 @@
 
 import { Activity, XCircle, Calendar, TrendingUp } from 'lucide-react';
 import { useState } from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
@@ -67,46 +66,42 @@ export default function CorrelationMatrixComponent({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
+      <div className="p-3">
+        <div className="space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <Skeleton className="h-6 w-[200px]" />
-              <Skeleton className="h-4 w-[300px] mt-2" />
+              <Skeleton className="h-5 w-[160px]" />
+              <Skeleton className="h-4 w-[200px] mt-1" />
             </div>
-            <Skeleton className="h-8 w-[120px]" />
+            <Skeleton className="h-7 w-[100px]" />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-4 border rounded-lg">
-                  <Skeleton className="h-4 w-[100px]" />
-                  <Skeleton className="h-8 w-[80px] mt-2" />
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {[...Array(16)].map((_, i) => (
-                <Skeleton key={i} className="aspect-square h-12" />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="p-3 border rounded-lg">
+                <Skeleton className="h-4 w-[80px] mb-2" />
+                <Skeleton className="h-6 w-[60px]" />
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+          <div className="h-48 bg-muted rounded-lg flex items-center justify-center">
+            <Skeleton className="h-6 w-[120px]" />
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (error || !matrix) {
     return (
-      <Alert variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>Correlation Data Error</AlertTitle>
-        <AlertDescription>
-          {error || 'Unable to load correlation matrix. Please try refreshing the page.'}
-        </AlertDescription>
-      </Alert>
+      <div className="p-3">
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Correlation Data Error</AlertTitle>
+          <AlertDescription>
+            {error || 'Unable to load correlation matrix. Please try refreshing the page.'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -130,15 +125,15 @@ export default function CorrelationMatrixComponent({
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="p-3">
+      <div className="space-y-3">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <Activity className="h-5 w-5" />
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Activity className="h-4 w-4" />
               Correlation Matrix
-            </h2>
-            <p className="text-muted-foreground text-sm mt-1">
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
               Asset correlation over {matrix?.time_period?.days || 0} days
             </p>
           </div>
@@ -151,7 +146,7 @@ export default function CorrelationMatrixComponent({
             <select
               value={timeWindowDays}
               onChange={(e) => setTimeWindowDays(Number(e.target.value))}
-              className="text-sm border border-border rounded-md px-3 py-1 bg-background"
+              className="text-xs border border-border rounded-md px-2 py-1 bg-background"
             >
               {timeWindowOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -161,12 +156,11 @@ export default function CorrelationMatrixComponent({
             </select>
           </div>
         </div>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-6">
+        
+        {/* Main Content */}
+        <div className="space-y-3">
           {/* Summary Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <MetricCard
               title="Average Correlation"
               value={formatPercent(matrix?.statistics?.avg_correlation || 0)}
@@ -193,7 +187,7 @@ export default function CorrelationMatrixComponent({
 
           {/* Correlation Matrix Grid */}
           <div>
-            <h3 className="text-lg font-medium mb-3">Correlation Heatmap</h3>
+            <h4 className="text-sm font-medium mb-2">Correlation Heatmap</h4>
             <div className="overflow-x-auto">
               <div className="min-w-max">
                 {/* Header Row */}
@@ -280,7 +274,7 @@ export default function CorrelationMatrixComponent({
             </Alert>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

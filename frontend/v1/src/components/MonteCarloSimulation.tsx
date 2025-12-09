@@ -2,7 +2,6 @@
 
 import { BarChart3, XCircle, AlertTriangle, TrendingUp, Target } from 'lucide-react';
 import { useState, useMemo } from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
@@ -89,49 +88,38 @@ export default function MonteCarloSimulationComponent({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
+      <div className="p-3">
+        <div className="space-y-3">
           <div className="flex justify-between items-start">
             <div>
-              <Skeleton className="h-6 w-[220px]" />
-              <Skeleton className="h-4 w-[350px] mt-2" />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-8 w-[120px]" />
-              <Skeleton className="h-8 w-[120px]" />
+              <Skeleton className="h-5 w-[180px]" />
+              <Skeleton className="h-4 w-[240px] mt-1" />
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="p-4 border rounded-lg">
-                  <Skeleton className="h-4 w-[100px]" />
-                  <Skeleton className="h-8 w-[120px] mt-2" />
-                  <Skeleton className="h-4 w-[80px] mt-1" />
-                </div>
-              ))}
-            </div>
-            <div>
-              <Skeleton className="h-6 w-[150px]" />
-              <div className="mt-4 h-48 bg-muted rounded-lg"></div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="p-3 border rounded-lg">
+                <Skeleton className="h-4 w-[80px] mb-2" />
+                <Skeleton className="h-6 w-[100px]" />
+              </div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (error || !simulation) {
     return (
-      <Alert variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>Monte Carlo Simulation Error</AlertTitle>
-        <AlertDescription>
-          {error || 'Unable to run Monte Carlo simulation. Please try refreshing the page.'}
-        </AlertDescription>
-      </Alert>
+      <div className="p-3">
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Monte Carlo Simulation Error</AlertTitle>
+          <AlertDescription>
+            {error || 'Unable to run Monte Carlo simulation. Please try refreshing the page.'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -141,15 +129,15 @@ export default function MonteCarloSimulationComponent({
   const initialValue = simulation?.parameters?.initial_value || 0;
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="p-3">
+      <div className="space-y-3">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-              <BarChart3 className="h-5 w-5" />
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
               Monte Carlo Simulation
-            </h2>
-            <p className="text-muted-foreground text-sm mt-1">
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1">
               Risk analysis over {timeHorizonDays} days ({numSimulations.toLocaleString()} simulations)
             </p>
           </div>
@@ -162,7 +150,7 @@ export default function MonteCarloSimulationComponent({
             <select
               value={numSimulations}
               onChange={(e) => setNumSimulations(Number(e.target.value))}
-              className="text-sm border border-border rounded-md px-3 py-1 bg-background"
+              className="text-xs border border-border rounded-md px-2 py-1 bg-background"
             >
               {simulationOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -173,7 +161,7 @@ export default function MonteCarloSimulationComponent({
             <select
               value={timeHorizonDays}
               onChange={(e) => setTimeHorizonDays(Number(e.target.value))}
-              className="text-sm border border-border rounded-md px-3 py-1 bg-background"
+              className="text-xs border border-border rounded-md px-2 py-1 bg-background"
             >
               {timeHorizonOptions.map(option => (
                 <option key={option.value} value={option.value}>
@@ -183,12 +171,11 @@ export default function MonteCarloSimulationComponent({
             </select>
           </div>
         </div>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-6">
+        
+        {/* Main Content */}
+        <div className="space-y-3">
           {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <MetricCard
               title="Expected Return"
               value={formatPercent(simulation?.expected_return || 0)}
@@ -354,7 +341,7 @@ export default function MonteCarloSimulationComponent({
             </Alert>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

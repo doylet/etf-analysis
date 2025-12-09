@@ -1,7 +1,6 @@
 'use client';
 
 import { TrendingUp, TrendingDown, DollarSign, PieChart, XCircle } from 'lucide-react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
@@ -37,37 +36,39 @@ export default function PortfolioSummaryComponent() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-[200px]" />
-          <Skeleton className="h-4 w-[300px]" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="p-3">
+        <div className="space-y-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <Skeleton className="h-5 w-[140px]" />
+              <Skeleton className="h-4 w-[180px] mt-1" />
+            </div>
+            <Skeleton className="h-5 w-[50px]" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {[...Array(4)].map((_, i) => (
-              <MetricCard
-                key={i}
-                title="Loading..."
-                value="$0.00"
-                loading
-                variant="default"
-              />
+              <div key={i} className="p-3 border rounded-lg">
+                <Skeleton className="h-4 w-[80px] mb-2" />
+                <Skeleton className="h-6 w-[70px]" />
+              </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   if (error || !summary) {
     return (
-      <Alert variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>Portfolio Data Error</AlertTitle>
-        <AlertDescription>
-          {error || 'Unable to load portfolio data. Please try refreshing the page.'}
-        </AlertDescription>
-      </Alert>
+      <div className="p-3">
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertTitle>Portfolio Data Error</AlertTitle>
+          <AlertDescription>
+            {error || 'Unable to load portfolio data. Please try refreshing the page.'}
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
@@ -106,12 +107,12 @@ export default function PortfolioSummaryComponent() {
   ];
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="p-3">
+      <div className="space-y-3">
         <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Portfolio Summary</h2>
-            <p className="text-muted-foreground text-sm mt-1">Real-time portfolio overview</p>
+            <h3 className="text-sm font-semibold text-foreground">Portfolio Summary</h3>
+            <p className="text-xs text-muted-foreground mt-1">Real-time portfolio overview</p>
           </div>
           {cacheHit && (
             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
@@ -119,10 +120,8 @@ export default function PortfolioSummaryComponent() {
             </span>
           )}
         </div>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {metrics.map((metric, index) => (
             <MetricCard
               key={index}
@@ -135,7 +134,7 @@ export default function PortfolioSummaryComponent() {
             />
           ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

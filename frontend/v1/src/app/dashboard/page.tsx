@@ -174,9 +174,9 @@ export default function DashboardPage() {
 
   // Render individual widget with remove button
   const renderWidget = (widget: WidgetInstance) => (
-    <Card key={widget.id} className="h-full relative overflow-hidden cursor-move">
-      <CardHeader className="py-1 border-b">
-        <CardTitle className="text-sm font-medium flex items-center justify-between">
+    <Card key={widget.id} className="h-full relative overflow-hidden cursor-move" variant="professional" size="sm">
+      <CardHeader className="py-2 px-3 border-b" size="sm">
+        <CardTitle className="text-sm font-medium flex items-center justify-between" size="sm" variant="professional">
           <span className="truncate">{widget.name}</span>
           <Button
             variant="ghost"
@@ -191,7 +191,7 @@ export default function DashboardPage() {
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 h-full overflow-auto border-none">
+      <CardContent className="p-0 h-full overflow-auto border-none" size="sm">
         <widget.component portfolioId={portfolioId} />
       </CardContent>
     </Card>
@@ -204,10 +204,10 @@ export default function DashboardPage() {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Toolbar */}
-      <div className="flex items-center justify-between p-2 px-4 border-b">
+      <div className="flex items-center justify-between p-3 border-b bg-background">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="font-semibold">Portfolio Dashboard</h1>
+            <h1 className="font-semibold text-lg">Portfolio Dashboard</h1>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>{widgets.length} widgets</span>
             </div>
@@ -232,8 +232,8 @@ export default function DashboardPage() {
 
       {/* Widget Palette */}
       {showWidgetPalette && (
-        <div className="p-0 border-b bg-muted/30">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="p-3 border-b bg-muted/30">
+          <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm font-medium">Add Widget:</span>
             {availableToAdd.map(widget => (
               <Button
@@ -255,14 +255,14 @@ export default function DashboardPage() {
       )}
 
       {/* Main Dashboard Grid */}
-      <div className="flex-1 overflow-auto p-0">
+      <div className="flex-1 overflow-auto">
         <ResponsiveGridLayout
           layouts={layouts}
           onLayoutChange={handleLayoutChange}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
           cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
           rowHeight={60}
-          margin={[16, 16]}
+          margin={[12, 12]}
           isDraggable={true}
           isResizable={true}
           compactType="vertical"

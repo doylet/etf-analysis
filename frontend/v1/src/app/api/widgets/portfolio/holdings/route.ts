@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
+interface BackendHolding {
+  symbol: string;
+  quantity: number;
+  current_price: number;
+  market_value: number;
+  weight: number;
+  unrealized_gain_loss: number;
+  unrealized_gain_loss_pct: number;
+  instrument?: {
+    name: string;
+  };
+}
+
+interface BackendHoldingsResponse {
+  holdings: BackendHolding[];
+  breakdown?: unknown[];
+  total_value: number;
+  execution_time?: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -41,14 +61,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
+    const data = await response.json() as BackendHoldingsResponse;
     
     // Transform backend response to widget response format
     return NextResponse.json({
       widget_name: 'holdings_breakdown',
       success: true,
       data: {
-        holdings: (data.holdings || []).map((holding: any) => ({
+        holdings: (data.holdings || []).map((holding) => ({
           symbol: holding.symbol,
           name: holding.instrument?.name || holding.symbol,
           shares: holding.quantity || 0,

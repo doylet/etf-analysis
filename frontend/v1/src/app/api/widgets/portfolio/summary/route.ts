@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:8000';
 
+interface BackendSummaryResponse {
+  total_value: number;
+  total_unrealized_gain_loss: number;
+  total_unrealized_gain_loss_pct: number;
+  num_holdings: number;
+  execution_time?: string;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -40,7 +48,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const data = await response.json();
+    const data = await response.json() as BackendSummaryResponse;
     
     // Transform backend response to widget response format
     return NextResponse.json({

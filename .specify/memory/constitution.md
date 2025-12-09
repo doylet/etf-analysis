@@ -1,5 +1,17 @@
 <!--
 Sync Impact Report:
+Version: 1.3.0 → 1.3.1
+Action: Added git commit message length requirement
+Changes:
+  - PATCH version bump: Added Required Practice #7 (Git Commit Messages)
+  - Commit subject lines must be ≤100 characters
+  - Added imperative mood requirement and formatting guidelines
+  - Rationale: Improve git log readability and compatibility with git tooling
+Templates Status:
+  - All templates: ✅ No updates required (clarification only)
+Affected Code:
+  - All future commits: ⚠️ Must follow 100-char limit
+Previous Report:
 Version: 1.2.0 → 1.3.0
 Action: Added Frontend Architecture Principles and removed Streamlit-specific rules
 Changes:
@@ -126,6 +138,13 @@ The following practices are **EXPRESSLY FORBIDDEN** in this codebase:
    - Color MUST NOT be the only indicator of positive/negative values (use +/- symbols)
    - WCAG AA compliance MUST be maintained for contrast ratios
 
+7. **Git Commit Messages**
+   - Commit subject lines MUST be 100 characters or less
+   - Subject line MUST use imperative mood (e.g., "Add feature" not "Added feature")
+   - Body text (if needed) MUST be separated from subject by blank line
+   - Body text SHOULD wrap at 72 characters for readability
+   - **Rationale**: Short, scannable commit messages improve git log readability and work better with git tooling
+
 ## Storage Architecture
 
 ### Database Layer Requirements
@@ -167,4 +186,4 @@ This constitution supersedes all other development practices and preferences. Wh
 - Complexity that violates simplicity principles MUST be justified in writing
 - When constitution conflicts with external library patterns, constitution wins unless explicitly documented otherwise
 
-**Version**: 1.3.0 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-09
+**Version**: 1.3.1 | **Ratified**: 2025-12-01 | **Last Amended**: 2025-12-09

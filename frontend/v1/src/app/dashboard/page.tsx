@@ -115,7 +115,7 @@ const HoldingsWidget = React.memo(({ portfolioId }: { portfolioId?: string }) =>
       </table>
     </div>
   );
-}
+});
 
 const BenchmarkComparisonWidget = React.memo(({ portfolioId }: { portfolioId?: string }) => {
   const { data, loading, error } = useBenchmarkComparison({ portfolioId });

@@ -275,8 +275,8 @@ export default function DashboardPage() {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-        {/* Toolbar */}
-        <div className="flex items-center justify-between p-3 border-b bg-background">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between p-3 border-b bg-background">
           <div className="flex items-center gap-4">
             <div>
               <h1 className="font-semibold text-lg">Portfolio Dashboard</h1>
@@ -302,8 +302,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Widget Palette */}
-        {showWidgetPalette && (
+      {/* Widget Palette */}
+      {showWidgetPalette && (
           <div className="p-3 border-b bg-muted/30">
             <div className="flex items-center gap-3 flex-wrap">
               <span className="text-sm font-medium">Add Widget:</span>
@@ -324,10 +324,10 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-        )}
+      )}
 
-        {/* Main Dashboard Grid */}
-        <div className="flex-1 overflow-auto">
+      {/* Main Dashboard Grid */}
+      <div className="flex-1 overflow-auto">
           <ResponsiveGridLayout
             layouts={layouts}
             onLayoutChange={handleLayoutChange}
@@ -346,19 +346,18 @@ export default function DashboardPage() {
                 {renderWidget(widget)}
               </div>
             ))}
-          </ResponsiveGridLayout>
-          
-          {widgets.length === 0 && (
+        </ResponsiveGridLayout>
+        
+        {widgets.length === 0 && (
             <div className="flex items-center justify-center h-96 border-2 border-dashed border-border rounded-lg">
               <div className="text-center">
                 <h3 className="text-lg font-medium mb-2">No widgets added yet</h3>
                 <p className="text-muted-foreground mb-4">
                   Click &ldquo;Add Widget&rdquo; to start building your dashboard
                 </p>
-              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

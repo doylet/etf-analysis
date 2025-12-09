@@ -10,7 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // Import working hooks
-import { usePortfolioSummary, useHoldingsBreakdown } from '@/hooks/use-portfolio-widgets';
+import { 
+  usePortfolioSummary, 
+  useHoldingsBreakdown,
+  useBenchmarkComparison,
+  useDividendAnalysis,
+  usePerformanceAnalysis
+} from '@/hooks/use-portfolio-widgets';
 
 // Import legacy components
 import CorrelationMatrix from '@/components/CorrelationMatrix';
@@ -42,30 +48,30 @@ interface WidgetInstance {
 function PortfolioSummaryWidget({ portfolioId }: { portfolioId?: string }) {
   const { data, loading, error } = usePortfolioSummary({ portfolioId });
 
-  if (loading) return <div className="p-4 text-center">Loading...</div>;
-  if (error) return <div className="p-4 text-center text-red-600">{error}</div>;
-  if (!data) return <div className="p-4 text-center text-gray-500">No data</div>;
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   return (
     <div className="p-4 space-y-3">
       <div className="grid grid-cols-2 gap-3">
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className="text-xl font-bold">${data.total_value.toLocaleString()}</div>
-          <div className="text-xs text-gray-600">Total Value</div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-xl font-bold text-foreground">${data.total_value.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">Total Value</div>
         </div>
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className={`text-xl font-bold ${data.total_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className={`text-xl font-bold ${data.total_return >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
             ${data.total_return.toLocaleString()}
           </div>
-          <div className="text-xs text-gray-600">Total Return</div>
+          <div className="text-xs text-muted-foreground">Total Return</div>
         </div>
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className="text-xl font-bold">{data.positions}</div>
-          <div className="text-xs text-gray-600">Positions</div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-xl font-bold text-foreground">{data.positions}</div>
+          <div className="text-xs text-muted-foreground">Positions</div>
         </div>
-        <div className="text-center p-3 bg-gray-50 rounded">
-          <div className="text-xl font-bold">${data.allocated_cash.toLocaleString()}</div>
-          <div className="text-xs text-gray-600">Cash</div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-xl font-bold text-foreground">${data.allocated_cash.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">Cash</div>
         </div>
       </div>
     </div>
@@ -75,34 +81,132 @@ function PortfolioSummaryWidget({ portfolioId }: { portfolioId?: string }) {
 function HoldingsWidget({ portfolioId }: { portfolioId?: string }) {
   const { data, loading, error } = useHoldingsBreakdown({ portfolioId });
 
-  if (loading) return <div className="p-4 text-center">Loading...</div>;
-  if (error) return <div className="p-4 text-center text-red-600">{error}</div>;
-  if (!data) return <div className="p-4 text-center text-gray-500">No data</div>;
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   return (
     <div className="p-2 overflow-auto">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b">
-            <th className="text-left p-2">Symbol</th>
-            <th className="text-right p-2">Value</th>
-            <th className="text-right p-2">Weight</th>
-            <th className="text-right p-2">Return</th>
+          <tr className="border-b border-border">
+            <th className="text-left p-2 text-muted-foreground font-medium">Symbol</th>
+            <th className="text-right p-2 text-muted-foreground font-medium">Value</th>
+            <th className="text-right p-2 text-muted-foreground font-medium">Weight</th>
+            <th className="text-right p-2 text-muted-foreground font-medium">Return</th>
           </tr>
         </thead>
         <tbody>
           {data.holdings.map((holding) => (
-            <tr key={holding.symbol} className="border-b hover:bg-gray-50">
-              <td className="p-2 font-medium">{holding.symbol}</td>
-              <td className="text-right p-2">${holding.current_value.toLocaleString()}</td>
-              <td className="text-right p-2">{(holding.weight_percent * 100).toFixed(1)}%</td>
-              <td className={`text-right p-2 ${holding.total_return >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            <tr key={holding.symbol} className="border-b border-border hover:bg-muted/50">
+              <td className="p-2 font-medium text-foreground">{holding.symbol}</td>
+              <td className="text-right p-2 text-foreground">${holding.current_value.toLocaleString()}</td>
+              <td className="text-right p-2 text-foreground">{(holding.weight_percent * 100).toFixed(1)}%</td>
+              <td className={`text-right p-2 ${holding.total_return >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {holding.total_return >= 0 ? '+' : ''}{holding.total_return_percent.toFixed(2)}%
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function BenchmarkComparisonWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = useBenchmarkComparison({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.portfolio_return.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Portfolio Return</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.benchmark_return.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Benchmark Return</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.alpha.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Alpha</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.sharpe_ratio.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DividendAnalysisWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = useDividendAnalysis({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">${data.total_dividends.toLocaleString()}</div>
+          <div className="text-xs text-muted-foreground">Total Dividends</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.dividend_yield.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Yield</div>
+        </div>
+      </div>
+      {data.top_dividend_holdings && data.top_dividend_holdings.length > 0 && (
+        <div className="mt-3">
+          <div className="text-xs font-medium text-muted-foreground mb-2">Top Dividend Holdings</div>
+          <div className="space-y-1">
+            {data.top_dividend_holdings.slice(0, 3).map((holding) => (
+              <div key={holding.symbol} className="flex justify-between text-xs">
+                <span className="text-foreground">{holding.symbol}</span>
+                <span className="text-muted-foreground">{holding.yield.toFixed(2)}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PerformanceWidget({ portfolioId }: { portfolioId?: string }) {
+  const { data, loading, error } = usePerformanceAnalysis({ portfolioId });
+
+  if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
+  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
+
+  return (
+    <div className="p-4 space-y-3">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.total_return.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Total Return</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.annualized_return.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Annualized</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.volatility.toFixed(2)}%</div>
+          <div className="text-xs text-muted-foreground">Volatility</div>
+        </div>
+        <div className="text-center p-3 bg-muted rounded-md">
+          <div className="text-lg font-bold text-foreground">{data.sharpe_ratio.toFixed(2)}</div>
+          <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -119,6 +223,24 @@ const AVAILABLE_WIDGETS = [
     name: 'Holdings',
     component: HoldingsWidget,
     defaultSize: { w: 6, h: 5 }
+  },
+  {
+    type: 'benchmark-comparison',
+    name: 'Benchmark Comparison',
+    component: BenchmarkComparisonWidget,
+    defaultSize: { w: 6, h: 4 }
+  },
+  {
+    type: 'dividend-analysis',
+    name: 'Dividend Analysis',
+    component: DividendAnalysisWidget,
+    defaultSize: { w: 6, h: 5 }
+  },
+  {
+    type: 'performance',
+    name: 'Performance',
+    component: PerformanceWidget,
+    defaultSize: { w: 6, h: 4 }
   },
   {
     type: 'correlation-matrix',
@@ -246,9 +368,9 @@ export default function DashboardPage() {
 
   // Render individual widget with remove button
   const renderWidget = (widget: WidgetInstance) => (
-    <Card key={widget.id} className="h-full relative overflow-hidden cursor-move" variant="professional" size="sm">
-      <CardHeader className="py-2 px-3 border-b" size="sm">
-        <CardTitle className="text-sm font-medium flex items-center justify-between" size="sm" variant="professional">
+    <Card key={widget.id} className="h-full relative overflow-hidden cursor-move">
+      <CardHeader className="py-2 px-3 border-b">
+        <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="truncate">{widget.name}</span>
           <Button
             variant="ghost"
@@ -257,13 +379,13 @@ export default function DashboardPage() {
               e.stopPropagation();
               removeWidget(widget.id);
             }}
-            className="h-6 w-6 p-0 text-destructive hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+            className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X className="h-3 w-3" />
           </Button>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0 h-full overflow-auto border-none" size="sm">
+      <CardContent className="p-0 h-full overflow-auto">
         <WidgetRenderer widget={widget} />
       </CardContent>
     </Card>

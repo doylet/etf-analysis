@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 // Widget API response types
@@ -394,6 +394,9 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  // Use ref to avoid re-fetching on every render
+  const hasFetchedRef = useRef(false);
 
   const fetchPortfolioSummary = useCallback(async () => {
     try {
@@ -444,7 +447,10 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
   }, [portfolioId]);
 
   useEffect(() => {
-    fetchPortfolioSummary();
+    if (!hasFetchedRef.current) {
+      fetchPortfolioSummary();
+      hasFetchedRef.current = true;
+    }
   }, [fetchPortfolioSummary]);
 
   // Auto-refresh functionality
@@ -481,6 +487,7 @@ export function useHoldingsBreakdown(options: UseHoldingsBreakdownOptions = {}):
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  const hasFetchedRef = useRef(false);
 
   const fetchHoldingsBreakdown = useCallback(async () => {
     try {
@@ -519,7 +526,10 @@ export function useHoldingsBreakdown(options: UseHoldingsBreakdownOptions = {}):
   }, [portfolioId, breakdownType]);
 
   useEffect(() => {
-    fetchHoldingsBreakdown();
+    if (!hasFetchedRef.current) {
+      fetchHoldingsBreakdown();
+      hasFetchedRef.current = true;
+    }
   }, [fetchHoldingsBreakdown]);
 
   // Auto-refresh functionality

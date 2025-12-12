@@ -2,7 +2,6 @@
 
 import { PieChart, XCircle } from 'lucide-react';
 import { useState } from 'react';
-import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { CacheBadge } from '@/components/ui/cache-badge';
@@ -164,43 +163,39 @@ export default function HoldingsBreakdownWidget({
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start">
-            <div>
-              <Skeleton className="h-6 w-[180px]" />
-              <Skeleton className="h-4 w-[250px] mt-2" />
-            </div>
-            <Skeleton className="h-8 w-[120px]" />
+      <div className="flex flex-col h-full p-4">
+        <div className="flex justify-between items-start flex-shrink-0">
+          <div>
+            <Skeleton className="h-6 w-[180px]" />
+            <Skeleton className="h-4 w-[250px] mt-2" />
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            <div className="flex flex-wrap justify-center gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="p-4 border rounded-lg">
+          <Skeleton className="h-8 w-[120px]" />
+        </div>
+        <div className="flex-1 overflow-y-auto min-h-0 mt-4 space-y-6">
+          <div className="flex flex-wrap justify-center gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="p-4 border rounded-lg">
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-8 w-[120px] mt-2" />
+                <Skeleton className="h-4 w-[80px] mt-1" />
+              </div>
+            ))}
+          </div>
+          <div>
+            <Skeleton className="h-6 w-[150px]" />
+            <div className="mt-4 space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <Skeleton className="h-4 w-[60px]" />
+                  <Skeleton className="h-4 w-[80px]" />
                   <Skeleton className="h-4 w-[100px]" />
-                  <Skeleton className="h-8 w-[120px] mt-2" />
-                  <Skeleton className="h-4 w-[80px] mt-1" />
+                  <Skeleton className="h-4 w-[90px]" />
                 </div>
               ))}
             </div>
-            <div>
-              <Skeleton className="h-6 w-[150px]" />
-              <div className="mt-4 space-y-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="flex justify-between">
-                    <Skeleton className="h-4 w-[60px]" />
-                    <Skeleton className="h-4 w-[80px]" />
-                    <Skeleton className="h-4 w-[100px]" />
-                    <Skeleton className="h-4 w-[90px]" />
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -216,33 +211,18 @@ export default function HoldingsBreakdownWidget({
   }
 
   return (
-    <Card className="flex flex-col h-full">
-      <CardHeader className="flex-shrink-0">
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">Holdings Breakdown</h2>
-            <p className="text-muted-foreground text-sm mt-1">
-              Portfolio composition by {breakdownType.replace('_', ' ')}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <CacheBadge show={cacheHit} />
-            <select
-              value={breakdownType}
-              onChange={(e) => setBreakdownType(e.target.value as typeof breakdownType)}
-              className="text-sm border border-border rounded-md px-3 py-1 bg-background"
-            >
-              {breakdownTypeOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </CardHeader>
+    <div className="flex flex-col h-full">
+      <div className="flex gap-2 items-center flex-shrink-0">
+        <WidgetSelect
+          value={breakdownType}
+          onChange={setBreakdownType}
+          options={breakdownTypeOptions}
+          className="flex-1"
+        />
+        <CacheBadge show={cacheHit} />
+      </div>
       
-      <CardContent className="flex-1 overflow-y-auto min-h-0">
+      <div className="flex-1 overflow-y-auto min-h-0 mt-3">
         <div className="space-y-6">
           {/* Breakdown Summary */}
           {breakdown?.breakdown && breakdown.breakdown.length > 0 && (
@@ -299,7 +279,7 @@ export default function HoldingsBreakdownWidget({
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

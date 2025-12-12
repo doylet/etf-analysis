@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useNewsEventAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
-import { XCircle } from 'lucide-react';
+import { formatNumber } from '@/lib/formatters';
+import { XCircle, MessageSquare, TrendingUp } from 'lucide-react';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -71,18 +73,19 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
       {hasFullData ? (
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">
-                {data.sentiment_analysis?.overall_sentiment?.toFixed(2) || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Overall Sentiment</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">
-                {data.market_impact?.price_correlation?.toFixed(2) || 0}
-              </div>
-              <div className="text-xs text-muted-foreground">Price Correlation</div>
-            </div>
+            <MetricCard
+              icon={MessageSquare}
+              title="Overall Sentiment"
+              value={formatNumber(data.sentiment_analysis?.overall_sentiment || 0, 2)}
+              trend={data.sentiment_analysis?.overall_sentiment > 0 ? 'up' : 'down'}
+              size="sm"
+            />
+            <MetricCard
+              icon={TrendingUp}
+              title="Price Correlation"
+              value={formatNumber(data.market_impact?.price_correlation || 0, 2)}
+              size="sm"
+            />
           </div>
           {data.events && data.events.length > 0 && (
             <div className="mt-3">

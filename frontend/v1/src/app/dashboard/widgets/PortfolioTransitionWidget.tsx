@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { usePortfolioTransition } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetSelect } from '@/components/ui/widget/widget-controls';
-import { formatCurrency } from '@/lib/formatters';
-import { XCircle } from 'lucide-react';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { XCircle, DollarSign, Activity } from 'lucide-react';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -99,16 +100,19 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
             <div className="text-sm text-muted-foreground text-center py-4">No trades required</div>
           )}
           <div className="flex flex-wrap justify-center gap-3 mt-3 pt-3 border-t border-border">
-            <div className="text-center p-2 bg-muted rounded-md">
-              <div className="text-sm font-bold text-foreground">{formatCurrency(data.transition_cost || 0)}</div>
-              <div className="text-xs text-muted-foreground">Cost</div>
-            </div>
-            <div className="text-center p-2 bg-muted rounded-md">
-              <div className="text-sm font-bold text-foreground">
-                {(data.expected_impact?.risk_change || 0).toFixed(2)}%
-              </div>
-              <div className="text-xs text-muted-foreground">Risk Change</div>
-            </div>
+            <MetricCard
+              icon={DollarSign}
+              title="Cost"
+              value={formatCurrency(data.transition_cost || 0)}
+              size="sm"
+            />
+            <MetricCard
+              icon={Activity}
+              title="Risk Change"
+              value={formatPercent((data.expected_impact?.risk_change || 0) / 100)}
+              trend={data.expected_impact?.risk_change < 0 ? 'down' : 'up'}
+              size="sm"
+            />
           </div>
         </div>
       ) : (

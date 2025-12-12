@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useConstrainedOptimization } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
 import { OPTIMIZATION_OBJECTIVES } from '@/lib/widget-constants';
 import { formatPercent } from '@/lib/formatters';
-import { XCircle } from 'lucide-react';
+import { XCircle, TrendingUp, Activity, Target, CheckCircle } from 'lucide-react';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -69,32 +70,31 @@ const ConstrainedOptimizationWidget: React.FC<ConstrainedOptimizationWidgetProps
       {hasFullData ? (
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
           <div className="flex flex-wrap justify-center gap-3">
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">
-                {formatPercent(data.optimization_result.return / 100)}
-              </div>
-              <div className="text-xs text-muted-foreground">Return</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">
-                {formatPercent(data.optimization_result.risk / 100)}
-              </div>
-              <div className="text-xs text-muted-foreground">Risk</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">
-                {data.optimization_result.sharpe_ratio?.toFixed(2)}
-              </div>
-              <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className={`text-lg font-bold ${
-                (!data.constraint_violations || data.constraint_violations.length === 0) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-              }`}>
-                {(!data.constraint_violations || data.constraint_violations.length === 0) ? 'YES' : 'NO'}
-              </div>
-              <div className="text-xs text-muted-foreground">Constraints Met</div>
-            </div>
+            <MetricCard
+              icon={TrendingUp}
+              title="Return"
+              value={formatPercent(data.optimization_result.return / 100)}
+              size="sm"
+            />
+            <MetricCard
+              icon={Activity}
+              title="Risk"
+              value={formatPercent(data.optimization_result.risk / 100)}
+              size="sm"
+            />
+            <MetricCard
+              icon={Target}
+              title="Sharpe Ratio"
+              value={data.optimization_result.sharpe_ratio?.toFixed(2)}
+              size="sm"
+            />
+            <MetricCard
+              icon={CheckCircle}
+              title="Constraints Met"
+              value={(!data.constraint_violations || data.constraint_violations.length === 0) ? 'YES' : 'NO'}
+              variant={(!data.constraint_violations || data.constraint_violations.length === 0) ? 'success' : 'destructive'}
+              size="sm"
+            />
           </div>
           {data.constraint_violations && data.constraint_violations.length > 0 && (
             <div className="mt-3 p-2 bg-destructive/10 rounded-md">

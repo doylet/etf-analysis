@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useTimeseriesAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { TIME_PERIODS } from '@/lib/widget-constants';
-import { XCircle, TrendingUp } from 'lucide-react';
+import { formatPercent } from '@/lib/formatters';
+import { XCircle, TrendingUp, Activity, Target, TrendingDown } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { ContentType } from './widget-metadata';
 
@@ -111,22 +113,32 @@ const TimeseriesAnalysisWidget: React.FC<TimeseriesAnalysisWidgetProps> = ({ por
           
           {/* Statistics */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">{data.statistics.total_return?.toFixed(2)}%</div>
-              <div className="text-xs text-muted-foreground">Total Return</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">{data.statistics.volatility?.toFixed(2)}%</div>
-              <div className="text-xs text-muted-foreground">Volatility</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">{data.statistics.sharpe_ratio?.toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-destructive">{data.statistics.max_drawdown?.toFixed(2)}%</div>
-              <div className="text-xs text-muted-foreground">Max Drawdown</div>
-            </div>
+            <MetricCard
+              icon={TrendingUp}
+              title="Total Return"
+              value={formatPercent(data.statistics.total_return / 100)}
+              trend={data.statistics.total_return > 0 ? 'up' : 'down'}
+              size="sm"
+            />
+            <MetricCard
+              icon={Activity}
+              title="Volatility"
+              value={formatPercent(data.statistics.volatility / 100)}
+              size="sm"
+            />
+            <MetricCard
+              icon={Target}
+              title="Sharpe Ratio"
+              value={data.statistics.sharpe_ratio?.toFixed(2)}
+              size="sm"
+            />
+            <MetricCard
+              icon={TrendingDown}
+              title="Max Drawdown"
+              value={formatPercent(data.statistics.max_drawdown / 100)}
+              variant="destructive"
+              size="sm"
+            />
           </div>
         </div>
       ) : (

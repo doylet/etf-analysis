@@ -1,6 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
+// Debounce utility for parameter changes
+function useDebouncedCallback<T extends (...args: any[]) => void>(
+  callback: T,
+  delay: number
+): T {
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  return useCallback((...args: Parameters<T>) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      callback(...args);
+    }, delay);
+  }, [callback, delay]) as T;
+}
+
 // Widget API response types
 export interface WidgetError {
   code: string;
@@ -80,34 +97,55 @@ export interface CorrelationMatrixData {
 }
 
 export interface MonteCarloData {
-  simulation_results: {
-    final_values: number[];
-    percentiles: {
-      p5: number;
-      p25: number;
-      p50: number;
-      p75: number;
-      p95: number;
-    };
-    statistics: {
-      mean: number;
-      std: number;
-      min: number;
-      max: number;
-    };
-  };
-  expected_return: number;
-  risk_metrics: {
-    var_95: number;
-    var_99: number;
-    expected_shortfall_95: number;
+  scenarios: Array<{
+    final_value: number;
+    return_percent: number;
+    max_drawdown: number;
+  }>;
+  statistics: {
+    mean_final_value: number;
+    std_final_value: number;
+    mean_return_percent: number;
     probability_of_loss: number;
+    cagr_median: number;
+    cagr_10th: number;
+    cagr_90th: number;
+    historical_sharpe: number;
+    historical_volatility: number;
+    max_drawdown_median: number;
+    cvar_95?: number;
   };
-  parameters: {
+  percentiles: {
+    "10": number;
+    "50": number;
+    "90": number;
+  };
+  var_95: number;
+  var_99: number;
+  simulation_params: {
     num_simulations: number;
-    time_horizon_days: number;
+    time_horizon_years: number;
     initial_value: number;
+    confidence_level: number;
   };
+  path_statistics?: {
+    time_points: number[];
+    percentile_10: number[];
+    percentile_50: number[];
+    percentile_90: number[];
+    median_drawdown: number[];
+  };
+  rebalancing_rec?: {
+    rebalance_dates: string[];
+    drift_at_rebalance: number[];
+    trigger_threshold: number;
+    avg_drift: number;
+    cost_benefit_ratio: number;
+    sharpe_improvement: number;
+    description: string;
+    symbols: string[];
+  };
+  execution_time_seconds: number;
   last_updated: string;
 }
 
@@ -117,6 +155,10 @@ export interface BenchmarkComparisonData {
   alpha: number;
   beta: number;
   sharpe_ratio: number;
+  benchmark_sharpe?: number;
+  portfolio_volatility?: number;
+  benchmark_volatility?: number;
+  information_ratio?: number;
   tracking_error: number;
   outperformance: number;
   correlation: number;
@@ -254,22 +296,33 @@ export interface NewsEventData {
 }
 
 export interface PortfolioOptimizerData {
-  current_weights: Record<string, number>;
-  optimized_weights: Record<string, number>;
+  current_weights?: Record<string, number>;
+  optimal_weights?: Record<string, number>;
+  optimized_weights?: Record<string, number>;
   expected_return: number;
   expected_risk: number;
   sharpe_ratio: number;
-  improvement_metrics: {
+  current_return?: number;
+  current_risk?: number;
+  current_sharpe?: number;
+  improvement_metrics?: {
     return_improvement: number;
     risk_reduction: number;
     sharpe_improvement: number;
   };
-  constraints_satisfied: boolean;
-  last_updated: string;
+  efficient_frontier?: Array<{
+    expected_return: number;
+    volatility: number;
+    sharpe_ratio: number;
+    weights?: Record<string, number>;
+  }>;
+  constraints_satisfied?: boolean;
+  last_updated?: string;
   // Optional fallback properties for minimal responses
   status?: string;
   message?: string;
   holdings_count?: number;
+  holdings_analyzed?: number;
 }
 
 export interface ConstrainedOptimizationData {
@@ -303,10 +356,12 @@ export type PerformanceResponse = WidgetResponse<PerformanceData>;
 export interface UseWidgetReturn<T> {
   data: T | null;
   loading: boolean;
+  isRefreshing: boolean;
   error: string | null;
   metadata: WidgetMetadata | null;
   cacheHit: boolean;
   refetch: () => Promise<void>;
+  mutate: (updater: T | ((current: T | null) => T | null)) => void;
 }
 
 export interface UsePortfolioSummaryOptions {
@@ -334,6 +389,12 @@ export interface UseMonteCarloOptions {
   numSimulations?: number;
   timeHorizonDays?: number;
   estimationMethod?: 'Historical Mean' | 'Exponentially Weighted';
+  confidenceLevel?: number;
+  initialValue?: number;
+  includeDividends?: boolean;
+  enableContributions?: boolean;
+  contributionAmount?: number;
+  contributionFrequency?: 'Monthly' | 'Quarterly' | 'Annual';
   autoRefresh?: boolean;
   refreshInterval?: number;
 }
@@ -440,6 +501,7 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
   
   const [data, setData] = useState<PortfolioSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
@@ -447,9 +509,13 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
   // Use ref to avoid re-fetching on every render
   const hasFetchedRef = useRef(false);
 
-  const fetchPortfolioSummary = useCallback(async () => {
+  const fetchPortfolioSummary = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = portfolioId ? { portfolio_id: portfolioId } : undefined;
@@ -491,14 +557,25 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
       setData(null);
       setMetadata(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId]);
 
+  const mutate = useCallback((updater: PortfolioSummaryData | ((current: PortfolioSummaryData | null) => PortfolioSummaryData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    if (!hasFetchedRef.current) {
-      fetchPortfolioSummary();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
       hasFetchedRef.current = true;
+      fetchPortfolioSummary(true);
+    } else {
+      fetchPortfolioSummary(false);
     }
   }, [fetchPortfolioSummary]);
 
@@ -507,21 +584,23 @@ export function usePortfolioSummary(options: UsePortfolioSummaryOptions = {}): U
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchPortfolioSummary();
+      if (!loading && !isRefreshing) {
+        fetchPortfolioSummary(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchPortfolioSummary]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchPortfolioSummary]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchPortfolioSummary,
+    refetch: () => fetchPortfolioSummary(false),
+    mutate,
   };
 }
 
@@ -533,14 +612,19 @@ export function useHoldingsBreakdown(options: UseHoldingsBreakdownOptions = {}):
   
   const [data, setData] = useState<HoldingsBreakdownData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
   const hasFetchedRef = useRef(false);
 
-  const fetchHoldingsBreakdown = useCallback(async () => {
+  const fetchHoldingsBreakdown = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -570,14 +654,25 @@ export function useHoldingsBreakdown(options: UseHoldingsBreakdownOptions = {}):
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, breakdownType]);
 
+  const mutate = useCallback((updater: HoldingsBreakdownData | ((current: HoldingsBreakdownData | null) => HoldingsBreakdownData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    if (!hasFetchedRef.current) {
-      fetchHoldingsBreakdown();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
       hasFetchedRef.current = true;
+      fetchHoldingsBreakdown(true);
+    } else {
+      fetchHoldingsBreakdown(false);
     }
   }, [fetchHoldingsBreakdown]);
 
@@ -586,21 +681,23 @@ export function useHoldingsBreakdown(options: UseHoldingsBreakdownOptions = {}):
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchHoldingsBreakdown();
+      if (!loading && !isRefreshing) {
+        fetchHoldingsBreakdown(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchHoldingsBreakdown]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchHoldingsBreakdown]);
 
   return {
     data,
-    loading, 
+    loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchHoldingsBreakdown,
+    refetch: () => fetchHoldingsBreakdown(false),
+    mutate,
   };
 }
 
@@ -612,13 +709,19 @@ export function useCorrelationMatrix(options: UseCorrelationMatrixOptions = {}):
   
   const [data, setData] = useState<CorrelationMatrixData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  const hasFetchedRef = useRef(false);
 
-  const fetchCorrelationMatrix = useCallback(async () => {
+  const fetchCorrelationMatrix = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -648,12 +751,26 @@ export function useCorrelationMatrix(options: UseCorrelationMatrixOptions = {}):
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, timeWindowDays]);
 
+  const mutate = useCallback((updater: CorrelationMatrixData | ((current: CorrelationMatrixData | null) => CorrelationMatrixData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchCorrelationMatrix();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchCorrelationMatrix(true);
+    } else {
+      fetchCorrelationMatrix(false);
+    }
   }, [fetchCorrelationMatrix]);
 
   // Auto-refresh functionality
@@ -661,21 +778,23 @@ export function useCorrelationMatrix(options: UseCorrelationMatrixOptions = {}):
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchCorrelationMatrix();
+      if (!loading && !isRefreshing) {
+        fetchCorrelationMatrix(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchCorrelationMatrix]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchCorrelationMatrix]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchCorrelationMatrix,
+    refetch: () => fetchCorrelationMatrix(false),
+    mutate,
   };
 }
 
@@ -688,26 +807,44 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
     numSimulations = 10000, 
     timeHorizonDays = 252, 
     estimationMethod = 'Historical Mean',
+    confidenceLevel = 0.95,
+    initialValue,
+    includeDividends = true,
+    enableContributions = false,
+    contributionAmount = 0,
+    contributionFrequency = 'Annual',
     autoRefresh = false, 
     refreshInterval = 1200000 // 20 min default
   } = options;
   
   const [data, setData] = useState<MonteCarloData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  const hasFetchedRef = useRef(false);
 
-  const runSimulation = useCallback(async () => {
+  const runSimulation = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
         ...(portfolioId && { portfolio_id: portfolioId }),
         num_simulations: numSimulations.toString(),
         time_horizon_days: timeHorizonDays.toString(),
-        estimation_method: estimationMethod
+        estimation_method: estimationMethod,
+        confidence_level: confidenceLevel.toString(),
+        ...(initialValue !== undefined && { initial_value: initialValue.toString() }),
+        include_dividends: includeDividends.toString(),
+        enable_contributions: enableContributions.toString(),
+        contribution_amount: contributionAmount.toString(),
+        contribution_frequency: contributionFrequency
       };
       
       const widgetResponse = await fetchWidget<MonteCarloData>('/portfolio/monte-carlo', params);
@@ -732,12 +869,42 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
-  }, [portfolioId, numSimulations, timeHorizonDays, estimationMethod]);
+  }, [portfolioId, numSimulations, timeHorizonDays, estimationMethod, confidenceLevel, initialValue, includeDividends, enableContributions, contributionAmount, contributionFrequency]);
+
+  const mutate = useCallback((updater: MonteCarloData | ((current: MonteCarloData | null) => MonteCarloData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
+  // Debounced trigger for parameter changes
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    runSimulation();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      runSimulation(true); // Initial load happens immediately
+    } else {
+      // Clear any pending debounced call
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      // Debounce subsequent runs to batch rapid parameter changes
+      debounceTimeoutRef.current = setTimeout(() => {
+        runSimulation(false);
+      }, 300);
+    }
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
   }, [runSimulation]);
 
   // Auto-refresh functionality
@@ -745,21 +912,23 @@ export function useMonteCarloSimulation(options: UseMonteCarloOptions = {}): Use
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        runSimulation();
+      if (!loading && !isRefreshing) {
+        runSimulation(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, runSimulation]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, runSimulation]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: runSimulation,
+    refetch: () => runSimulation(false),
+    mutate,
   };
 }
 
@@ -771,13 +940,20 @@ export function useBenchmarkComparison(options: UseBenchmarkComparisonOptions = 
   
   const [data, setData] = useState<BenchmarkComparisonData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchBenchmarkComparison = useCallback(async () => {
+  const fetchBenchmarkComparison = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -807,33 +983,49 @@ export function useBenchmarkComparison(options: UseBenchmarkComparisonOptions = 
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, benchmark, timePeriod]);
 
+  const mutate = useCallback((updater: BenchmarkComparisonData | ((current: BenchmarkComparisonData | null) => BenchmarkComparisonData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchBenchmarkComparison();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchBenchmarkComparison(true);
+    } else {
+      fetchBenchmarkComparison(false);
+    }
   }, [fetchBenchmarkComparison]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchBenchmarkComparison();
+      if (!loading && !isRefreshing) {
+        fetchBenchmarkComparison(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchBenchmarkComparison]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchBenchmarkComparison]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchBenchmarkComparison,
+    refetch: () => fetchBenchmarkComparison(false),
+    mutate,
   };
 }
 
@@ -845,13 +1037,20 @@ export function useDividendAnalysis(options: UseDividendAnalysisOptions = {}): U
   
   const [data, setData] = useState<DividendAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchDividendAnalysis = useCallback(async () => {
+  const fetchDividendAnalysis = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params: Record<string, string> = {
@@ -881,33 +1080,49 @@ export function useDividendAnalysis(options: UseDividendAnalysisOptions = {}): U
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, timePeriod, symbol]);
 
+  const mutate = useCallback((updater: DividendAnalysisData | ((current: DividendAnalysisData | null) => DividendAnalysisData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchDividendAnalysis();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchDividendAnalysis(true);
+    } else {
+      fetchDividendAnalysis(false);
+    }
   }, [fetchDividendAnalysis]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchDividendAnalysis();
+      if (!loading && !isRefreshing) {
+        fetchDividendAnalysis(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchDividendAnalysis]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchDividendAnalysis]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchDividendAnalysis,
+    refetch: () => fetchDividendAnalysis(false),
+    mutate,
   };
 }
 
@@ -919,13 +1134,20 @@ export function usePerformanceAnalysis(options: UsePerformanceOptions = {}): Use
   
   const [data, setData] = useState<PerformanceData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchPerformanceAnalysis = useCallback(async () => {
+  const fetchPerformanceAnalysis = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -954,33 +1176,49 @@ export function usePerformanceAnalysis(options: UsePerformanceOptions = {}): Use
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, timePeriod]);
 
+  const mutate = useCallback((updater: PerformanceData | ((current: PerformanceData | null) => PerformanceData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchPerformanceAnalysis();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchPerformanceAnalysis(true);
+    } else {
+      fetchPerformanceAnalysis(false);
+    }
   }, [fetchPerformanceAnalysis]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchPerformanceAnalysis();
+      if (!loading && !isRefreshing) {
+        fetchPerformanceAnalysis(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchPerformanceAnalysis]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchPerformanceAnalysis]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchPerformanceAnalysis,
+    refetch: () => fetchPerformanceAnalysis(false),
+    mutate,
   };
 }
 
@@ -992,13 +1230,20 @@ export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWi
   
   const [data, setData] = useState<TimeseriesData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchTimeseriesAnalysis = useCallback(async () => {
+  const fetchTimeseriesAnalysis = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -1029,33 +1274,49 @@ export function useTimeseriesAnalysis(options: UseTimeseriesOptions = {}): UseWi
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, timePeriod, analysisType, symbol]);
 
+  const mutate = useCallback((updater: TimeseriesData | ((current: TimeseriesData | null) => TimeseriesData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchTimeseriesAnalysis();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchTimeseriesAnalysis(true);
+    } else {
+      fetchTimeseriesAnalysis(false);
+    }
   }, [fetchTimeseriesAnalysis]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchTimeseriesAnalysis();
+      if (!loading && !isRefreshing) {
+        fetchTimeseriesAnalysis(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchTimeseriesAnalysis]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchTimeseriesAnalysis]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchTimeseriesAnalysis,
+    refetch: () => fetchTimeseriesAnalysis(false),
+    mutate,
   };
 }
 
@@ -1067,13 +1328,20 @@ export function usePortfolioTransition(options: UsePortfolioTransitionOptions = 
   
   const [data, setData] = useState<PortfolioTransitionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchPortfolioTransition = useCallback(async () => {
+  const fetchPortfolioTransition = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -1105,33 +1373,49 @@ export function usePortfolioTransition(options: UsePortfolioTransitionOptions = 
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [currentPortfolioId, targetPortfolioId, transitionMethod, optimizationPriority, targetWeights]);
 
+  const mutate = useCallback((updater: PortfolioTransitionData | ((current: PortfolioTransitionData | null) => PortfolioTransitionData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchPortfolioTransition();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchPortfolioTransition(true);
+    } else {
+      fetchPortfolioTransition(false);
+    }
   }, [fetchPortfolioTransition]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchPortfolioTransition();
+      if (!loading && !isRefreshing) {
+        fetchPortfolioTransition(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchPortfolioTransition]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchPortfolioTransition]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchPortfolioTransition,
+    refetch: () => fetchPortfolioTransition(false),
+    mutate,
   };
 }
 
@@ -1143,13 +1427,20 @@ export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidg
   
   const [data, setData] = useState<NewsEventData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchNewsEventAnalysis = useCallback(async () => {
+  const fetchNewsEventAnalysis = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -1180,33 +1471,49 @@ export function useNewsEventAnalysis(options: UseNewsEventOptions = {}): UseWidg
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, timePeriod, lookbackDays, surpriseThreshold]);
 
+  const mutate = useCallback((updater: NewsEventData | ((current: NewsEventData | null) => NewsEventData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchNewsEventAnalysis();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchNewsEventAnalysis(true);
+    } else {
+      fetchNewsEventAnalysis(false);
+    }
   }, [fetchNewsEventAnalysis]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchNewsEventAnalysis();
+      if (!loading && !isRefreshing) {
+        fetchNewsEventAnalysis(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchNewsEventAnalysis]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchNewsEventAnalysis]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchNewsEventAnalysis,
+    refetch: () => fetchNewsEventAnalysis(false),
+    mutate,
   };
 }
 
@@ -1218,13 +1525,20 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
   
   const [data, setData] = useState<PortfolioOptimizerData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchPortfolioOptimizer = useCallback(async () => {
+  const fetchPortfolioOptimizer = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -1258,33 +1572,49 @@ export function usePortfolioOptimizer(options: UsePortfolioOptimizerOptions = {}
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, mode, timePeriod, targetReturn, includeDividends, optimizationType, riskTolerance]);
 
+  const mutate = useCallback((updater: PortfolioOptimizerData | ((current: PortfolioOptimizerData | null) => PortfolioOptimizerData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchPortfolioOptimizer();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchPortfolioOptimizer(true);
+    } else {
+      fetchPortfolioOptimizer(false);
+    }
   }, [fetchPortfolioOptimizer]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchPortfolioOptimizer();
+      if (!loading && !isRefreshing) {
+        fetchPortfolioOptimizer(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchPortfolioOptimizer]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchPortfolioOptimizer]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchPortfolioOptimizer,
+    refetch: () => fetchPortfolioOptimizer(false),
+    mutate,
   };
 }
 
@@ -1296,13 +1626,20 @@ export function useConstrainedOptimization(options: UseConstrainedOptimizationOp
   
   const [data, setData] = useState<ConstrainedOptimizationData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [metadata, setMetadata] = useState<WidgetMetadata | null>(null);
   const [cacheHit, setCacheHit] = useState(false);
+  
+  const hasFetchedRef = useRef(false);
 
-  const fetchConstrainedOptimization = useCallback(async () => {
+  const fetchConstrainedOptimization = useCallback(async (isInitialLoad = false) => {
     try {
-      setLoading(true);
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       setError(null);
       
       const params = {
@@ -1336,33 +1673,49 @@ export function useConstrainedOptimization(options: UseConstrainedOptimizationOp
       }
       setData(null);
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   }, [portfolioId, objective, maxWeight, minWeight, targetReturn, constraints, optimizationType]);
 
+  const mutate = useCallback((updater: ConstrainedOptimizationData | ((current: ConstrainedOptimizationData | null) => ConstrainedOptimizationData | null)) => {
+    setData(current => typeof updater === 'function' ? updater(current) : updater);
+  }, []);
+
   useEffect(() => {
-    fetchConstrainedOptimization();
+    const isFirstRun = !hasFetchedRef.current;
+    if (isFirstRun) {
+      hasFetchedRef.current = true;
+      fetchConstrainedOptimization(true);
+    } else {
+      fetchConstrainedOptimization(false);
+    }
   }, [fetchConstrainedOptimization]);
 
   useEffect(() => {
     if (!autoRefresh || refreshInterval <= 0) return;
     
     const interval = setInterval(() => {
-      if (!loading) {
-        fetchConstrainedOptimization();
+      if (!loading && !isRefreshing) {
+        fetchConstrainedOptimization(false);
       }
     }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval, loading, fetchConstrainedOptimization]);
+  }, [autoRefresh, refreshInterval, loading, isRefreshing, fetchConstrainedOptimization]);
 
   return {
     data,
     loading,
+    isRefreshing,
     error,
     metadata,
     cacheHit,
-    refetch: fetchConstrainedOptimization,
+    refetch: () => fetchConstrainedOptimization(false),
+    mutate,
   };
 }
 

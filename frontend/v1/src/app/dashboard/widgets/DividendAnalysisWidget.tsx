@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
 import { useDividendAnalysis } from '@/hooks/use-portfolio-widgets';
+import { WidgetInsight } from '@/components/ui/widget-insight';
+import { XCircle } from 'lucide-react';
+import type { ContentType } from './widget-metadata';
+
+export const WIDGET_SIZE_CONFIG = {
+  minSize: { w: 5, h: 4 },
+  contentType: 'balanced' as ContentType,
+  requiresFullWidth: false,
+  aspectRatioPreference: 1.5,
+  isScrollable: true,
+} as const;
 
 interface DividendAnalysisWidgetProps {
   portfolioId?: string;
@@ -11,7 +22,14 @@ const DividendAnalysisWidget: React.FC<DividendAnalysisWidgetProps> = ({ portfol
   const { data, loading, error } = useDividendAnalysis({ portfolioId, timePeriod });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
-  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (error) return (
+    <WidgetInsight
+      title="Dividend Data Error"
+      description={error}
+      icon={XCircle}
+      variant="destructive"
+    />
+  );
   if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   // Handle minimal API response structure
@@ -25,8 +43,8 @@ const DividendAnalysisWidget: React.FC<DividendAnalysisWidgetProps> = ({ portfol
   ];
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex gap-2">
+    <div className="flex flex-col h-full p-4">
+      <div className="flex gap-2 flex-shrink-0">
         <select 
           value={timePeriod} 
           onChange={(e) => setTimePeriod(e.target.value)}
@@ -39,8 +57,8 @@ const DividendAnalysisWidget: React.FC<DividendAnalysisWidgetProps> = ({ portfol
       </div>
       
       {hasFullData ? (
-        <>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
+          <div className="flex flex-wrap justify-center gap-3">
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-lg font-bold text-foreground">${data.total_dividends?.toLocaleString()}</div>
               <div className="text-xs text-muted-foreground">Total Dividends</div>
@@ -63,7 +81,7 @@ const DividendAnalysisWidget: React.FC<DividendAnalysisWidgetProps> = ({ portfol
               </div>
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="text-center p-4 text-muted-foreground">
           <div className="text-sm">{data.status || data.message || 'Dividend analysis data available'}</div>

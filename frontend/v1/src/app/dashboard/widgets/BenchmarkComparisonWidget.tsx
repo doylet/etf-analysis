@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
 import { useBenchmarkComparison } from '@/hooks/use-portfolio-widgets';
+import { WidgetInsight } from '@/components/ui/widget-insight';
+import { MetricCard } from '@/components/ui/metric-card';
+import { XCircle, TrendingUp, TrendingDown, Activity, Target } from 'lucide-react';
+import type { ContentType } from './widget-metadata';
+
+export const WIDGET_SIZE_CONFIG = {
+  minSize: { w: 5, h: 5 },
+  contentType: 'balanced' as ContentType,
+  requiresFullWidth: false,
+  aspectRatioPreference: 1.0,
+  isScrollable: true,
+} as const;
 
 interface BenchmarkComparisonWidgetProps {
   portfolioId?: string;
@@ -16,7 +28,14 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
   });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
-  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (error) return (
+    <WidgetInsight
+      title="Benchmark Data Error"
+      description={error}
+      icon={XCircle}
+      variant="destructive"
+    />
+  );
   if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   // Handle minimal API response structure
@@ -44,8 +63,8 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
   ];
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex gap-2">
+    <div className="flex flex-col h-full p-4">
+      <div className="flex gap-2 flex-shrink-0">
         <select 
           value={benchmark} 
           onChange={(e) => setBenchmark(e.target.value)}
@@ -67,23 +86,92 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
       </div>
       
       {hasFullData ? (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.portfolio_return?.toFixed(2)}%</div>
-            <div className="text-xs text-muted-foreground">Portfolio Return</div>
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
+          {/* Primary Metrics */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <MetricCard
+              title="Portfolio Return"
+              value={`${data.portfolio_return?.toFixed(2)}%`}
+              icon={data.portfolio_return && data.portfolio_return > 0 ? TrendingUp : TrendingDown}
+              variant="default"
+              size="sm"
+              trend={data.portfolio_return && data.portfolio_return > 0 ? 'positive' : 'negative'}
+            />
+            <MetricCard
+              title="Benchmark Return"
+              value={`${data.benchmark_return?.toFixed(2)}%`}
+              icon={data.benchmark_return && data.benchmark_return > 0 ? TrendingUp : TrendingDown}
+              variant="default"
+              size="sm"
+              trend={data.benchmark_return && data.benchmark_return > 0 ? 'positive' : 'negative'}
+            />
+            <MetricCard
+              title="Alpha"
+              value={data.alpha?.toFixed(2)}
+              subtitle="Excess Return"
+              icon={Target}
+              variant={data.alpha && data.alpha > 0 ? 'highlighted' : 'default'}
+              size="sm"
+              trend={data.alpha && data.alpha > 0 ? 'positive' : 'negative'}
+            />
+            <MetricCard
+              title="Beta"
+              value={data.beta?.toFixed(2)}
+              subtitle="Market Sensitivity"
+              icon={Activity}
+              variant="default"
+              size="sm"
+            />
           </div>
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.benchmark_return?.toFixed(2)}%</div>
-            <div className="text-xs text-muted-foreground">Benchmark Return</div>
+          
+          {/* Risk Metrics */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <MetricCard
+              title="Portfolio Sharpe"
+              value={data.sharpe_ratio?.toFixed(2)}
+              subtitle="Risk-Adjusted Return"
+              icon={TrendingUp}
+              variant="default"
+              size="sm"
+            />
+            <MetricCard
+              title="Benchmark Sharpe"
+              value={data.benchmark_sharpe?.toFixed(2) ?? 'N/A'}
+              subtitle="Risk-Adjusted Return"
+              icon={TrendingUp}
+              variant="default"
+              size="sm"
+            />
+            <MetricCard
+              title="Portfolio Vol"
+              value={data.portfolio_volatility ? `${data.portfolio_volatility.toFixed(2)}%` : 'N/A'}
+              subtitle="Annualized"
+              icon={Activity}
+              variant="subtle"
+              size="sm"
+            />
+            <MetricCard
+              title="Benchmark Vol"
+              value={data.benchmark_volatility ? `${data.benchmark_volatility.toFixed(2)}%` : 'N/A'}
+              subtitle="Annualized"
+              icon={Activity}
+              variant="subtle"
+              size="sm"
+            />
           </div>
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.alpha?.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground">Alpha</div>
-          </div>
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.sharpe_ratio?.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
-          </div>
+          
+          {/* Information Ratio */}
+          {data.information_ratio !== undefined && (
+            <MetricCard
+              title="Information Ratio"
+              value={data.information_ratio.toFixed(2)}
+              subtitle="Risk-Adjusted Excess Return"
+              icon={Target}
+              variant="highlighted"
+              size="sm"
+              trend={data.information_ratio > 0 ? 'positive' : 'negative'}
+            />
+          )}
         </div>
       ) : (
         <div className="text-center p-4 text-muted-foreground">

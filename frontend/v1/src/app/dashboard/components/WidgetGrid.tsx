@@ -1,9 +1,9 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
 import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { getWidgetComponent } from '../widgets/widget-registry';
+import { getWidgetComponent, getWidgetTitle } from '../widgets/widget-registry';
+import { WidgetWrapper, useWidgetSpacing } from '@/components/ui/widget-wrapper';
+import { WidgetCard } from '@/components/ui/widget-card';
+import { generateAllLayouts } from '../services/layout-algorithm';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 
@@ -16,6 +16,7 @@ export interface WidgetInstance {
   y: number;
   w: number;
   h: number;
+  isLocked?: boolean; // Track if widget position is manually set
 }
 
 interface WidgetGridProps {
@@ -23,6 +24,7 @@ interface WidgetGridProps {
   portfolioId: string;
   onLayoutChange: (layout: Layout[]) => void;
   onRemoveWidget: (widgetKey: string) => void;
+  onResetWidget?: (widgetKey: string) => void;
 }
 
 const WidgetGrid: React.FC<WidgetGridProps> = ({
@@ -30,25 +32,37 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({
   portfolioId,
   onLayoutChange,
   onRemoveWidget,
+  onResetWidget,
 }) => {
-  // Convert widgets to layout format
+  const { spacing } = useWidgetSpacing();
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<string>('lg');
+  const [isDragging, setIsDragging] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Generate optimal layouts using dynamic algorithm
+  // Algorithm respects locked widgets (manually positioned) and optimizes unlocked widgets
   const layouts = useMemo((): Layouts => {
-    const layout: Layout[] = widgets.map(widget => ({
-      i: widget.i,
-      x: widget.x,
-      y: widget.y,
-      w: widget.w,
-      h: widget.h,
-      isDraggable: true,
-      isResizable: true
-    }));
+    const optimizedLayouts = generateAllLayouts(widgets);
+    
+    // Add draggable/resizable flags
+    const addInteractionFlags = (layout: Layout[]): Layout[] => {
+      return layout.map(item => ({
+        ...item,
+        isDraggable: true,
+        isResizable: true,
+      }));
+    };
 
     return {
-      lg: layout,
-      md: layout,
-      sm: layout,
-      xs: layout.map(item => ({ ...item, w: Math.min(item.w, 4) })),
-      xxs: layout.map(item => ({ ...item, w: 2 }))
+      lg: addInteractionFlags(optimizedLayouts.lg),
+      md: addInteractionFlags(optimizedLayouts.md),
+      sm: addInteractionFlags(optimizedLayouts.sm),
+      xs: addInteractionFlags(optimizedLayouts.xs),
+      xxs: addInteractionFlags(optimizedLayouts.xxs),
     };
   }, [widgets]);
 
@@ -63,31 +77,73 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({
     [portfolioId]
   );
 
+  const handleBreakpointChange = useCallback((breakpoint: string) => {
+    setCurrentBreakpoint(breakpoint);
+  }, []);
+
+  const handleDrag = useCallback(
+    (layout: Layout[], oldItem: Layout, newItem: Layout, placeholder: Layout) => {
+      if (!isDragging) setIsDragging(true);
+
+      // Find the widget that's being dragged
+      const draggedWidget = widgets.find(w => w.i === newItem.i);
+      if (!draggedWidget) return;
+
+      // Calculate available space at the new position
+      const cols = { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }[currentBreakpoint] || 12;
+      
+      let maxWidth = cols - newItem.x;
+      let maxHeight = 20; // reasonable max height
+      
+      // Find the nearest blocking widget in each direction
+      layout.forEach(item => {
+        if (item.i === newItem.i) return;
+        
+        // Check for widgets to the right that would block horizontal expansion
+        if (item.x >= newItem.x && item.y < newItem.y + draggedWidget.h && item.y + item.h > newItem.y) {
+          maxWidth = Math.min(maxWidth, item.x - newItem.x);
+        }
+        
+        // Check for widgets below that would block vertical expansion
+        if (item.y >= newItem.y && item.x < newItem.x + draggedWidget.w && item.x + item.w > newItem.x) {
+          maxHeight = Math.min(maxHeight, item.y - newItem.y);
+        }
+      });
+      
+      // Update the placeholder to show the constrained size
+      const constrainedWidth = Math.max(1, Math.min(draggedWidget.w, maxWidth));
+      const constrainedHeight = Math.max(1, Math.min(draggedWidget.h, maxHeight));
+      
+      placeholder.w = constrainedWidth;
+      placeholder.h = constrainedHeight;
+    },
+    [widgets, currentBreakpoint, isDragging]
+  );
+
+  const handleDragStop = useCallback(
+    (layout: Layout[]) => {
+      setIsDragging(false);
+      onLayoutChange(layout);
+    },
+    [onLayoutChange]
+  );
+
   const renderWidget = useCallback(
     (widget: WidgetInstance) => (
-      <Card key={widget.i} className="h-full relative overflow-hidden cursor-move">
-        <CardHeader className="py-2 px-3 border-b">
-          <CardTitle className="text-sm font-medium flex items-center justify-between">
-            <span className="truncate">Widget</span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemoveWidget(widget.i);
-              }}
-              className="h-6 w-6 p-0 hover:bg-destructive/10 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-3 w-3" />
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0 h-full overflow-auto">
+      <WidgetCard
+        key={widget.i}
+        widgetKey={widget.i}
+        title={getWidgetTitle(widget.widgetId)}
+        isLocked={widget.isLocked}
+        onRemove={onRemoveWidget}
+        onReset={onResetWidget}
+      >
+        <WidgetWrapper spacing={spacing}>
           <WidgetRenderer widgetId={widget.widgetId} />
-        </CardContent>
-      </Card>
+        </WidgetWrapper>
+      </WidgetCard>
     ),
-    [WidgetRenderer, onRemoveWidget]
+    [WidgetRenderer, onRemoveWidget, onResetWidget, spacing]
   );
 
   if (widgets.length === 0) {
@@ -103,18 +159,31 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({
     );
   }
 
+  // Prevent hydration mismatch by not rendering grid until client-side
+  if (!mounted) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-muted-foreground">Loading widgets...</div>
+      </div>
+    );
+  }
+
   return (
     <ResponsiveGridLayout
       layouts={layouts}
       onLayoutChange={onLayoutChange}
+      onBreakpointChange={handleBreakpointChange}
+      onDrag={handleDrag}
+      onDragStop={handleDragStop}
       breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
       cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
       rowHeight={60}
-      margin={[12, 12]}
+      margin={[8, 8]}
       isDraggable={true}
       isResizable={true}
       compactType="vertical"
       preventCollision={false}
+      allowOverlap={false}
       useCSSTransforms={true}
     >
       {widgets.map(widget => (

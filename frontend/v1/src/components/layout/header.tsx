@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="bg-background border-b border-border shadow-sm">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center py-4">
+        <div className="flex justify-between items-center pt-2 pb-1">
           {/* Left side - Brand and Navigation */}
           <div className="flex items-center space-x-6">
             {/* Brand */}

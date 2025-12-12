@@ -1,11 +1,22 @@
 'use client';
 
-import { Activity, XCircle, Calendar, TrendingUp } from 'lucide-react';
-import { useState } from 'react';
+import { Activity, XCircle, Calendar, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
+import { WidgetInsight } from '@/components/ui/widget-insight';
+import { CacheBadge } from '@/components/ui/cache-badge';
 import { useCorrelationMatrix } from '@/hooks/use-portfolio-widgets';
+import type { ContentType } from './widget-metadata';
+
+export const WIDGET_SIZE_CONFIG = {
+  minSize: { w: 4, h: 6 },
+  contentType: 'square' as ContentType,
+  requiresFullWidth: false,
+  aspectRatioPreference: 1.0,
+  isScrollable: false,
+} as const;
 
 interface CorrelationMatrixProps {
   portfolioId?: string;
@@ -45,6 +56,55 @@ const getCorrelationIntensity = (value: number): number => {
   return Math.abs(value);
 };
 
+// Generate dynamic insights based on correlation data
+const generateCorrelationInsights = (
+  maxCorrelation: number,
+  avgCorrelation: number,
+  symbols: string[]
+) => {
+  const insights: Array<{ 
+    title: string; 
+    description: string; 
+    icon: typeof TrendingUp; 
+    variant: 'default' | 'destructive' 
+  }> = [];
+
+  if (maxCorrelation > 0.9) {
+    insights.push({
+      title: 'Critical Correlation Risk',
+      description: `Extremely high correlation detected (${(maxCorrelation * 100).toFixed(1)}%). Assets are moving almost identically, indicating severe concentration risk. Immediate diversification recommended.`,
+      icon: AlertTriangle,
+      variant: 'destructive'
+    });
+  } else if (maxCorrelation > 0.8) {
+    insights.push({
+      title: 'High Correlation Alert',
+      description: `Strong correlation detected (${(maxCorrelation * 100).toFixed(1)}%). Some assets show high correlation, which may indicate concentrated risk. Consider diversification across ${symbols.length} holdings.`,
+      icon: TrendingUp,
+      variant: 'default'
+    });
+  } else if (maxCorrelation > 0.6) {
+    insights.push({
+      title: 'Moderate Correlation',
+      description: `Moderate correlation detected (${(maxCorrelation * 100).toFixed(1)}%). Portfolio shows reasonable but not excessive correlation. Monitor for increased concentration.`,
+      icon: TrendingUp,
+      variant: 'default'
+    });
+  }
+
+  if (avgCorrelation < 0.3 && symbols.length > 5) {
+    insights.push({
+      title: 'Well Diversified Portfolio',
+      description: `Average correlation of ${(avgCorrelation * 100).toFixed(1)}% indicates good diversification across ${symbols.length} assets. Holdings are moving relatively independently.`,
+      icon: CheckCircle,
+      variant: 'default'
+    });
+  }
+
+  return insights;
+};
+
+
 export default function CorrelationMatrixWidget({ 
   portfolioId, 
   defaultTimeWindow = 252 
@@ -56,6 +116,38 @@ export default function CorrelationMatrixWidget({
     timeWindowDays,
   });
 
+  // Memoize symbols to avoid dependency issues
+  const symbols = useMemo(() => matrix?.symbols || [], [matrix?.symbols]);
+
+  // Transform correlation matrix from API format to expected format
+  const correlationData = useMemo(() => {
+    const data: Record<string, Record<string, number>> = {};
+    if (matrix?.correlation_matrix) {
+      if (Array.isArray(matrix.correlation_matrix)) {
+        // Convert array format to nested object format
+        matrix.correlation_matrix.forEach((item: {symbol1: string, symbol2: string, correlation: number}) => {
+          if (!data[item.symbol1]) {
+            data[item.symbol1] = {};
+          }
+          data[item.symbol1][item.symbol2] = item.correlation;
+        });
+      } else {
+        // Already in correct format
+        return matrix.correlation_matrix as Record<string, Record<string, number>>;
+      }
+    }
+    return data;
+  }, [matrix]);
+
+  // Generate dynamic insights based on actual data
+  const insights = useMemo(() => {
+    return generateCorrelationInsights(
+      matrix?.statistics?.max_correlation || 0,
+      matrix?.statistics?.avg_correlation || 0,
+      symbols
+    );
+  }, [matrix, symbols]);
+
   const timeWindowOptions = [
     { value: 30, label: '1 Month' },
     { value: 90, label: '3 Months' },
@@ -66,26 +158,24 @@ export default function CorrelationMatrixWidget({
 
   if (loading) {
     return (
-      <div className="p-3">
-        <div className="space-y-3">
-          <div className="flex justify-between items-start">
-            <div>
-              <Skeleton className="h-5 w-[160px]" />
-              <Skeleton className="h-4 w-[200px] mt-1" />
+      <div className="space-y-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <Skeleton className="h-5 w-[160px]" />
+            <Skeleton className="h-4 w-[200px] mt-1" />
+          </div>
+          <Skeleton className="h-7 w-[100px]" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="p-3 border rounded-lg">
+              <Skeleton className="h-4 w-[80px] mb-2" />
+              <Skeleton className="h-6 w-[60px]" />
             </div>
-            <Skeleton className="h-7 w-[100px]" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="p-3 border rounded-lg">
-                <Skeleton className="h-4 w-[80px] mb-2" />
-                <Skeleton className="h-6 w-[60px]" />
-              </div>
-            ))}
-          </div>
-          <div className="h-48 bg-muted rounded-lg flex items-center justify-center">
-            <Skeleton className="h-6 w-[120px]" />
-          </div>
+          ))}
+        </div>
+        <div className="h-48 bg-muted rounded-lg flex items-center justify-center">
+          <Skeleton className="h-6 w-[120px]" />
         </div>
       </div>
     );
@@ -93,76 +183,50 @@ export default function CorrelationMatrixWidget({
 
   if (error || !matrix) {
     return (
-      <div className="p-3">
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertTitle>Correlation Data Error</AlertTitle>
-          <AlertDescription>
-            {error || 'Unable to load correlation matrix. Please try refreshing the page.'}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <WidgetInsight
+        title="Correlation Data Error"
+        description={error || 'Unable to load correlation matrix. Please try refreshing the page.'}
+        icon={XCircle}
+        variant="destructive"
+      />
     );
   }
 
-  const symbols = matrix?.symbols || [];
-  
-  // Transform correlation matrix from API format to expected format
-  let correlationData: Record<string, Record<string, number>> = {};
-  if (matrix?.correlation_matrix) {
-    if (Array.isArray(matrix.correlation_matrix)) {
-      // Convert array format to nested object format
-      matrix.correlation_matrix.forEach((item: {symbol1: string, symbol2: string, correlation: number}) => {
-        if (!correlationData[item.symbol1]) {
-          correlationData[item.symbol1] = {};
-        }
-        correlationData[item.symbol1][item.symbol2] = item.correlation;
-      });
-    } else {
-      // Already in correct format
-      correlationData = matrix.correlation_matrix as Record<string, Record<string, number>>;
-    }
-  }
-
   return (
-    <div className="p-3">
-      <div className="space-y-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Correlation Matrix
-            </h3>
-            <p className="text-xs text-muted-foreground mt-1">
-              Asset correlation between {`${formatDate(matrix?.analysis_period?.start_date || '')} and ${formatDate(matrix?.analysis_period?.end_date || '')}`}.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {cacheHit && (
-              <span className="text-xs bg-muted-100 text-foreground-700 px-2 py-1 rounded-md">
-                Cached
-              </span>
-            )}
-            <select
-              value={timeWindowDays}
-              onChange={(e) => setTimeWindowDays(Number(e.target.value))}
-              className="text-xs border border-border rounded-md px-2 py-1 bg-background"
-            >
-              {timeWindowOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex justify-between items-start flex-shrink-0">
+        <div>
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Correlation Matrix
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1">
+            Asset correlation between {`${formatDate(matrix?.analysis_period?.start_date || '')} and ${formatDate(matrix?.analysis_period?.end_date || '')}`}.
+          </p>
         </div>
-        
-        {/* Main Content */}
-        <div className="space-y-3">
-          {/* Summary Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <MetricCard
-              title="Average Correlation"
+        <div className="flex items-center gap-2">
+          <CacheBadge show={cacheHit} />
+          <select
+            value={timeWindowDays}
+            onChange={(e) => setTimeWindowDays(Number(e.target.value))}
+            className="text-xs border border-border rounded-md px-2 py-1 bg-background"
+          >
+            {timeWindowOptions.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+      
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
+        {/* Summary Statistics */}
+        <div className="flex flex-wrap justify-center gap-2">
+          <MetricCard
+            title="Average Correlation"
               value={formatPercent(matrix?.statistics?.avg_correlation || 0)}
               icon={Activity}
               variant="default"
@@ -262,18 +326,16 @@ export default function CorrelationMatrixWidget({
           </div>
 
           {/* Insights */}
-          {(matrix?.statistics?.max_correlation || 0) > 0.8 && (
-            <Alert>
-              <TrendingUp className="h-4 w-4" />
-              <AlertTitle>High Correlation Alert</AlertTitle>
-              <AlertDescription>
-                Some assets show high correlation ({formatPercent(matrix?.statistics?.max_correlation || 0)}), 
-                which may indicate concentrated risk. Consider diversification.
-              </AlertDescription>
-            </Alert>
-          )}
+          {insights.map((insight, index) => (
+            <WidgetInsight
+              key={index}
+              title={insight.title}
+              description={insight.description}
+              icon={insight.icon}
+              variant={insight.variant}
+            />
+          ))}
         </div>
-      </div>
     </div>
   );
 }

@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
 import { useNewsEventAnalysis } from '@/hooks/use-portfolio-widgets';
+import { WidgetInsight } from '@/components/ui/widget-insight';
+import { XCircle } from 'lucide-react';
+import type { ContentType } from './widget-metadata';
+
+export const WIDGET_SIZE_CONFIG = {
+  minSize: { w: 5, h: 5 },
+  contentType: 'height-heavy' as ContentType,
+  requiresFullWidth: false,
+  aspectRatioPreference: 1.2,
+  isScrollable: true,
+} as const;
 
 interface NewsEventAnalysisWidgetProps {
   portfolioId?: string;
@@ -12,7 +23,14 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
   const { data, loading, error } = useNewsEventAnalysis({ portfolioId, lookbackDays, surpriseThreshold });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
-  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (error) return (
+    <WidgetInsight
+      title="News Data Error"
+      description={error}
+      icon={XCircle}
+      variant="destructive"
+    />
+  );
   if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   // Handle minimal API response structure
@@ -27,8 +45,8 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
   ];
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex flex-col gap-2">
+    <div className="flex flex-col h-full p-4">
+      <div className="flex flex-col gap-2 flex-shrink-0">
         <select 
           value={lookbackDays} 
           onChange={(e) => setLookbackDays(Number(e.target.value))}
@@ -54,7 +72,7 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
       </div>
       
       {hasFullData ? (
-        <>
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-lg font-bold text-foreground">
@@ -91,7 +109,7 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
               </div>
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="text-center p-4 text-muted-foreground">
           <div className="text-sm">{data.status || data.message || 'News and event analysis data available'}</div>

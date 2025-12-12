@@ -12,8 +12,8 @@ export const Footer: React.FC<FooterProps> = ({
   className = ''
 }) => {
   return (
-    <footer className={`bg-background border-t border-border mt-12 ${className}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <footer className={`bg-background border-t border-border ${className}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
         <div className="flex flex-col sm:flex-row justify-between items-center">
           <p className="text-sm text-muted-foreground">
             {appName}

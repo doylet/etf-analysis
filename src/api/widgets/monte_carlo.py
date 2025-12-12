@@ -223,12 +223,15 @@ class MonteCarloAdapter(BaseWidgetAdapter):
                 return None
                 
             # Use widget's Monte Carlo calculation method (static method)
+            years_param = int(params.get('time_horizon_years', 1.0))  # Ensure integer
+            logger.info(f"Running Monte Carlo: symbols={symbols}, years={years_param}, initial_value={initial_value}, num_sims={params.get('num_simulations', 1000)}")
+            
             simulation_results = MonteCarloWidget._run_monte_carlo(
                 symbols=symbols,
                 weights=weights,
                 returns_df=returns_df,
                 num_sims=params.get('num_simulations', 1000),
-                years=params.get('time_horizon_years', 1.0),
+                years=years_param,
                 initial_value=initial_value,
                 include_dividends=params.get('include_dividends', True),
                 confidence_level=int(params.get('confidence_level', 0.95) * 100),  # Widget expects int (95 not 0.95)
@@ -238,10 +241,11 @@ class MonteCarloAdapter(BaseWidgetAdapter):
                 contribution_frequency=params.get('contribution_frequency', 'Annual')
             )
             
+            logger.info(f"Monte Carlo simulation completed successfully")
             return simulation_results
             
         except Exception as e:
-            logger.error(f"Widget Monte Carlo calculation failed: {e}")
+            logger.error(f"Widget Monte Carlo calculation failed: {type(e).__name__}: {str(e) or 'No error message'}", exc_info=True)
             raise
     
     def _convert_simulation_data_to_api_format(self, simulation_results) -> Dict[str, Any]:
@@ -297,7 +301,36 @@ class MonteCarloAdapter(BaseWidgetAdapter):
             "confidence_level": 95  # Default for now
         }
         
-        return {
+        # Calculate path statistics for timeseries visualization
+        path_statistics = None
+        try:
+            # Get percentile paths (10th, 50th, 90th) for each time point
+            if hasattr(simulation_results, 'paths') and hasattr(simulation_results, 'time_points'):
+                paths_array = simulation_results.paths  # Shape: (num_simulations, time_steps)
+                time_points = simulation_results.time_points
+                
+                if paths_array is not None and time_points is not None and len(paths_array) > 0:
+                    percentile_10_path = np.percentile(paths_array, 10, axis=0)
+                    percentile_50_path = np.percentile(paths_array, 50, axis=0)
+                    percentile_90_path = np.percentile(paths_array, 90, axis=0)
+                    
+                    # Calculate drawdown statistics at each time point
+                    running_max = np.maximum.accumulate(paths_array, axis=1)
+                    drawdowns = (paths_array - running_max) / running_max * 100  # Convert to percentage
+                    median_drawdown = np.percentile(drawdowns, 50, axis=0)
+                    
+                    path_statistics = {
+                        "time_points": time_points.tolist(),
+                        "percentile_10": percentile_10_path.tolist(),
+                        "percentile_50": percentile_50_path.tolist(),
+                        "percentile_90": percentile_90_path.tolist(),
+                        "median_drawdown": median_drawdown.tolist()
+                    }
+        except Exception as e:
+            logger.warning(f"Could not generate path statistics: {str(e)}")
+            path_statistics = None
+        
+        result = {
             "scenarios": scenarios,
             "statistics": statistics,
             "percentiles": percentiles,
@@ -307,6 +340,12 @@ class MonteCarloAdapter(BaseWidgetAdapter):
             "execution_time_seconds": 0.0,  # Will be filled by performance monitor
             "last_updated": datetime.utcnow().isoformat()
         }
+        
+        # Only include path_statistics if available
+        if path_statistics is not None:
+            result["path_statistics"] = path_statistics
+            
+        return result
     
     def _empty_monte_carlo_response(self) -> Dict[str, Any]:
         """Return empty Monte Carlo response structure."""

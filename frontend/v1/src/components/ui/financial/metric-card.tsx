@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import type { MetricCardProps } from '@/lib/design-tokens';
 
 const metricCardVariants = cva(
-  'group relative rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:scale-[1.02] hover:-translate-y-1 cursor-default',
+  'group relative rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:scale-[1.02] hover:-translate-y-1 cursor-default max-w-[16.666667%] min-w-[200px]',
   {
     variants: {
       variant: {
@@ -20,9 +20,9 @@ const metricCardVariants = cva(
         subtle: 'border-border bg-muted hover:shadow-sm hover:border-border hover:bg-card',
       },
       size: {
-        sm: 'p-4',
-        base: 'p-6',
-        lg: 'p-8',
+        sm: 'p-1',
+        base: 'p-3',
+        lg: 'p-4',
       },
     },
     defaultVariants: {
@@ -33,7 +33,7 @@ const metricCardVariants = cva(
 );
 
 const metricValueVariants = cva(
-  'font-financial transition-all duration-300 ease-out group-hover:scale-105 group-hover:font-black',
+  'font-financial transition-all duration-300 ease-out',
   {
     variants: {
       trend: {
@@ -55,7 +55,7 @@ const metricValueVariants = cva(
 );
 
 const metricTitleVariants = cva(
-  'font-medium transition-all duration-300 ease-out group-hover:text-foreground group-hover:font-semibold',
+  'font-medium transition-all duration-300 ease-out group-hover:text-foreground',
   {
     variants: {
       size: {
@@ -71,7 +71,7 @@ const metricTitleVariants = cva(
 );
 
 const metricChangeVariants = cva(
-  'flex items-center gap-1 font-tabular text-sm transition-all duration-300 ease-out group-hover:scale-105',
+  'flex items-center gap-1 font-tabular text-sm transition-all duration-300 ease-out',
   {
     variants: {
       trend: {

@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
 import { usePerformanceAnalysis } from '@/hooks/use-portfolio-widgets';
+import { WidgetInsight } from '@/components/ui/widget-insight';
+import { XCircle } from 'lucide-react';
+import type { ContentType } from './widget-metadata';
+
+export const WIDGET_SIZE_CONFIG = {
+  minSize: { w: 6, h: 4 },
+  contentType: 'width-heavy' as ContentType,
+  requiresFullWidth: false,
+  aspectRatioPreference: 1.6,
+  isScrollable: false,
+} as const;
 
 interface PerformanceWidgetProps {
   portfolioId?: string;
@@ -8,10 +19,17 @@ interface PerformanceWidgetProps {
 const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) => {
   const [timePeriod, setTimePeriod] = useState('1Y');
   
-  const { data, loading, error } = usePerformanceAnalysis({ portfolioId, timePeriod });
+  const { data, loading, isRefreshing, error } = usePerformanceAnalysis({ portfolioId, timePeriod });
 
   if (loading) return <div className="p-4 text-center text-muted-foreground">Loading...</div>;
-  if (error) return <div className="p-4 text-center text-destructive">{error}</div>;
+  if (error) return (
+    <WidgetInsight
+      title="Performance Data Error"
+      description={error}
+      icon={XCircle}
+      variant="destructive"
+    />
+  );
   if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   // Handle minimal API response structure
@@ -28,21 +46,25 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
   ];
 
   return (
-    <div className="p-4 space-y-3">
-      <div className="flex gap-2">
+    <div className="flex flex-col h-full p-4">
+      <div className="flex gap-2 flex-shrink-0">
         <select 
           value={timePeriod} 
           onChange={(e) => setTimePeriod(e.target.value)}
           className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
+          disabled={isRefreshing}
         >
           {periods.map(p => (
             <option key={p.value} value={p.value}>{p.label}</option>
           ))}
         </select>
+        {isRefreshing && (
+          <span className="text-xs text-muted-foreground animate-pulse self-center">Updating...</span>
+        )}
       </div>
       
       {hasFullData ? (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="flex-1 overflow-y-auto min-h-0 grid grid-cols-2 gap-3">
           <div className="text-center p-3 bg-muted rounded-md">
             <div className="text-lg font-bold text-foreground">{data.total_return?.toFixed(2)}%</div>
             <div className="text-xs text-muted-foreground">Total Return</div>

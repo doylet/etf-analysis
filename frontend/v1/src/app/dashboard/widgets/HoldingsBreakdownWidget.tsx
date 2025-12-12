@@ -3,12 +3,22 @@
 import { PieChart, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { WidgetInsight } from '@/components/ui/widget-insight';
+import { CacheBadge } from '@/components/ui/cache-badge';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { FinancialAmount } from '@/components/ui/financial-amount';
 import { PercentageChange } from '@/components/ui/percentage-change';
 import { useHoldingsBreakdown, type BreakdownData } from '@/hooks/use-portfolio-widgets';
+import type { ContentType } from './widget-metadata';
+
+export const WIDGET_SIZE_CONFIG = {
+  minSize: { w: 5, h: 5 },
+  contentType: 'balanced' as ContentType,
+  requiresFullWidth: false,
+  aspectRatioPreference: 1.0,
+  isScrollable: true,
+} as const;
 
 interface HoldingsBreakdownProps {
   portfolioId?: string;
@@ -181,7 +191,7 @@ export default function HoldingsBreakdownWidget({
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex flex-wrap justify-center gap-4">
               {[...Array(3)].map((_, i) => (
                 <div key={i} className="p-4 border rounded-lg">
                   <Skeleton className="h-4 w-[100px]" />
@@ -211,19 +221,18 @@ export default function HoldingsBreakdownWidget({
 
   if (error || !breakdown) {
     return (
-      <Alert variant="destructive">
-        <XCircle className="h-4 w-4" />
-        <AlertTitle>Holdings Data Error</AlertTitle>
-        <AlertDescription>
-          {error || 'Unable to load holdings breakdown. Please try refreshing the page.'}
-        </AlertDescription>
-      </Alert>
+      <WidgetInsight
+        title="Holdings Data Error"
+        description={error || 'Unable to load holdings breakdown. Please try refreshing the page.'}
+        icon={XCircle}
+        variant="destructive"
+      />
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="flex flex-col h-full">
+      <CardHeader className="flex-shrink-0">
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-xl font-semibold text-foreground">Holdings Breakdown</h2>
@@ -232,11 +241,7 @@ export default function HoldingsBreakdownWidget({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {cacheHit && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-md">
-                Cached
-              </span>
-            )}
+            <CacheBadge show={cacheHit} />
             <select
               value={breakdownType}
               onChange={(e) => setBreakdownType(e.target.value as typeof breakdownType)}
@@ -252,7 +257,7 @@ export default function HoldingsBreakdownWidget({
         </div>
       </CardHeader>
       
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto min-h-0">
         <div className="space-y-6">
           {/* Breakdown Summary */}
           {breakdown?.breakdown && breakdown.breakdown.length > 0 && (
@@ -284,7 +289,7 @@ export default function HoldingsBreakdownWidget({
           )}
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-border">
+          <div className="flex flex-wrap justify-center gap-4 pt-4 border-t border-border">
             <div className="text-center">
               <div className="text-2xl font-bold text-text-primary">
                 {formatCurrency(breakdown?.total_value)}

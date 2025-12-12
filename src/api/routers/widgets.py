@@ -256,7 +256,10 @@ async def get_monte_carlo_simulation(
     confidence_level: float = Query(0.95, description="Confidence level for VaR calculation"),
     initial_value: Optional[float] = Query(None, description="Initial portfolio value (uses current if not provided)"),
     include_dividends: bool = Query(True, description="Include dividend payments in simulation"),
-    estimation_method: str = Query("historical", description="Return estimation method (historical, monte_carlo)")
+    estimation_method: str = Query("Historical Mean", description="Return estimation method (Historical Mean, Exponentially Weighted)"),
+    enable_contributions: bool = Query(False, description="Enable periodic contributions"),
+    contribution_amount: float = Query(0, description="Periodic contribution amount"),
+    contribution_frequency: str = Query("Annual", description="Contribution frequency (Monthly, Quarterly, Annual)")
 ) -> MonteCarloResponse:
     """Get Monte Carlo risk simulation."""
     try:
@@ -267,8 +270,8 @@ async def get_monte_carlo_simulation(
         if confidence_level <= 0 or confidence_level >= 1:
             raise HTTPException(status_code=400, detail="Confidence level must be between 0 and 1")
             
-        if time_horizon_days < 1 or time_horizon_days > 5*252:  # Max 5 years
-            raise HTTPException(status_code=400, detail="Time horizon must be between 1 and 1260 days")
+        if time_horizon_days < 1 or time_horizon_days > 30*252:  # Max 30 years
+            raise HTTPException(status_code=400, detail="Time horizon must be between 1 and 7560 days (30 years)")
         
         # Create Monte Carlo adapter
         adapter = MonteCarloAdapter(db)
@@ -281,7 +284,10 @@ async def get_monte_carlo_simulation(
             confidence_level=confidence_level,
             initial_value=initial_value,
             include_dividends=include_dividends,
-            estimation_method=estimation_method
+            estimation_method=estimation_method,
+            enable_contributions=enable_contributions,
+            contribution_amount=contribution_amount,
+            contribution_frequency=contribution_frequency
         )
         
         # Return typed response

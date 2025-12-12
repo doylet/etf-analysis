@@ -136,7 +136,7 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
               size="sm"
             />
           </MetricGroup>
-          
+
           {/* Information Ratio */}
           {data.information_ratio !== undefined && (
             <MetricCard

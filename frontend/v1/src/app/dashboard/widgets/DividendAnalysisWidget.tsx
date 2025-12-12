@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useDividendAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
-import { XCircle } from 'lucide-react';
+import { MetricCard } from '@/components/ui/metric-card';
+import { WidgetSelect } from '@/components/ui/widget/widget-controls';
+import { XCircle, DollarSign, Percent } from 'lucide-react';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { TIME_PERIODS_EXTENDED } from '@/lib/widget-constants';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -35,38 +39,34 @@ const DividendAnalysisWidget: React.FC<DividendAnalysisWidgetProps> = ({ portfol
   // Handle minimal API response structure
   const hasFullData = data.total_dividends !== undefined && data.dividend_yield !== undefined;
 
-  const periods = [
-    { value: 'All', label: 'All Time' },
-    { value: '1Y', label: '1 Year' },
-    { value: '2Y', label: '2 Years' },
-    { value: '5Y', label: '5 Years' },
-  ];
-
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex gap-2 flex-shrink-0">
-        <select 
-          value={timePeriod} 
-          onChange={(e) => setTimePeriod(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {periods.map(p => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
+        <WidgetSelect
+          value={timePeriod}
+          onChange={setTimePeriod}
+          options={TIME_PERIODS_EXTENDED.filter(p => ['All', '1Y', '2Y', '5Y'].includes(p.value))}
+          className="flex-1"
+        />
       </div>
       
       {hasFullData ? (
-        <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3 mt-3">
           <div className="flex flex-wrap justify-center gap-3">
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">${data.total_dividends?.toLocaleString()}</div>
-              <div className="text-xs text-muted-foreground">Total Dividends</div>
-            </div>
-            <div className="text-center p-3 bg-muted rounded-md">
-              <div className="text-lg font-bold text-foreground">{data.dividend_yield?.toFixed(2)}%</div>
-              <div className="text-xs text-muted-foreground">Yield</div>
-            </div>
+            <MetricCard
+              title="Total Dividends"
+              value={formatCurrency(data.total_dividends)}
+              icon={DollarSign}
+              variant="default"
+              size="sm"
+            />
+            <MetricCard
+              title="Yield"
+              value={formatPercent(data.dividend_yield / 100)}
+              icon={Percent}
+              variant="default"
+              size="sm"
+            />
           </div>
           {data.top_dividend_holdings && data.top_dividend_holdings.length > 0 && (
             <div className="mt-3">

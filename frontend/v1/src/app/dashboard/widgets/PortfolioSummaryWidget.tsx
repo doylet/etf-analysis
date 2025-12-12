@@ -1,7 +1,9 @@
 import React from 'react';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
-import { XCircle } from 'lucide-react';
+import { MetricCard } from '@/components/ui/metric-card';
+import { XCircle, DollarSign, TrendingUp, Briefcase, Wallet } from 'lucide-react';
+import { formatCurrency } from '@/lib/formatters';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -33,24 +35,35 @@ const PortfolioSummaryWidget: React.FC<PortfolioSummaryWidgetProps> = ({ portfol
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-wrap justify-center gap-3">
-        <div className="text-center p-3 bg-muted rounded-md">
-          <div className="text-xl font-bold text-foreground">${data.total_value.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">Total Value</div>
-        </div>
-        <div className="text-center p-3 bg-muted rounded-md">
-          <div className={`text-xl font-bold ${data.total_return >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-            ${data.total_return.toLocaleString()}
-          </div>
-          <div className="text-xs text-muted-foreground">Total Return</div>
-        </div>
-        <div className="text-center p-3 bg-muted rounded-md">
-          <div className="text-xl font-bold text-foreground">{data.positions}</div>
-          <div className="text-xs text-muted-foreground">Positions</div>
-        </div>
-        <div className="text-center p-3 bg-muted rounded-md">
-          <div className="text-xl font-bold text-foreground">${data.allocated_cash.toLocaleString()}</div>
-          <div className="text-xs text-muted-foreground">Cash</div>
-        </div>
+        <MetricCard
+          title="Total Value"
+          value={formatCurrency(data.total_value)}
+          icon={DollarSign}
+          variant="default"
+          size="sm"
+        />
+        <MetricCard
+          title="Total Return"
+          value={formatCurrency(data.total_return)}
+          icon={TrendingUp}
+          variant="default"
+          size="sm"
+          trend={data.total_return >= 0 ? 'positive' : 'negative'}
+        />
+        <MetricCard
+          title="Positions"
+          value={data.positions.toString()}
+          icon={Briefcase}
+          variant="default"
+          size="sm"
+        />
+        <MetricCard
+          title="Cash"
+          value={formatCurrency(data.allocated_cash)}
+          icon={Wallet}
+          variant="default"
+          size="sm"
+        />
       </div>
     </div>
   );

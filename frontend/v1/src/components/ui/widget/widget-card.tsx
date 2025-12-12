@@ -44,7 +44,7 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
 
   return (
     <Card className="h-full relative overflow-hidden cursor-move flex flex-col">
-      <CardHeader className="py-2 px-3 border-b flex-shrink-0 cursor-move">
+      <CardHeader className="py-1 px-3 border-b flex-shrink-0 cursor-move">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="truncate">{title}</span>
           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

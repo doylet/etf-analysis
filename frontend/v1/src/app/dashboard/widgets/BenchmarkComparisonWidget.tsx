@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { useBenchmarkComparison } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { XCircle, TrendingUp, TrendingDown, Activity, Target } from 'lucide-react';
+import { formatPercent } from '@/lib/formatters';
+import { TIME_PERIODS, COMMON_BENCHMARKS } from '@/lib/widget-constants';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -41,57 +44,30 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
   // Handle minimal API response structure
   const hasFullData = data.portfolio_return !== undefined && data.benchmark_return !== undefined;
 
-  const benchmarks = [
-    { value: 'SPY', label: 'S&P 500' },
-    { value: 'QQQ', label: 'Nasdaq 100' },
-    { value: 'DIA', label: 'Dow Jones' },
-    { value: 'IWM', label: 'Russell 2000' },
-    { value: 'VTI', label: 'Total US Market' },
-    { value: 'EFA', label: 'International' },
-    { value: 'AGG', label: 'US Bonds' },
-    { value: 'GLD', label: 'Gold' },
-  ];
-
-  const periods = [
-    { value: '1W', label: '1 Week' },
-    { value: '1M', label: '1 Month' },
-    { value: '3M', label: '3 Months' },
-    { value: '6M', label: '6 Months' },
-    { value: '1Y', label: '1 Year' },
-    { value: '2Y', label: '2 Years' },
-    { value: '5Y', label: '5 Years' },
-  ];
-
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex gap-2 flex-shrink-0">
-        <select 
-          value={benchmark} 
-          onChange={(e) => setBenchmark(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {benchmarks.map(b => (
-            <option key={b.value} value={b.value}>{b.label}</option>
-          ))}
-        </select>
-        <select 
-          value={timePeriod} 
-          onChange={(e) => setTimePeriod(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {periods.map(p => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
+        <WidgetSelect
+          value={benchmark}
+          onChange={setBenchmark}
+          options={COMMON_BENCHMARKS}
+          className="flex-1"
+        />
+        <WidgetSelect
+          value={timePeriod}
+          onChange={setTimePeriod}
+          options={TIME_PERIODS}
+          className="flex-1"
+        />
       </div>
       
       {hasFullData ? (
-        <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
+        <div className="flex-1 overflow-y-auto min-h-0 space-y-3 mt-3">
           {/* Primary Metrics */}
           <div className="flex flex-wrap justify-center gap-3">
             <MetricCard
               title="Portfolio Return"
-              value={`${data.portfolio_return?.toFixed(2)}%`}
+              value={formatPercent(data.portfolio_return / 100)}
               icon={data.portfolio_return && data.portfolio_return > 0 ? TrendingUp : TrendingDown}
               variant="default"
               size="sm"
@@ -99,7 +75,7 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
             />
             <MetricCard
               title="Benchmark Return"
-              value={`${data.benchmark_return?.toFixed(2)}%`}
+              value={formatPercent(data.benchmark_return / 100)}
               icon={data.benchmark_return && data.benchmark_return > 0 ? TrendingUp : TrendingDown}
               variant="default"
               size="sm"
@@ -107,7 +83,7 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
             />
             <MetricCard
               title="Alpha"
-              value={data.alpha?.toFixed(2)}
+              value={formatPercent(data.alpha / 100)}
               subtitle="Excess Return"
               icon={Target}
               variant={data.alpha && data.alpha > 0 ? 'highlighted' : 'default'}

@@ -9,7 +9,9 @@ import { CacheBadge } from '@/components/ui/cache-badge';
 import { DataTable, Column } from '@/components/ui/data-table';
 import { FinancialAmount } from '@/components/ui/financial-amount';
 import { PercentageChange } from '@/components/ui/percentage-change';
+import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { useHoldingsBreakdown, type BreakdownData } from '@/hooks/use-portfolio-widgets';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -38,23 +40,6 @@ interface HoldingRow extends Record<string, unknown> {
   total_return_percent: number;
 }
 
-const formatCurrency = (amount: number | undefined | null): string => {
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    return '$0.00';
-  }
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-};
-
-const formatPercent = (value: number | undefined | null): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '0.00%';
-  }
-  return `${value.toFixed(2)}%`;
-};
-
 export default function HoldingsBreakdownWidget({ 
   portfolioId, 
   defaultBreakdownType = 'asset_class' 
@@ -67,9 +52,9 @@ export default function HoldingsBreakdownWidget({
   });
 
   const breakdownTypeOptions = [
-    { value: 'asset_class', label: 'Asset Class' },
-    { value: 'sector', label: 'Sector' },
-    { value: 'geography', label: 'Geography' },
+    { value: 'asset_class' as const, label: 'Asset Class' },
+    { value: 'sector' as const, label: 'Sector' },
+    { value: 'geography' as const, label: 'Geography' },
   ];
 
   // Define table columns for holdings

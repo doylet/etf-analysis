@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { usePerformanceAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
-import { XCircle } from 'lucide-react';
+import { MetricCard } from '@/components/ui/metric-card';
+import { WidgetSelect } from '@/components/ui/widget/widget-controls';
+import { XCircle, TrendingUp, Activity, Target } from 'lucide-react';
+import { formatPercent } from '@/lib/formatters';
+import { TIME_PERIODS } from '@/lib/widget-constants';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -35,52 +39,52 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
   // Handle minimal API response structure
   const hasFullData = data.total_return !== undefined && data.annualized_return !== undefined;
 
-  const periods = [
-    { value: '1W', label: '1 Week' },
-    { value: '1M', label: '1 Month' },
-    { value: '3M', label: '3 Months' },
-    { value: '6M', label: '6 Months' },
-    { value: '1Y', label: '1 Year' },
-    { value: '2Y', label: '2 Years' },
-    { value: '5Y', label: '5 Years' },
-  ];
-
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex gap-2 flex-shrink-0">
-        <select 
-          value={timePeriod} 
-          onChange={(e) => setTimePeriod(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
+        <WidgetSelect
+          value={timePeriod}
+          onChange={setTimePeriod}
+          options={TIME_PERIODS}
           disabled={isRefreshing}
-        >
-          {periods.map(p => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
+          className="flex-1"
+        />
         {isRefreshing && (
           <span className="text-xs text-muted-foreground animate-pulse self-center">Updating...</span>
         )}
       </div>
       
       {hasFullData ? (
-        <div className="flex-1 overflow-y-auto min-h-0 grid grid-cols-2 gap-3">
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.total_return?.toFixed(2)}%</div>
-            <div className="text-xs text-muted-foreground">Total Return</div>
-          </div>
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.annualized_return?.toFixed(2)}%</div>
-            <div className="text-xs text-muted-foreground">Annualized</div>
-          </div>
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.volatility?.toFixed(2)}%</div>
-            <div className="text-xs text-muted-foreground">Volatility</div>
-          </div>
-          <div className="text-center p-3 bg-muted rounded-md">
-            <div className="text-lg font-bold text-foreground">{data.sharpe_ratio?.toFixed(2)}</div>
-            <div className="text-xs text-muted-foreground">Sharpe Ratio</div>
-          </div>
+        <div className="flex-1 overflow-y-auto min-h-0 grid grid-cols-2 gap-3 mt-3">
+          <MetricCard
+            title="Total Return"
+            value={formatPercent(data.total_return / 100)}
+            icon={TrendingUp}
+            variant="default"
+            size="sm"
+            trend={data.total_return && data.total_return > 0 ? 'positive' : 'negative'}
+          />
+          <MetricCard
+            title="Annualized"
+            value={formatPercent(data.annualized_return / 100)}
+            icon={TrendingUp}
+            variant="default"
+            size="sm"
+          />
+          <MetricCard
+            title="Volatility"
+            value={formatPercent(data.volatility / 100)}
+            icon={Activity}
+            variant="default"
+            size="sm"
+          />
+          <MetricCard
+            title="Sharpe Ratio"
+            value={data.sharpe_ratio?.toFixed(2) || '0.00'}
+            icon={Target}
+            variant="default"
+            size="sm"
+          />
         </div>
       ) : (
         <div className="text-center p-4 text-muted-foreground">

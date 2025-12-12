@@ -7,7 +7,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { CacheBadge } from '@/components/ui/cache-badge';
+import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
 import { useCorrelationMatrix } from '@/hooks/use-portfolio-widgets';
+import { formatPercent, formatDate } from '@/lib/formatters';
 import type { ContentType } from './widget-metadata';
 
 export const WIDGET_SIZE_CONFIG = {
@@ -22,26 +24,6 @@ interface CorrelationMatrixProps {
   portfolioId?: string;
   defaultTimeWindow?: number;
 }
-
-const formatPercent = (value: number | undefined | null): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '0.00%';
-  }
-  return `${(value * 100).toFixed(1)}%`;
-};
-
-const formatDate = (dateString: string): string => {
-  if (!dateString) return 'N/A';
-  try {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  } catch {
-    return 'Invalid Date';
-  }
-};
 
 const getCorrelationColor = (value: number): string => {
   const absValue = Math.abs(value);
@@ -149,12 +131,12 @@ export default function CorrelationMatrixWidget({
   }, [matrix, symbols]);
 
   const timeWindowOptions = [
-    { value: 30, label: '1 Month' },
-    { value: 90, label: '3 Months' },
-    { value: 180, label: '6 Months' },
-    { value: 252, label: '1 Year' },
-    { value: 504, label: '2 Years' },
-  ];
+    { value: '30', label: '1 Month' },
+    { value: '90', label: '3 Months' },
+    { value: '180', label: '6 Months' },
+    { value: '252', label: '1 Year' },
+    { value: '504', label: '2 Years' },
+  ] as const;
 
   if (loading) {
     return (

@@ -21,7 +21,10 @@ import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { CacheBadge } from '@/components/ui/cache-badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { WidgetSelect, WidgetNumberInput, WidgetCheckbox } from '@/components/ui/widget/widget-controls';
 import type { ContentType } from './widget-metadata';
+import { formatCurrency, formatPercent } from '@/lib/formatters';
+import { SIMULATION_COUNTS, CONFIDENCE_LEVELS, FREQUENCY_OPTIONS, WEIGHT_METHODS, ESTIMATION_METHODS } from '@/lib/widget-constants';
 
 import { useMonteCarloSimulation } from '@/hooks/use-portfolio-widgets';
 
@@ -37,23 +40,6 @@ interface MonteCarloSimulationProps {
   portfolioId?: string;
   defaultSimulations?: number;
 }
-
-const formatPercent = (value: number | undefined | null): string => {
-  if (value === undefined || value === null || isNaN(value)) {
-    return '0.00%';
-  }
-  return `${(value * 100).toFixed(1)}%`;
-};
-
-const formatCurrency = (amount: number | undefined | null): string => {
-  if (amount === undefined || amount === null || isNaN(amount)) {
-    return '$0.00';
-  }
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-};
 
 export default function MonteCarloWidget({ 
   portfolioId, 
@@ -95,13 +81,6 @@ export default function MonteCarloWidget({
     contributionAmount,
     contributionFrequency,
   });
-
-  const simulationOptions = [
-    { value: 1000, label: '1K Simulations' },
-    { value: 5000, label: '5K Simulations' },
-    { value: 10000, label: '10K Simulations' },
-    { value: 25000, label: '25K Simulations' },
-  ];
 
   // Create histogram data for visualization (proper vertical histogram)
   const histogramData = useMemo(() => {
@@ -175,125 +154,73 @@ export default function MonteCarloWidget({
       
       {/* Configuration Controls */}
       <div className="grid grid-cols-2 gap-2 px-1 py-3 bg-muted rounded-md flex-shrink-0 mt-3">
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Simulations</label>
-          <select
-            value={numSimulations}
-            onChange={(e) => setNumSimulations(Number(e.target.value))}
-            className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-          >
-            {simulationOptions.map(option => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <WidgetSelect
+          label="Simulations"
+          value={numSimulations.toString()}
+          onChange={(val) => setNumSimulations(Number(val))}
+          options={SIMULATION_COUNTS.map(opt => ({ value: opt.value.toString(), label: opt.label }))}
+        />
         
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Time Horizon (Years)</label>
-          <input
-            type="number"
-            value={timeHorizonYears}
-            onChange={(e) => setTimeHorizonYears(Math.max(1, Math.min(30, Number(e.target.value))))}
-            className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-            min="1"
-            max="30"
-            step="1"
-          />
-        </div>
+        <WidgetNumberInput
+          label="Time Horizon (Years)"
+          value={timeHorizonYears}
+          onChange={setTimeHorizonYears}
+          min={1}
+          max={30}
+          step={1}
+        />
         
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Initial Portfolio Value</label>
-          <input
-            type="number"
-            value={initialValue}
-            onChange={(e) => setInitialValue(Math.max(1000, Math.min(10000000, Number(e.target.value))))}
-            className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-            min="1000"
-            max="10000000"
-            step="10000"
-          />
-        </div>
+        <WidgetNumberInput
+          label="Initial Portfolio Value"
+          value={initialValue}
+          onChange={setInitialValue}
+          min={1000}
+          max={10000000}
+          step={10000}
+        />
         
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Estimation Method</label>
-          <select
-            value={estimationMethod}
-            onChange={(e) => setEstimationMethod(e.target.value as 'Historical Mean' | 'Exponentially Weighted')}
-            className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-          >
-            <option value="Historical Mean">Historical Mean</option>
-            <option value="Exponentially Weighted">Exp. Weighted</option>
-          </select>
-        </div>
+        <WidgetSelect
+          label="Estimation Method"
+          value={estimationMethod}
+          onChange={(val) => setEstimationMethod(val as 'Historical Mean' | 'Exponentially Weighted')}
+          options={ESTIMATION_METHODS}
+        />
         
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1">Confidence Level</label>
-          <select
-            value={confidenceLevel}
-            onChange={(e) => setConfidenceLevel(Number(e.target.value))}
-            className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-          >
-            <option value={0.90}>90%</option>
-            <option value={0.95}>95%</option>
-            <option value={0.99}>99%</option>
-          </select>
-        </div>
+        <WidgetSelect
+          label="Confidence Level"
+          value={confidenceLevel.toString()}
+          onChange={(val) => setConfidenceLevel(Number(val))}
+          options={CONFIDENCE_LEVELS.map(opt => ({ value: opt.value.toString(), label: opt.label }))}
+        />
         
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="includeDividends"
-            checked={includeDividends}
-            onChange={(e) => setIncludeDividends(e.target.checked)}
-            className="rounded border-border"
-          />
-          <label htmlFor="includeDividends" className="text-xs text-muted-foreground cursor-pointer">
-            Include Dividends
-          </label>
-        </div>
+        <WidgetCheckbox
+          checked={includeDividends}
+          onChange={setIncludeDividends}
+          label="Include Dividends"
+        />
         
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="enableContributions"
-            checked={enableContributions}
-            onChange={(e) => setEnableContributions(e.target.checked)}
-            className="rounded border-border"
-          />
-          <label htmlFor="enableContributions" className="text-xs text-muted-foreground cursor-pointer">
-            Enable Contributions
-          </label>
-        </div>
+        <WidgetCheckbox
+          checked={enableContributions}
+          onChange={setEnableContributions}
+          label="Enable Contributions"
+        />
         
         {enableContributions && (
           <>
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Contribution Amount</label>
-              <input
-                type="number"
-                value={contributionAmount}
-                onChange={(e) => setContributionAmount(Number(e.target.value))}
-                className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-                placeholder="0"
-                min="0"
-                step="100"
-              />
-            </div>
+            <WidgetNumberInput
+              label="Contribution Amount"
+              value={contributionAmount}
+              onChange={setContributionAmount}
+              min={0}
+              step={100}
+            />
             
-            <div>
-              <label className="text-xs text-muted-foreground block mb-1">Frequency</label>
-              <select
-                value={contributionFrequency}
-                onChange={(e) => setContributionFrequency(e.target.value as 'Monthly' | 'Quarterly' | 'Annual')}
-                className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
-              >
-                <option value="Monthly">Monthly</option>
-                <option value="Quarterly">Quarterly</option>
-                <option value="Annual">Annual</option>
-              </select>
-            </div>
+            <WidgetSelect
+              label="Frequency"
+              value={contributionFrequency}
+              onChange={(val) => setContributionFrequency(val as 'Monthly' | 'Quarterly' | 'Annual')}
+              options={FREQUENCY_OPTIONS.filter(opt => ['Monthly', 'Quarterly', 'Annual'].includes(opt.value))}
+            />
           </>
         )}
       </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTimeseriesAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { TIME_PERIODS } from '@/lib/widget-constants';
 import { formatPercent } from '@/lib/formatters';
@@ -112,7 +113,7 @@ const TimeseriesAnalysisWidget: React.FC<TimeseriesAnalysisWidgetProps> = ({ por
           )}
           
           {/* Statistics */}
-          <div className="grid grid-cols-2 gap-3">
+          <MetricGroup columns={2}>
             <MetricCard
               icon={TrendingUp}
               title="Total Return"
@@ -139,7 +140,7 @@ const TimeseriesAnalysisWidget: React.FC<TimeseriesAnalysisWidgetProps> = ({ por
               variant="destructive"
               size="sm"
             />
-          </div>
+          </MetricGroup>
         </div>
       ) : (
         <div className="text-center p-4 text-muted-foreground">

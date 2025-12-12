@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePortfolioTransition } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
 import { XCircle, DollarSign, Activity } from 'lucide-react';
@@ -99,7 +100,7 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
           ) : (
             <div className="text-sm text-muted-foreground text-center py-4">No trades required</div>
           )}
-          <div className="flex flex-wrap justify-center gap-3 mt-3 pt-3 border-t border-border">
+          <MetricGroup layout="horizontal" className="mt-3 pt-3 border-t border-border">
             <MetricCard
               icon={DollarSign}
               title="Cost"
@@ -113,7 +114,7 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
               trend={data.expected_impact?.risk_change < 0 ? 'down' : 'up'}
               size="sm"
             />
-          </div>
+          </MetricGroup>
         </div>
       ) : (
         <div className="text-center p-4 text-muted-foreground">

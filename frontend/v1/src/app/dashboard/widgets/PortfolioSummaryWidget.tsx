@@ -2,6 +2,7 @@ import React from 'react';
 import { usePortfolioSummary } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { XCircle, DollarSign, TrendingUp, Briefcase, Wallet } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import type { ContentType } from './widget-metadata';
@@ -34,7 +35,7 @@ const PortfolioSummaryWidget: React.FC<PortfolioSummaryWidgetProps> = ({ portfol
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto min-h-0 flex flex-wrap justify-center gap-3">
+      <MetricGroup layout="horizontal" className="flex-1 overflow-y-auto min-h-0">
         <MetricCard
           title="Total Value"
           value={formatCurrency(data.total_value)}
@@ -64,7 +65,7 @@ const PortfolioSummaryWidget: React.FC<PortfolioSummaryWidgetProps> = ({ portfol
           variant="default"
           size="sm"
         />
-      </div>
+      </MetricGroup>
     </div>
   );
 };

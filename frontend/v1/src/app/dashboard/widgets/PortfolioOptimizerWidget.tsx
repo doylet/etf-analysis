@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { usePortfolioOptimizer } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect, WidgetCheckbox, WidgetNumberInput } from '@/components/ui/widget/widget-controls';
 import { TIME_PERIODS, OPTIMIZATION_OBJECTIVES } from '@/lib/widget-constants';
 import { formatPercent } from '@/lib/formatters';
@@ -103,7 +104,7 @@ const PortfolioOptimizerWidget: React.FC<PortfolioOptimizerWidgetProps> = ({ por
       {hasFullData ? (
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
           {/* Key Metrics */}
-          <div className="grid grid-cols-3 gap-3">
+          <MetricGroup columns={3}>
             <MetricCard
               title="Expected Return"
               value={formatPercent(data.expected_return / 100)}
@@ -129,7 +130,7 @@ const PortfolioOptimizerWidget: React.FC<PortfolioOptimizerWidgetProps> = ({ por
               variant="default"
               size="sm"
             />
-          </div>
+          </MetricGroup>
 
           {/* Improvements Section */}
           {data.improvement_metrics && (

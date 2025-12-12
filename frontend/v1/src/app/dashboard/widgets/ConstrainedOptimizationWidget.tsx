@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useConstrainedOptimization } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
 import { OPTIMIZATION_OBJECTIVES } from '@/lib/widget-constants';
 import { formatPercent } from '@/lib/formatters';
@@ -69,7 +70,7 @@ const ConstrainedOptimizationWidget: React.FC<ConstrainedOptimizationWidgetProps
       
       {hasFullData ? (
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
-          <div className="flex flex-wrap justify-center gap-3">
+          <MetricGroup layout="horizontal">
             <MetricCard
               icon={TrendingUp}
               title="Return"
@@ -95,7 +96,7 @@ const ConstrainedOptimizationWidget: React.FC<ConstrainedOptimizationWidgetProps
               variant={(!data.constraint_violations || data.constraint_violations.length === 0) ? 'success' : 'destructive'}
               size="sm"
             />
-          </div>
+          </MetricGroup>
           {data.constraint_violations && data.constraint_violations.length > 0 && (
             <div className="mt-3 p-2 bg-destructive/10 rounded-md">
               <div className="text-xs font-medium text-destructive mb-1">Violations</div>

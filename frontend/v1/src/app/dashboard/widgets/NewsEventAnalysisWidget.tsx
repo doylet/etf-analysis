@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNewsEventAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
 import { formatNumber } from '@/lib/formatters';
 import { XCircle, MessageSquare, TrendingUp } from 'lucide-react';
@@ -72,7 +73,7 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
       
       {hasFullData ? (
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <MetricGroup columns={2}>
             <MetricCard
               icon={MessageSquare}
               title="Overall Sentiment"
@@ -86,7 +87,7 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
               value={formatNumber(data.market_impact?.price_correlation || 0, 2)}
               size="sm"
             />
-          </div>
+          </MetricGroup>
           {data.events && data.events.length > 0 && (
             <div className="mt-3">
               <div className="text-xs font-medium text-muted-foreground mb-2">Recent Events</div>

@@ -5,6 +5,7 @@ import { useState, useMemo } from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { CacheBadge } from '@/components/ui/cache-badge';
 import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
@@ -206,7 +207,7 @@ export default function CorrelationMatrixWidget({
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto min-h-0 space-y-2">
         {/* Summary Statistics */}
-        <div className="flex flex-wrap justify-center gap-2">
+        <MetricGroup layout="horizontal">
           <MetricCard
             title="Average Correlation"
               value={formatPercent(matrix?.statistics?.avg_correlation || 0)}
@@ -228,9 +229,9 @@ export default function CorrelationMatrixWidget({
               variant="subtle"
               trend="neutral"
             />
-          </div>
+        </MetricGroup>
 
-          {/* Correlation Matrix Grid */}
+        {/* Correlation Matrix Grid */}
           <div>
             <h4 className="text-sm font-medium mb-2">Correlation Heatmap</h4>
             <div className="overflow-x-auto">

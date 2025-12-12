@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useBenchmarkComparison } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { XCircle, TrendingUp, TrendingDown, Activity, Target } from 'lucide-react';
 import { formatPercent } from '@/lib/formatters';
@@ -98,10 +99,10 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
               variant="default"
               size="sm"
             />
-          </div>
+          </MetricGroup>
           
           {/* Risk Metrics */}
-          <div className="flex flex-wrap justify-center gap-3">
+          <MetricGroup layout="horizontal">
             <MetricCard
               title="Portfolio Sharpe"
               value={data.sharpe_ratio?.toFixed(2)}

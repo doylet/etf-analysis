@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePerformanceAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { WidgetSelect } from '@/components/ui/widget/widget-controls';
 import { XCircle, TrendingUp, Activity, Target } from 'lucide-react';
 import { formatPercent } from '@/lib/formatters';
@@ -55,7 +56,7 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
       </div>
       
       {hasFullData ? (
-        <div className="flex-1 overflow-y-auto min-h-0 grid grid-cols-2 gap-3 mt-3">
+        <MetricGroup columns={2} className="flex-1 overflow-y-auto min-h-0 mt-3">
           <MetricCard
             title="Total Return"
             value={formatPercent(data.total_return / 100)}
@@ -85,7 +86,7 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
             variant="default"
             size="sm"
           />
-        </div>
+        </MetricGroup>
       ) : (
         <div className="text-center p-4 text-muted-foreground">
           <div className="text-sm">{data.status || data.message || 'Performance data available'}</div>

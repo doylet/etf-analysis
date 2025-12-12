@@ -4,6 +4,7 @@
  */
 import { TrendingUp, AlertTriangle, Target } from 'lucide-react';
 import { MetricCard } from '@/components/ui/metric-card';
+import { MetricGroup } from '@/components/ui/financial/metric-group';
 import { formatCurrency, formatPercent } from '@/lib/formatters';
 
 interface MonteCarloMetricsProps {
@@ -28,7 +29,7 @@ interface MonteCarloMetricsProps {
 
 export function MonteCarloMetrics({ statistics, percentiles }: MonteCarloMetricsProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-3">
+    <MetricGroup layout="horizontal">
       <MetricCard
         title="Median Final Value"
         value={formatCurrency(percentiles["50"])}
@@ -65,6 +66,6 @@ export function MonteCarloMetrics({ statistics, percentiles }: MonteCarloMetrics
         size="sm"
         trend={statistics.probability_of_loss > 0.3 ? 'negative' : 'neutral'}
       />
-    </div>
+    </MetricGroup>
   );
 }

@@ -19,18 +19,12 @@ const DashboardToolbar: React.FC<DashboardToolbarProps> = ({
   onReset,
   isRefreshing,
 }) => {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   return (
     <div className="flex items-center justify-between">
       <div>
         <h1 className="font-semibold text-lg">Portfolio Dashboard</h1>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{mounted ? widgetCount : '...'} widgets</span>
+          <span>{widgetCount} widgets</span>
         </div>
       </div>
       

@@ -37,11 +37,7 @@ const WidgetGrid: React.FC<WidgetGridProps> = ({
   const { spacing } = useWidgetSpacing();
   const [currentBreakpoint, setCurrentBreakpoint] = useState<string>('lg');
   const [isDragging, setIsDragging] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [mounted, setMounted] = useState(typeof window !== 'undefined');
   
   // Generate optimal layouts using dynamic algorithm
   // Algorithm respects locked widgets (manually positioned) and optimizes unlocked widgets

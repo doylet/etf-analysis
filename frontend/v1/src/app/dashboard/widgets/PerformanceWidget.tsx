@@ -56,10 +56,10 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
       </div>
       
       {hasFullData ? (
-        <MetricGroup columns={2} className="flex-1 overflow-y-auto min-h-0 mt-3">
+        <MetricGroup layout="horizontal" className="flex-1 min-h-0 mt-3">
           <MetricCard
             title="Total Return"
-            value={formatPercent(data.total_return / 100)}
+            value={formatPercent(data.total_return)}
             icon={TrendingUp}
             variant="default"
             size="sm"
@@ -67,14 +67,14 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
           />
           <MetricCard
             title="Annualized"
-            value={formatPercent(data.annualized_return / 100)}
+            value={formatPercent(data.annualized_return)}
             icon={TrendingUp}
             variant="default"
             size="sm"
           />
           <MetricCard
             title="Volatility"
-            value={formatPercent(data.volatility / 100)}
+            value={formatPercent(data.volatility)}
             icon={Activity}
             variant="default"
             size="sm"

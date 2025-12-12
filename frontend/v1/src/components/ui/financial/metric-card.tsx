@@ -20,7 +20,7 @@ const metricCardVariants = cva(
         subtle: 'border-border bg-muted hover:shadow-sm hover:border-border hover:bg-card',
       },
       size: {
-        sm: 'p-1',
+        sm: 'p-2',
         base: 'p-3',
         lg: 'p-4',
       },

@@ -15,7 +15,7 @@
 'use client';
 
 import { BarChart3, XCircle, AlertTriangle, TrendingUp, Target, ChevronDown } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, SetStateAction } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MetricCard } from '@/components/ui/metric-card';
 import { WidgetInsight } from '@/components/ui/widget-insight';
@@ -242,7 +242,7 @@ export default function MonteCarloWidget({
               <label className="text-xs text-muted-foreground block mb-1">Weight Allocation Method</label>
               <select
                 value={weightMethod}
-                onChange={(e) => setWeightMethod(e.target.value as any)}
+                onChange={(e) => setWeightMethod(e.target.value as SetStateAction<'Equal Weights' | 'Max Sharpe Ratio' | 'Min Volatility' | 'Current Portfolio' | 'Custom'>)}
                 className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
               >
                 <option value="Current Portfolio">Current Portfolio</option>
@@ -290,7 +290,7 @@ export default function MonteCarloWidget({
                     <label className="text-xs text-muted-foreground block mb-1">Frequency</label>
                     <select
                       value={rebalancingFrequency}
-                      onChange={(e) => setRebalancingFrequency(e.target.value as any)}
+                      onChange={(e) => setRebalancingFrequency(e.target.value as SetStateAction<'Quarterly' | 'Semi-Annual' | 'Annual'>)}
                       className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
                     >
                       <option value="Quarterly">Quarterly</option>

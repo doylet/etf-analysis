@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const metricGroupVariants = cva(
-  "",
+  "space-y-2",
   {
     variants: {
       variant: {
@@ -16,7 +16,7 @@ const metricGroupVariants = cva(
       },
       layout: {
         vertical: "",
-        horizontal: "flex flex-wrap",
+        horizontal: "flex flex-wrap gap-2",
         grid: "grid",
       },
     },

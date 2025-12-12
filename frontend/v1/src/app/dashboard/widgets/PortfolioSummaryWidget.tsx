@@ -35,7 +35,7 @@ const PortfolioSummaryWidget: React.FC<PortfolioSummaryWidgetProps> = ({ portfol
 
   return (
     <div className="flex flex-col h-full">
-      <MetricGroup layout="horizontal" className="flex-1 overflow-y-auto min-h-0">
+      <MetricGroup layout="horizontal" className="flex-1 min-h-0">
         <MetricCard
           title="Total Value"
           value={formatCurrency(data.total_value)}

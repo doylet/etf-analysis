@@ -59,7 +59,7 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
         <MetricGroup layout="horizontal" className="flex-1 min-h-0 mt-3">
           <MetricCard
             title="Total Return"
-            value={formatPercent(data.total_return)}
+            value={formatPercent(data.total_return / 100)}
             icon={TrendingUp}
             variant="default"
             size="sm"
@@ -67,14 +67,14 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
           />
           <MetricCard
             title="Annualized"
-            value={formatPercent(data.annualized_return)}
+            value={formatPercent(data.annualized_return / 100)}
             icon={TrendingUp}
             variant="default"
             size="sm"
           />
           <MetricCard
             title="Volatility"
-            value={formatPercent(data.volatility)}
+            value={formatPercent(data.volatility / 100)}
             icon={Activity}
             variant="default"
             size="sm"

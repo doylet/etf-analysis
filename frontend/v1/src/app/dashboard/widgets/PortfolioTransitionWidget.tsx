@@ -111,7 +111,7 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
               icon={Activity}
               title="Risk Change"
               value={formatPercent((data.expected_impact?.risk_change || 0) / 100)}
-              trend={data.expected_impact?.risk_change < 0 ? 'down' : 'up'}
+              trend={data.expected_impact?.risk_change < 0 ? 'negative' : 'positive'}
               size="sm"
             />
           </MetricGroup>

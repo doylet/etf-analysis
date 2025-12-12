@@ -65,7 +65,7 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
       {hasFullData ? (
         <div className="flex-1 overflow-y-auto min-h-0 space-y-3 mt-3">
           {/* Primary Metrics */}
-          <div className="flex flex-wrap justify-center gap-3">
+          <MetricGroup layout="horizontal">
             <MetricCard
               title="Portfolio Return"
               value={formatPercent(data.portfolio_return / 100)}
@@ -135,7 +135,7 @@ const BenchmarkComparisonWidget: React.FC<BenchmarkComparisonWidgetProps> = ({ p
               variant="subtle"
               size="sm"
             />
-          </div>
+          </MetricGroup>
           
           {/* Information Ratio */}
           {data.information_ratio !== undefined && (

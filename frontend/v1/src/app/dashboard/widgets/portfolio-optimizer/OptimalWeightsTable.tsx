@@ -12,7 +12,7 @@ export function OptimalWeightsTable({ optimalWeights, currentWeights }: OptimalW
     <div>
       <div className="text-sm font-medium mb-2">Recommended Allocations</div>
       <div className="space-y-2 max-h-64 overflow-y-auto">
-        {Object.entries(optimalWeights).map(([symbol, weight]: [string, any]) => {
+        {Object.entries(optimalWeights).map(([symbol, weight]: [string, number]) => {
           const currentWeight = currentWeights?.[symbol] || 0;
           const optimalWeight = typeof weight === 'number' ? weight : 0;
           const change = optimalWeight - currentWeight;

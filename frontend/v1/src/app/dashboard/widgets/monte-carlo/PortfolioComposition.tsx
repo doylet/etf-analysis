@@ -30,7 +30,7 @@ export function PortfolioComposition({ config, actions }: PortfolioCompositionPr
             <label className="text-xs text-muted-foreground block mb-1">Weight Allocation Method</label>
             <select
               value={config.weightMethod}
-              onChange={(e) => actions.setWeightMethod(e.target.value as any)}
+              onChange={(e) => actions.setWeightMethod(e.target.value as 'Current Portfolio' | 'Equal Weights' | 'Max Sharpe Ratio' | 'Min Volatility' | 'Custom')}
               className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
             >
               <option value="Current Portfolio">Current Portfolio</option>
@@ -78,7 +78,7 @@ export function PortfolioComposition({ config, actions }: PortfolioCompositionPr
                   <label className="text-xs text-muted-foreground block mb-1">Frequency</label>
                   <select
                     value={config.rebalancingFrequency}
-                    onChange={(e) => actions.setRebalancingFrequency(e.target.value as any)}
+                    onChange={(e) => actions.setRebalancingFrequency(e.target.value as 'Quarterly' | 'Semi-Annual' | 'Annual')}
                     className="w-full text-xs border border-border rounded-md px-2 py-1 bg-background"
                   >
                     <option value="Quarterly">Quarterly</option>

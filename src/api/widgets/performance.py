@@ -161,7 +161,8 @@ class PerformanceAdapter(BaseWidgetAdapter):
                                 total_shares -= volume
                 
                 # Calculate position values
-                avg_cost = total_spent / total_shares if total_shares > 0 else 0
+                # Use total_spent directly since it already represents the remaining cost basis
+                # and total_shares should equal quantity after processing all orders
                 current_price = latest_prices.get(symbol, 0.0)
                 
                 # Convert current price to AUD
@@ -169,7 +170,8 @@ class PerformanceAdapter(BaseWidgetAdapter):
                     current_price = current_price * usd_to_aud
                 
                 position_current_value = quantity * current_price
-                position_cost_basis = quantity * avg_cost
+                # Use total_spent as the cost basis for current holdings
+                position_cost_basis = total_spent
                 
                 total_current_value += position_current_value
                 total_cost_basis += position_cost_basis

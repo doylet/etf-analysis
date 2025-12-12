@@ -1,0 +1,162 @@
+#!/usr/bin/env python3
+"""
+Pre-commit hook to enforce architecture principles.
+
+Prevents:
+1. Business logic calculations in frontend
+2. Duplicated calculation logic across files
+3. Direct database access from controllers
+"""
+
+import re
+import sys
+from pathlib import Path
+
+# Patterns that indicate business logic violations
+FRONTEND_VIOLATIONS = [
+    (r'const\s+\w+\s*=\s*\(.*-.*\)\s*/\s*.*\*\s*100', 'percentage calculation'),
+    (r'const\s+cost_basis\s*=.*\*', 'cost basis calculation'),
+    (r'const\s+total_return\s*=\s*\(', 'return calculation'),
+    (r'const\s+portfolio_value\s*=.*\.reduce\(', 'portfolio aggregation'),
+    (r'const\s+sharpe_ratio\s*=', 'risk metric calculation'),
+    (r'const\s+volatility\s*=.*\.std\(\)', 'volatility calculation'),
+]
+
+BACKEND_DUPLICATES = [
+    (r'def calculate_portfolio_return', 'Portfolio return calculation should be in portfolio_service.py'),
+    (r'def calculate_cost_basis', 'Cost basis calculation should be in portfolio_service.py'),
+    (r'SELECT.*FROM.*WHERE', 'Direct SQL queries should be in repositories'),
+    (r'sqlite3\.connect\(', 'Database connections should be in repositories'),
+]
+
+def check_frontend_files():
+    """Check frontend files for business logic violations."""
+    frontend_dir = Path('frontend/v1/src')
+    if not frontend_dir.exists():
+        return []
+    
+    violations = []
+    
+    for file_path in frontend_dir.rglob('*.tsx'):
+        if 'node_modules' in str(file_path):
+            continue
+            
+        with open(file_path, 'r') as f:
+            content = f.read()
+            line_num = 0
+            
+            for line in content.split('\n'):
+                line_num += 1
+                for pattern, description in FRONTEND_VIOLATIONS:
+                    if re.search(pattern, line, re.IGNORECASE):
+                        violations.append({
+                            'file': str(file_path),
+                            'line': line_num,
+                            'issue': f'Frontend contains business logic: {description}',
+                            'code': line.strip()
+                        })
+    
+    return violations
+
+def check_backend_duplicates():
+    """Check backend files for duplicated business logic."""
+    backend_dirs = [
+        Path('src/api/routers'),
+        Path('src/api/widgets'),
+    ]
+    
+    violations = []
+    
+    for backend_dir in backend_dirs:
+        if not backend_dir.exists():
+            continue
+            
+        for file_path in backend_dir.rglob('*.py'):
+            with open(file_path, 'r') as f:
+                content = f.read()
+                line_num = 0
+                
+                for line in content.split('\n'):
+                    line_num += 1
+                    for pattern, description in BACKEND_DUPLICATES:
+                        if re.search(pattern, line, re.IGNORECASE):
+                            # Allow in service files
+                            if 'services' in str(file_path):
+                                continue
+                            # Allow in repositories for SQL
+                            if 'repositories' in str(file_path) and 'SELECT' in pattern:
+                                continue
+                                
+                            violations.append({
+                                'file': str(file_path),
+                                'line': line_num,
+                                'issue': description,
+                                'code': line.strip()
+                            })
+    
+    return violations
+
+def check_service_imports_in_frontend():
+    """Ensure frontend doesn't import backend services."""
+    frontend_dir = Path('frontend/v1/src')
+    if not frontend_dir.exists():
+        return []
+    
+    violations = []
+    
+    for file_path in frontend_dir.rglob('*.tsx'):
+        if 'node_modules' in str(file_path):
+            continue
+            
+        with open(file_path, 'r') as f:
+            content = f.read()
+            line_num = 0
+            
+            for line in content.split('\n'):
+                line_num += 1
+                # Check for importing from backend services (not frontend services)
+                if re.search(r'from\s+[\'"].*\.\./\.\./\.\./src/services.*[\'"]', line):
+                    violations.append({
+                        'file': str(file_path),
+                        'line': line_num,
+                        'issue': 'Frontend importing backend services (should use API)',
+                        'code': line.strip()
+                    })
+    
+    return violations
+
+def main():
+    """Run all architecture checks."""
+    print("🔍 Checking architecture principles...\n")
+    
+    all_violations = []
+    
+    # Check 1: Frontend business logic
+    frontend_violations = check_frontend_files()
+    all_violations.extend(frontend_violations)
+    
+    # Check 2: Backend duplicates
+    backend_violations = check_backend_duplicates()
+    all_violations.extend(backend_violations)
+    
+    # Check 3: Service imports in frontend
+    import_violations = check_service_imports_in_frontend()
+    all_violations.extend(import_violations)
+    
+    if all_violations:
+        print("❌ Architecture violations found:\n")
+        for v in all_violations:
+            print(f"  {v['file']}:{v['line']}")
+            print(f"    Issue: {v['issue']}")
+            print(f"    Code: {v['code']}")
+            print()
+        
+        print(f"Total violations: {len(all_violations)}")
+        print("\n📖 See docs/ARCHITECTURE-PRINCIPLES.md for guidelines")
+        return 1
+    
+    print("✅ All architecture checks passed!")
+    return 0
+
+if __name__ == '__main__':
+    sys.exit(main())

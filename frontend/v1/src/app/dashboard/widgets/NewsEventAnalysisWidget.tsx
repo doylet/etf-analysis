@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNewsEventAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
 import { XCircle } from 'lucide-react';
 import type { ContentType } from './widget-metadata';
 
@@ -44,31 +45,27 @@ const NewsEventAnalysisWidget: React.FC<NewsEventAnalysisWidgetProps> = ({ portf
     { value: 90, label: '3 Months' },
   ];
 
+  const lookbackOptionsForSelect = lookbackOptions.map(opt => ({
+    value: String(opt.value),
+    label: opt.label
+  }));
+
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex flex-col gap-2 flex-shrink-0">
-        <select 
-          value={lookbackDays} 
-          onChange={(e) => setLookbackDays(Number(e.target.value))}
-          className="px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {lookbackOptions.map(l => (
-            <option key={l.value} value={l.value}>{l.label}</option>
-          ))}
-        </select>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">
-            Surprise Threshold: {surpriseThreshold}%
-          </label>
-          <input 
-            type="range" 
-            min="1" 
-            max="20" 
-            value={surpriseThreshold} 
-            onChange={(e) => setSurpriseThreshold(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
+        <WidgetSelect
+          value={String(lookbackDays)}
+          onChange={(value) => setLookbackDays(Number(value))}
+          options={lookbackOptionsForSelect}
+        />
+        <WidgetSlider
+          label="Surprise Threshold (%)"
+          value={surpriseThreshold}
+          onChange={setSurpriseThreshold}
+          min={1}
+          max={20}
+          step={1}
+        />
       </div>
       
       {hasFullData ? (

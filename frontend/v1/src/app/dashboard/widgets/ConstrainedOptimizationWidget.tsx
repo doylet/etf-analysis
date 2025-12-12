@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useConstrainedOptimization } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { WidgetSelect, WidgetSlider } from '@/components/ui/widget/widget-controls';
+import { OPTIMIZATION_OBJECTIVES } from '@/lib/widget-constants';
+import { formatPercent } from '@/lib/formatters';
 import { XCircle } from 'lucide-react';
 import type { ContentType } from './widget-metadata';
 
@@ -37,51 +40,30 @@ const ConstrainedOptimizationWidget: React.FC<ConstrainedOptimizationWidgetProps
   // Handle minimal API response structure
   const hasFullData = data.optimization_result?.return !== undefined;
 
-  const objectives = [
-    { value: 'Max Sharpe', label: 'Max Sharpe' },
-    { value: 'Min Volatility', label: 'Min Volatility' },
-    { value: 'Max Return', label: 'Max Return' },
-    { value: 'Risk Parity', label: 'Risk Parity' },
-  ];
-
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex flex-col gap-2 flex-shrink-0">
-        <select 
-          value={objective} 
-          onChange={(e) => setObjective(e.target.value)}
-          className="px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {objectives.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">
-            Max Weight: {maxWeight}%
-          </label>
-          <input 
-            type="range" 
-            min="10" 
-            max="100" 
-            value={maxWeight} 
-            onChange={(e) => setMaxWeight(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-muted-foreground">
-            Min Weight: {minWeight}%
-          </label>
-          <input 
-            type="range" 
-            min="0" 
-            max="30" 
-            value={minWeight} 
-            onChange={(e) => setMinWeight(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
+        <WidgetSelect
+          value={objective}
+          onChange={setObjective}
+          options={OPTIMIZATION_OBJECTIVES.filter(o => ['Max Sharpe', 'Min Volatility', 'Max Return', 'Risk Parity'].includes(o.value))}
+        />
+        <WidgetSlider
+          label="Max Weight (%)"
+          value={maxWeight}
+          onChange={setMaxWeight}
+          min={10}
+          max={100}
+          step={1}
+        />
+        <WidgetSlider
+          label="Min Weight (%)"
+          value={minWeight}
+          onChange={setMinWeight}
+          min={0}
+          max={30}
+          step={1}
+        />
       </div>
       
       {hasFullData ? (
@@ -89,13 +71,13 @@ const ConstrainedOptimizationWidget: React.FC<ConstrainedOptimizationWidgetProps
           <div className="flex flex-wrap justify-center gap-3">
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-lg font-bold text-foreground">
-                {data.optimization_result.return?.toFixed(2)}%
+                {formatPercent(data.optimization_result.return / 100)}
               </div>
               <div className="text-xs text-muted-foreground">Return</div>
             </div>
             <div className="text-center p-3 bg-muted rounded-md">
               <div className="text-lg font-bold text-foreground">
-                {data.optimization_result.risk?.toFixed(2)}%
+                {formatPercent(data.optimization_result.risk / 100)}
               </div>
               <div className="text-xs text-muted-foreground">Risk</div>
             </div>

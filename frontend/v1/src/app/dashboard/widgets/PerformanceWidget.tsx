@@ -40,7 +40,7 @@ const PerformanceWidget: React.FC<PerformanceWidgetProps> = ({ portfolioId }) =>
   const hasFullData = data.total_return !== undefined && data.annualized_return !== undefined;
 
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full">
       <div className="flex gap-2 flex-shrink-0">
         <WidgetSelect
           value={timePeriod}

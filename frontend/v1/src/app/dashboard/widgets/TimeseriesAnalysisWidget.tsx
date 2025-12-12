@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useTimeseriesAnalysis } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { WidgetSelect } from '@/components/ui/widget/widget-controls';
+import { TIME_PERIODS } from '@/lib/widget-constants';
 import { XCircle, TrendingUp } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { ContentType } from './widget-metadata';
@@ -37,16 +39,6 @@ const TimeseriesAnalysisWidget: React.FC<TimeseriesAnalysisWidgetProps> = ({ por
   // Handle minimal API response structure
   const hasFullData = data.statistics?.total_return !== undefined;
 
-  const periods = [
-    { value: '1W', label: '1 Week' },
-    { value: '1M', label: '1 Month' },
-    { value: '3M', label: '3 Months' },
-    { value: '6M', label: '6 Months' },
-    { value: '1Y', label: '1 Year' },
-    { value: '2Y', label: '2 Years' },
-    { value: '5Y', label: '5 Years' },
-  ];
-
   const analysisTypes = [
     { value: 'Portfolio Overview', label: 'Portfolio Overview' },
     { value: 'Stationarity', label: 'Stationarity' },
@@ -58,24 +50,18 @@ const TimeseriesAnalysisWidget: React.FC<TimeseriesAnalysisWidgetProps> = ({ por
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex gap-2 flex-shrink-0">
-        <select 
-          value={timePeriod} 
-          onChange={(e) => setTimePeriod(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {periods.map(p => (
-            <option key={p.value} value={p.value}>{p.label}</option>
-          ))}
-        </select>
-        <select 
-          value={analysisType} 
-          onChange={(e) => setAnalysisType(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {analysisTypes.map(a => (
-            <option key={a.value} value={a.value}>{a.label}</option>
-          ))}
-        </select>
+        <WidgetSelect
+          value={timePeriod}
+          onChange={setTimePeriod}
+          options={TIME_PERIODS}
+          className="flex-1"
+        />
+        <WidgetSelect
+          value={analysisType}
+          onChange={setAnalysisType}
+          options={analysisTypes}
+          className="flex-1"
+        />
       </div>
       
       {hasFullData ? (

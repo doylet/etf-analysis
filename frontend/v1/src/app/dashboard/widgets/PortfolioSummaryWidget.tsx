@@ -33,7 +33,7 @@ const PortfolioSummaryWidget: React.FC<PortfolioSummaryWidgetProps> = ({ portfol
   if (!data) return <div className="p-4 text-center text-muted-foreground">No data</div>;
 
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto min-h-0 flex flex-wrap justify-center gap-3">
         <MetricCard
           title="Total Value"

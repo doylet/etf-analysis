@@ -30,7 +30,7 @@ import { useMonteCarloSimulation } from '@/hooks/use-portfolio-widgets';
 
 export const WIDGET_SIZE_CONFIG = {
   minSize: { w: 5, h: 5 },
-  contentType: 'height-heavy' as ContentType,
+  contentType: 'width-heavy' as ContentType,
   requiresFullWidth: false,
   aspectRatioPreference: 1.0,
   isScrollable: true,

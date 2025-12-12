@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { usePortfolioTransition } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
+import { WidgetSelect } from '@/components/ui/widget/widget-controls';
+import { formatCurrency } from '@/lib/formatters';
 import { XCircle } from 'lucide-react';
 import type { ContentType } from './widget-metadata';
 
@@ -57,24 +59,18 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
   return (
     <div className="flex flex-col h-full p-4">
       <div className="flex gap-2 flex-shrink-0">
-        <select 
-          value={transitionMethod} 
-          onChange={(e) => setTransitionMethod(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {transitionMethods.map(t => (
-            <option key={t.value} value={t.value}>{t.label}</option>
-          ))}
-        </select>
-        <select 
-          value={optimizationPriority} 
-          onChange={(e) => setOptimizationPriority(e.target.value)}
-          className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-        >
-          {optimizationPriorities.map(o => (
-            <option key={o.value} value={o.value}>{o.label}</option>
-          ))}
-        </select>
+        <WidgetSelect
+          value={transitionMethod}
+          onChange={setTransitionMethod}
+          options={transitionMethods}
+          className="flex-1"
+        />
+        <WidgetSelect
+          value={optimizationPriority}
+          onChange={setOptimizationPriority}
+          options={optimizationPriorities}
+          className="flex-1"
+        />
       </div>
       
       {hasFullData ? (
@@ -94,7 +90,7 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-medium text-foreground">{trade.shares} shares</div>
-                    <div className="text-xs text-muted-foreground">${trade.value?.toLocaleString()}</div>
+                    <div className="text-xs text-muted-foreground">{formatCurrency(trade.value || 0)}</div>
                   </div>
                 </div>
               ))}
@@ -104,12 +100,12 @@ const PortfolioTransitionWidget: React.FC<PortfolioTransitionWidgetProps> = ({ p
           )}
           <div className="flex flex-wrap justify-center gap-3 mt-3 pt-3 border-t border-border">
             <div className="text-center p-2 bg-muted rounded-md">
-              <div className="text-sm font-bold text-foreground">${data.transition_cost?.toLocaleString() || 0}</div>
+              <div className="text-sm font-bold text-foreground">{formatCurrency(data.transition_cost || 0)}</div>
               <div className="text-xs text-muted-foreground">Cost</div>
             </div>
             <div className="text-center p-2 bg-muted rounded-md">
               <div className="text-sm font-bold text-foreground">
-                {data.expected_impact?.risk_change?.toFixed(2) || 0}%
+                {(data.expected_impact?.risk_change || 0).toFixed(2)}%
               </div>
               <div className="text-xs text-muted-foreground">Risk Change</div>
             </div>

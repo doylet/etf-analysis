@@ -2,6 +2,9 @@ import React, { useState, useMemo } from 'react';
 import { usePortfolioOptimizer } from '@/hooks/use-portfolio-widgets';
 import { WidgetInsight } from '@/components/ui/widget-insight';
 import { MetricCard } from '@/components/ui/metric-card';
+import { WidgetSelect, WidgetCheckbox, WidgetNumberInput } from '@/components/ui/widget/widget-controls';
+import { TIME_PERIODS, OPTIMIZATION_OBJECTIVES } from '@/lib/widget-constants';
+import { formatPercent } from '@/lib/formatters';
 import { XCircle, TrendingUp, Activity, Target, ArrowRight } from 'lucide-react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ZAxis } from 'recharts';
 import type { ContentType } from './widget-metadata';
@@ -59,71 +62,40 @@ const PortfolioOptimizerWidget: React.FC<PortfolioOptimizerWidgetProps> = ({ por
   // Handle minimal API response structure
   const hasFullData = data.expected_return !== undefined && data.expected_risk !== undefined;
 
-  const modes = [
-    { value: 'Max Sharpe', label: 'Max Sharpe Ratio' },
-    { value: 'Min Volatility', label: 'Min Volatility' },
-    { value: 'Target Return', label: 'Target Return' },
-    { value: 'Efficient Frontier', label: 'Efficient Frontier' },
-  ];
-
-  const periods = [
-    { value: '1M', label: '1 Month' },
-    { value: '3M', label: '3 Months' },
-    { value: '6M', label: '6 Months' },
-    { value: '1Y', label: '1 Year' },
-    { value: '2Y', label: '2 Years' },
-    { value: '5Y', label: '5 Years' },
-  ];
-
   return (
-    <div className="flex flex-col h-full p-4">
-      <div className="flex flex-col gap-2 flex-shrink-0">
+    <div className="flex flex-col h-full">
+      <div className="flex flex-col gap-2 flex-shrink-0 mb-1">
         <div className="flex gap-2">
-          <select 
-            value={mode} 
-            onChange={(e) => setMode(e.target.value)}
-            className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-          >
-            {modes.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
-          <select 
-            value={timePeriod} 
-            onChange={(e) => setTimePeriod(e.target.value)}
-            className="flex-1 px-2 py-1 text-sm border rounded-md bg-background"
-          >
-            {periods.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
+          <WidgetSelect
+            value={mode}
+            onChange={setMode}
+            options={OPTIMIZATION_OBJECTIVES}
+            className="flex-1"
+          />
+          <WidgetSelect
+            value={timePeriod}
+            onChange={setTimePeriod}
+            options={TIME_PERIODS.filter(p => p.value !== '1W')}
+            className="flex-1"
+          />
         </div>
         
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input 
-              type="checkbox" 
-              checked={includeDividends} 
-              onChange={(e) => setIncludeDividends(e.target.checked)}
-              className="rounded"
-            />
-            Include Dividends
-          </label>
+          <WidgetCheckbox
+            label="Include Dividends"
+            checked={includeDividends}
+            onChange={setIncludeDividends}
+          />
           
           {mode === 'Target Return' && (
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-muted-foreground">Target Return:</label>
-              <input
-                type="number"
-                value={targetReturn}
-                onChange={(e) => setTargetReturn(Number(e.target.value))}
-                className="w-20 px-2 py-1 text-xs border rounded-md bg-background"
-                min="0"
-                max="100"
-                step="0.5"
-              />
-              <span className="text-xs text-muted-foreground">%</span>
-            </div>
+            <WidgetNumberInput
+              label="Target Return (%)"
+              value={targetReturn}
+              onChange={setTargetReturn}
+              min={0}
+              max={100}
+              step={0.5}
+            />
           )}
         </div>
       </div>
@@ -134,8 +106,8 @@ const PortfolioOptimizerWidget: React.FC<PortfolioOptimizerWidgetProps> = ({ por
           <div className="grid grid-cols-3 gap-3">
             <MetricCard
               title="Expected Return"
-              value={`${data.expected_return?.toFixed(2)}%`}
-              subtitle={data.current_return ? `Currently: ${data.current_return?.toFixed(2)}%` : undefined}
+              value={formatPercent(data.expected_return / 100)}
+              subtitle={data.current_return ? `Currently: ${formatPercent(data.current_return / 100)}` : undefined}
               icon={TrendingUp}
               variant="highlighted"
               size="sm"
@@ -143,8 +115,8 @@ const PortfolioOptimizerWidget: React.FC<PortfolioOptimizerWidgetProps> = ({ por
             />
             <MetricCard
               title="Expected Risk"
-              value={`${data.expected_risk?.toFixed(2)}%`}
-              subtitle={data.current_risk ? `Currently: ${data.current_risk?.toFixed(2)}%` : undefined}
+              value={formatPercent(data.expected_risk / 100)}
+              subtitle={data.current_risk ? `Currently: ${formatPercent(data.current_risk / 100)}` : undefined}
               icon={Activity}
               variant="default"
               size="sm"
@@ -166,13 +138,13 @@ const PortfolioOptimizerWidget: React.FC<PortfolioOptimizerWidgetProps> = ({ por
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
                   <div className="text-sm font-bold text-green-600 dark:text-green-400">
-                    +{data.improvement_metrics.return_improvement?.toFixed(2)}%
+                    +{formatPercent(data.improvement_metrics.return_improvement / 100)}
                   </div>
                   <div className="text-xs text-muted-foreground">Return Gain</div>
                 </div>
                 <div>
                   <div className="text-sm font-bold text-green-600 dark:text-green-400">
-                    {data.improvement_metrics.risk_reduction?.toFixed(2)}%
+                    {formatPercent(data.improvement_metrics.risk_reduction / 100)}
                   </div>
                   <div className="text-xs text-muted-foreground">Risk Reduction</div>
                 </div>

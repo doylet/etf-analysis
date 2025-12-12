@@ -40,7 +40,7 @@ const DividendAnalysisWidget: React.FC<DividendAnalysisWidgetProps> = ({ portfol
   const hasFullData = data.total_dividends !== undefined && data.dividend_yield !== undefined;
 
   return (
-    <div className="flex flex-col h-full p-4">
+    <div className="flex flex-col h-full">
       <div className="flex gap-2 flex-shrink-0">
         <WidgetSelect
           value={timePeriod}

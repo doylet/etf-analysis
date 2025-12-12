@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import type { MetricCardProps } from '@/lib/design-tokens';
 
 const metricCardVariants = cva(
-  'group relative rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:scale-[1.02] hover:-translate-y-1 cursor-default max-w-[16.666667%] min-w-[200px]',
+  'group relative rounded-lg border bg-card text-card-foreground shadow-sm transition-all duration-300 ease-out hover:scale-[1.02] hover:-translate-y-[2px] cursor-default max-w-[16.666667%] min-w-[200px] mb-3',
   {
     variants: {
       variant: {

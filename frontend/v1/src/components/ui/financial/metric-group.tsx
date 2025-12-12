@@ -1,9 +1,11 @@
+"use client"
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const metricGroupVariants = cva(
-  "space-y-4",
+  "",
   {
     variants: {
       variant: {
@@ -13,9 +15,9 @@ const metricGroupVariants = cva(
         grid: "",
       },
       layout: {
-        vertical: "space-y-4",
-        horizontal: "flex flex-wrap gap-4",
-        grid: "grid gap-4",
+        vertical: "",
+        horizontal: "flex flex-wrap",
+        grid: "grid",
       },
     },
     defaultVariants: {
